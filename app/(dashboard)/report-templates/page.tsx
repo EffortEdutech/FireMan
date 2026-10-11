@@ -39,6 +39,8 @@ function errorMessage(error: string) {
       return "The template status could not be updated.";
     case "create-failed":
       return "The template could not be created.";
+    case "duplicate-failed":
+      return "The template could not be duplicated.";
     default:
       return "The template could not be saved.";
   }

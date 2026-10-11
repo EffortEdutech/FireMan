@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { setReportTemplateActive } from "@/app/(dashboard)/report-templates/actions";
+import { duplicateReportTemplate, setReportTemplateActive } from "@/app/(dashboard)/report-templates/actions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireProfile } from "@/lib/auth/current-user";
@@ -94,13 +94,19 @@ export default async function ReportTemplateDetailPage({ params, searchParams }:
             <strong>{template.slug}</strong>
           </div>
         </div>
-        {!template.is_default ? (
-          <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem", flexWrap: "wrap" }}>
-            {isEditable ? (
-              <Link href={`/report-templates/${template.id}/edit`} style={{ color: "var(--accent)", fontWeight: 700 }}>
-                Edit Template
-              </Link>
-            ) : null}
+        <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+          {isEditable ? (
+            <Link href={`/report-templates/${template.id}/edit`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+              Edit Template
+            </Link>
+          ) : null}
+          <form action={duplicateReportTemplate}>
+            <input name="template_id" type="hidden" value={template.id} />
+            <Button type="submit" variant="secondary">
+              Duplicate Template
+            </Button>
+          </form>
+          {!template.is_default ? (
             <form action={setReportTemplateActive}>
               <input name="template_id" type="hidden" value={template.id} />
               <input name="active" type="hidden" value={template.active ? "false" : "true"} />
@@ -108,8 +114,8 @@ export default async function ReportTemplateDetailPage({ params, searchParams }:
                 {template.active ? "Deactivate Template" : "Activate Template"}
               </Button>
             </form>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </Card>
 
       <Card>

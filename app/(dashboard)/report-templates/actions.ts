@@ -158,6 +158,58 @@ export async function updateReportTemplate(formData: FormData) {
   redirect(`/report-templates/${templateId}?updated=1`);
 }
 
+export async function duplicateReportTemplate(formData: FormData) {
+  const profile = await requireProfile();
+
+  if (!canAccessManagement(profile.role)) {
+    redirect("/dashboard");
+  }
+
+  const templateId = value(formData, "template_id");
+
+  if (!templateId) {
+    redirect("/report-templates?error=missing-template");
+  }
+
+  const supabase = await createClient();
+  const { data: template, error: templateError } = await supabase
+    .from("report_templates")
+    .select("name,description,layout,report_type")
+    .eq("id", templateId)
+    .eq("organisation_id", profile.organisation_id)
+    .single();
+
+  if (templateError || !template) {
+    redirect("/report-templates?error=template-not-found");
+  }
+
+  const name = `${template.name} Copy`;
+  const slug = `${slugifyTemplateName(name)}-${Date.now().toString(36)}`;
+  const { data: copy, error } = await supabase
+    .from("report_templates")
+    .insert({
+      active: true,
+      created_by: profile.id,
+      description: template.description,
+      is_default: false,
+      layout: template.layout,
+      name,
+      organisation_id: profile.organisation_id,
+      report_type: template.report_type,
+      slug
+    })
+    .select("id")
+    .single();
+
+  if (error || !copy) {
+    redirect(`/report-templates/${templateId}?error=${encodeURIComponent(error?.code ?? "duplicate-failed")}`);
+  }
+
+  revalidatePath("/report-templates");
+  revalidatePath("/reports");
+  redirect(`/report-templates/${copy.id}/edit?duplicated=1`);
+}
+
 export async function setReportTemplateActive(formData: FormData) {
   const profile = await requireProfile();
 

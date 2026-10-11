@@ -15,6 +15,7 @@ type EditReportTemplatePageProps = {
     templateId: string;
   }>;
   searchParams?: Promise<{
+    duplicated?: string;
     error?: string;
   }>;
 };
@@ -80,6 +81,11 @@ export default async function EditReportTemplatePage({ params, searchParams }: E
       </div>
 
       {pageParams?.error ? <ErrorState title="Template not updated" message={errorMessage(pageParams.error)} /> : null}
+      {pageParams?.duplicated ? (
+        <Card role="status" style={{ borderColor: "#9cc9a8", color: "#22543d" }}>
+          Template duplicated. Adjust this copy for future reports.
+        </Card>
+      ) : null}
 
       <Card>
         <form action={updateReportTemplate} style={{ display: "grid", gap: "1rem" }}>
