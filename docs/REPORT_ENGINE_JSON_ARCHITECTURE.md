@@ -2,7 +2,7 @@
 
 ## Bismillah
 
-This document captures the report-engine direction before the PDF/download work begins.
+This document captures the report-engine direction and the first implemented vertical path.
 
 ## Reference Learned From WorkLedger
 
@@ -27,6 +27,18 @@ FireMaint report output will be JSON-layout driven:
    - Future organisation/client/site-specific layout records.
    - Can hide, reorder, rename, or configure sections without changing core report data.
    - Must remain RLS-scoped to the organisation/client access model.
+
+## Implemented Vertical Path
+
+The first standard report engine path is implemented:
+
+1. `IssuedReportData` is assembled by `lib/reports/issued-report-data.ts`.
+2. `standardMaintenanceReportLayout` defines the standard report sections in source-controlled JSON-compatible TypeScript.
+3. `ReportLayoutRenderer` renders the in-app report detail body from the layout.
+4. `renderReportHtml` generates the browser-readable downloaded HTML artifact.
+5. `renderReportPdf` generates the formal PDF artifact.
+6. `/api/reports/[reportId]/download` serves both PDF and HTML through the same data contract.
+7. Report detail pages and report queues expose PDF/HTML output links.
 
 ## Engine Concepts
 
@@ -107,8 +119,13 @@ The sprint is no longer simply "make a PDF". The locked path is:
 2. Report data bindings cover the issued report detail data already visible in the UI.
 3. The same engine can serve management and client report detail/download pages.
 4. Client access remains RLS-scoped.
-5. Existing checks pass:
+5. PDF generation and the download route have unit smoke coverage.
+6. Existing checks pass:
    - `npx tsc --noEmit`
    - `npm run lint`
    - `git diff --check`
    - `npm run build`
+
+## Future Custom Layout Path
+
+Custom report formats are intentionally not part of the first implementation. When this becomes the active sprint, add RLS-protected persistence for layout definitions and keep the existing source-controlled standard layout as the fallback/default.

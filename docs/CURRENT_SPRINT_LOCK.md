@@ -13,8 +13,23 @@ The online golden path is now usable in the application:
 3. Technician starts work, completes assigned checklists, captures findings, and submits the job.
 4. Management starts review, generates a report shell, reviews it, and issues it.
 5. Client logs in and views issued reports with field evidence and checklist evidence.
+6. Management and client users can download issued report output as PDF, with HTML available as a browser-readable fallback.
 
 The recent UI cleanup pass is considered complete enough for the current golden path. Further UI polish should be driven by a specific workflow defect, not general cleanup.
+
+## Report Output Implemented State
+
+The report engine sprint now has its first working vertical path:
+
+1. A typed JSON report layout contract exists in `lib/reports/report-layout.ts`.
+2. A locked standard maintenance layout exists in `lib/reports/standard-maintenance-report-layout.ts`.
+3. Issued report data is assembled through `lib/reports/issued-report-data.ts`.
+4. Management and client report detail pages render through the shared JSON-layout renderer.
+5. The download route at `/api/reports/[reportId]/download` supports:
+   - PDF via `?format=pdf`
+   - HTML fallback without the `format` parameter
+6. Management and client report queues expose compact output links for issued reports.
+7. Unit coverage verifies PDF generation and download-route access behavior.
 
 ## Why The Next Sprint Is Report Engine + PDF / Downloadable Report Output
 
@@ -32,7 +47,7 @@ Open Report
 Download PDF
 ```
 
-The current product reaches `Open Report`, but it does not yet provide a formal downloadable report artifact.
+The product now reaches `Download PDF` for issued reports. This section remains as the sprint rationale and completion record.
 
 For a fire maintenance platform, the report is the primary customer-facing proof record. In-browser viewing is useful, but it is not enough for handover, audit, filing, client sharing, or compliance workflows.
 
@@ -116,6 +131,16 @@ The sprint is complete when:
 8. Verify owner/client access boundaries.
 9. Improve report layout only after the access and data path works.
 
+The first nine steps are now implemented. Remaining report-output work should be treated as polish or as a new custom-template capability, not as a blocker for the golden path.
+
+## Remaining Future Work
+
+1. Improve visual PDF fidelity with a richer renderer if needed.
+2. Add photo evidence once uploads are available.
+3. Add organisation/client/site-specific custom layout persistence.
+4. Add approval/signature metadata when the workflow captures it.
+5. Add email delivery or public share links only after access rules are settled.
+
 ## Decision
 
 The UI polish/consolidation pass is now closed.
@@ -125,4 +150,10 @@ The next big sprint move is locked as:
 ```text
 JSON-driven report generation engine + PDF / downloadable report output
 ```
+
+This sprint's first usable vertical implementation is complete. Further report work should now be selected deliberately as either:
+
+- report output polish
+- custom report-template expansion
+- a separate business capability sprint
 
