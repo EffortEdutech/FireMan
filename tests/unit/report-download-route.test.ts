@@ -43,6 +43,8 @@ const reportData = {
     jobId: "job-1",
     reportNumber: "UKB-2026-000004",
     status: "ISSUED",
+    templateId: "template-1",
+    templateName: "Standard Maintenance Report",
     title: "Maintenance Report"
   },
   client: {
@@ -68,6 +70,23 @@ const reportData = {
   assets: [],
   checklistGroups: [],
   findings: [],
+  layout: {
+    layoutId: "test-layout",
+    name: "Test Layout",
+    version: "1.0.0",
+    locked: true,
+    page: {
+      size: "A4",
+      orientation: "portrait",
+      margins: {
+        top: 20,
+        right: 16,
+        bottom: 20,
+        left: 16
+      }
+    },
+    sections: []
+  },
   loadErrors: {
     findings: false,
     findingPhotos: false,

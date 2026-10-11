@@ -11,7 +11,6 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
 import { fetchIssuedReportData } from "@/lib/reports/issued-report-data";
-import { standardMaintenanceReportLayout } from "@/lib/reports/standard-maintenance-report-layout";
 import { createClient } from "@/lib/supabase/server";
 
 type ReportDetailPageProps = {
@@ -62,7 +61,7 @@ export default async function ReportDetailPage({ params }: ReportDetailPageProps
         </div>
       </div>
 
-      <ReportLayoutRenderer data={reportData} layout={standardMaintenanceReportLayout} />
+      <ReportLayoutRenderer data={reportData} layout={reportData.layout} />
       <ReportOutputNote />
 
       <Card className="no-print">

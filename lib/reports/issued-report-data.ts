@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ReportLayoutDefinition } from "@/lib/reports/report-layout";
+import { resolveReportLayout } from "@/lib/reports/report-template";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ReportStatus = Database["public"]["Enums"]["report_status"];
@@ -11,6 +13,11 @@ type ReportRow = {
   status: ReportStatus;
   generated_at: string | null;
   issued_at: string | null;
+  template_id: string | null;
+  report_templates: {
+    name: string;
+    layout: Database["public"]["Tables"]["report_templates"]["Row"]["layout"];
+  } | null;
   maintenance_jobs: {
     job_number: string;
     scheduled_date: string;
@@ -128,6 +135,8 @@ export type IssuedReportData = {
     reportNumber: string;
     title: string | null;
     status: ReportStatus;
+    templateId: string | null;
+    templateName: string;
     generatedAt: string | null;
     issuedAt: string | null;
   };
@@ -154,6 +163,7 @@ export type IssuedReportData = {
   assets: IssuedReportAsset[];
   findings: IssuedReportFinding[];
   checklistGroups: IssuedReportChecklistGroup[];
+  layout: ReportLayoutDefinition;
   loadErrors: {
     findings: boolean;
     findingPhotos: boolean;
@@ -175,7 +185,7 @@ export async function fetchIssuedReportData(
   let reportQuery = supabase
     .from("reports")
     .select(
-      "id,job_id,report_number,title,status,generated_at,issued_at,maintenance_jobs(job_number,scheduled_date,clients(name),sites(name))"
+      "id,job_id,report_number,title,status,generated_at,issued_at,template_id,report_templates(name,layout),maintenance_jobs(job_number,scheduled_date,clients(name),sites(name))"
     )
     .eq("id", reportId);
 
@@ -332,6 +342,8 @@ export async function fetchIssuedReportData(
       reportNumber: report.report_number,
       title: report.title,
       status: report.status,
+      templateId: report.template_id,
+      templateName: report.report_templates?.name ?? "Standard Maintenance Report",
       generatedAt: report.generated_at,
       issuedAt: report.issued_at
     },
@@ -374,6 +386,7 @@ export async function fetchIssuedReportData(
       photos: photosByFindingId.get(finding.id) ?? []
     })),
     checklistGroups,
+    layout: resolveReportLayout(report.report_templates?.layout),
     loadErrors: {
       findings: Boolean(findingsError),
       findingPhotos: Boolean(findingPhotosError || signedPhotoUrlError),

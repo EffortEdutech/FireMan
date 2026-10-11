@@ -11,6 +11,8 @@ const reportData: IssuedReportData = {
     reportNumber: "UKB-2026-000004",
     title: "Maintenance Report UKB-JOB-20261008-D89B92",
     status: "ISSUED",
+    templateId: "template-1",
+    templateName: "Standard Maintenance Report",
     generatedAt: "2026-10-08",
     issuedAt: "2026-10-08"
   },
@@ -85,6 +87,7 @@ const reportData: IssuedReportData = {
       status: "LOCKED"
     }
   ],
+  layout: standardMaintenanceReportLayout,
   loadErrors: {
     findings: false,
     findingPhotos: false,

@@ -20,9 +20,14 @@ export async function generateReportShell(formData: FormData) {
   }
 
   const jobId = value(formData, "job_id");
+  const templateId = value(formData, "template_id");
 
   if (!jobId) {
     redirect("/reports?error=missing-job");
+  }
+
+  if (!templateId) {
+    redirect("/reports?error=missing-template");
   }
 
   const supabase = await createClient();
@@ -38,6 +43,18 @@ export async function generateReportShell(formData: FormData) {
 
   if (job.status !== "UNDER_REVIEW") {
     redirect("/reports?error=job-not-under-review");
+  }
+
+  const { data: template, error: templateError } = await supabase
+    .from("report_templates")
+    .select("id,name")
+    .eq("id", templateId)
+    .eq("organisation_id", profile.organisation_id)
+    .eq("active", true)
+    .single();
+
+  if (templateError || !template) {
+    redirect("/reports?error=template-not-found");
   }
 
   const { count: existingReportCount, error: existingReportError } = await supabase
@@ -67,12 +84,14 @@ export async function generateReportShell(formData: FormData) {
     report_number: reportNumber,
     report_type: "MAINTENANCE",
     status: "GENERATED",
+    template_id: template.id,
     title,
     generated_at: new Date().toISOString(),
     generated_by: profile.id,
     report_data: {
       source: "management-report-shell",
-      job_number: job.job_number
+      job_number: job.job_number,
+      template_name: template.name
     }
   });
 

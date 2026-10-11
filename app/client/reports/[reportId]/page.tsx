@@ -8,7 +8,6 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessClientPortal } from "@/lib/permissions/roles";
 import { fetchIssuedReportData } from "@/lib/reports/issued-report-data";
-import { standardMaintenanceReportLayout } from "@/lib/reports/standard-maintenance-report-layout";
 import { createClient } from "@/lib/supabase/server";
 
 type ClientReportPageProps = {
@@ -51,7 +50,7 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
         </div>
       </div>
 
-      <ReportLayoutRenderer data={reportData} layout={standardMaintenanceReportLayout} />
+      <ReportLayoutRenderer data={reportData} layout={reportData.layout} />
       <ReportOutputNote />
     </div>
   );

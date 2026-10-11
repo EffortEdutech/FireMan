@@ -57,7 +57,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
 
   const params = await searchParams;
   const supabase = await createClient();
-  const [{ data: jobs }, { data: reports, error: reportsError }] = await Promise.all([
+  const [{ data: jobs }, { data: reports, error: reportsError }, { data: templates, error: templatesError }] = await Promise.all([
     supabase
       .from("maintenance_jobs")
       .select("id,job_number,scheduled_date,clients(name),sites(name)")
@@ -65,8 +65,15 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
       .order("scheduled_date", { ascending: false }),
     supabase
       .from("reports")
-      .select("id,job_id,report_number,title,status,generated_at,maintenance_jobs(job_number,clients(name),sites(name))")
-      .order("created_at", { ascending: false })
+      .select("id,job_id,report_number,title,status,generated_at,maintenance_jobs(job_number,clients(name),sites(name)),report_templates(name)")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("report_templates")
+      .select("id,name,description,is_default")
+      .eq("active", true)
+      .eq("report_type", "MAINTENANCE")
+      .order("is_default", { ascending: false })
+      .order("name", { ascending: true })
   ]);
   const reportJobIds = reports?.map((report) => report.job_id).filter(Boolean) ?? [];
   const { data: findings, error: findingsError } =
@@ -168,6 +175,10 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
           message={
             params.error === "missing-job"
               ? "Choose a job under management review."
+              : params.error === "missing-template"
+                ? "Choose a report template."
+                : params.error === "template-not-found"
+                  ? "The selected report template is unavailable."
               : params.error === "job-not-under-review"
                 ? "Start management review before generating a report."
                 : params.error === "report-exists"
@@ -191,6 +202,15 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                 </option>
               ))}
             </select>
+            <select aria-label="Report template" disabled={!hasJobs || !templates || templates.length === 0} name="template_id" required style={fieldStyle}>
+              <option value="">{templates && templates.length > 0 ? "Select report template" : "No report templates"}</option>
+              {templates?.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                  {template.is_default ? " (default)" : ""}
+                </option>
+              ))}
+            </select>
             <input aria-label="Report title" disabled={!hasJobs} name="title" placeholder="Report title" style={fieldStyle} />
           </div>
           <div>
@@ -203,7 +223,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
       <h2 style={{ fontSize: "1rem", margin: "0.5rem 0 0" }}>2. Review and issue reports</h2>
       {reportsError ? (
         <ErrorState title="Reports unavailable" message="The report list could not be loaded." />
-      ) : findingsError || jobEquipmentError || inspectionsError || resultsError ? (
+      ) : findingsError || jobEquipmentError || inspectionsError || resultsError || templatesError ? (
         <ErrorState title="Evidence unavailable" message="Captured findings could not be loaded." />
       ) : reports && reports.length > 0 ? (
         <>
@@ -226,6 +246,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
               <col style={{ width: 160 }} />
               <col style={{ width: 100 }} />
               <col style={{ width: 130 }} />
+              <col style={{ width: 170 }} />
               <col style={{ width: 230 }} />
               <col style={{ width: 100 }} />
               <col style={{ width: 110 }} />
@@ -239,6 +260,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                 <th>Job</th>
                 <th>Client</th>
                 <th>Site</th>
+                <th>Template</th>
                 <th>Evidence</th>
                 <th>Generated</th>
                 <th>Status</th>
@@ -286,6 +308,9 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                     </td>
                     <td>
                       {report.maintenance_jobs?.sites?.name ?? "Not set"}
+                    </td>
+                    <td>
+                      {report.report_templates?.name ?? "Standard Maintenance Report"}
                     </td>
                     <td>
                       {evidenceSummary}
