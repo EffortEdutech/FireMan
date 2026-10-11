@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { EmptyState } from "@/components/ui/states";
 import { PageHeader } from "@/components/ui/page-header";
+import { ReportOutputStatus } from "@/components/reports/report-output-status";
 import { requireProfile } from "@/lib/auth/current-user";
 import { formatDate } from "@/lib/format/date";
 import { canAccessClientPortal } from "@/lib/permissions/roles";
@@ -176,6 +177,7 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
               <col style={{ width: 150 }} />
               <col style={{ width: 260 }} />
               <col style={{ width: 100 }} />
+              <col style={{ width: 110 }} />
             </colgroup>
             <thead>
               <tr>
@@ -185,6 +187,7 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
                 <th>Site</th>
                 <th>Evidence</th>
                 <th>Issued</th>
+                <th>Output</th>
               </tr>
             </thead>
             <tbody>
@@ -230,6 +233,9 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
                     </td>
                     <td style={{ whiteSpace: "nowrap" }}>
                       {formatDate(report.issued_at)}
+                    </td>
+                    <td>
+                      <ReportOutputStatus reportId={report.id} status={report.status} />
                     </td>
                   </tr>
                 );

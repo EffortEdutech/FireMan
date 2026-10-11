@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { PageHeader } from "@/components/ui/page-header";
+import { ReportOutputStatus } from "@/components/reports/report-output-status";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState, ErrorState, SuccessState } from "@/components/ui/states";
 import { requireProfile } from "@/lib/auth/current-user";
@@ -228,6 +229,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
               <col style={{ width: 230 }} />
               <col style={{ width: 100 }} />
               <col style={{ width: 110 }} />
+              <col style={{ width: 110 }} />
               <col style={{ width: 130 }} />
             </colgroup>
             <thead>
@@ -240,6 +242,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                 <th>Evidence</th>
                 <th>Generated</th>
                 <th>Status</th>
+                <th>Output</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -292,6 +295,9 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                     </td>
                     <td>
                       <StatusBadge>{reportStatusLabel[report.status] ?? report.status}</StatusBadge>
+                    </td>
+                    <td>
+                      <ReportOutputStatus reportId={report.id} status={report.status} />
                     </td>
                     <td>
                       {report.status === "GENERATED" ? (
