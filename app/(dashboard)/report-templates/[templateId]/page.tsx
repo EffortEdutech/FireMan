@@ -12,6 +12,10 @@ type ReportTemplateDetailPageProps = {
   params: Promise<{
     templateId: string;
   }>;
+  searchParams?: Promise<{
+    error?: string;
+    updated?: string;
+  }>;
 };
 
 const blockLabel: Record<string, string> = {
@@ -24,7 +28,7 @@ const blockLabel: Record<string, string> = {
   summary_grid: "Summary grid"
 };
 
-export default async function ReportTemplateDetailPage({ params }: ReportTemplateDetailPageProps) {
+export default async function ReportTemplateDetailPage({ params, searchParams }: ReportTemplateDetailPageProps) {
   const profile = await requireProfile();
 
   if (!canAccessManagement(profile.role)) {
@@ -32,6 +36,7 @@ export default async function ReportTemplateDetailPage({ params }: ReportTemplat
   }
 
   const { templateId } = await params;
+  const pageParams = await searchParams;
   const supabase = await createClient();
   const [{ data: template, error }, { count: reportCount }] = await Promise.all([
     supabase
@@ -51,6 +56,7 @@ export default async function ReportTemplateDetailPage({ params }: ReportTemplat
 
   const layout = resolveReportLayout(template.layout);
   const visibleSections = layout.sections.filter((section) => section.blockType !== "header");
+  const isEditable = !template.is_default && (reportCount ?? 0) === 0;
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -61,6 +67,17 @@ export default async function ReportTemplateDetailPage({ params }: ReportTemplat
         <h1 style={{ fontSize: "1.75rem", margin: "0.5rem 0 0" }}>{template.name}</h1>
         <p style={{ color: "var(--muted)", margin: "0.5rem 0 0" }}>{template.description ?? "No description"}</p>
       </div>
+
+      {pageParams?.updated ? (
+        <Card role="status" style={{ borderColor: "#9cc9a8", color: "#22543d" }}>
+          Template updated.
+        </Card>
+      ) : null}
+      {pageParams?.error === "template-locked" ? (
+        <Card role="alert" style={{ borderColor: "#f0b4ae", color: "#8a1f17" }}>
+          This template is locked because it is the default template or already used by reports.
+        </Card>
+      ) : null}
 
       <Card>
         <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
@@ -78,13 +95,20 @@ export default async function ReportTemplateDetailPage({ params }: ReportTemplat
           </div>
         </div>
         {!template.is_default ? (
-          <form action={setReportTemplateActive} style={{ marginTop: "1rem" }}>
-            <input name="template_id" type="hidden" value={template.id} />
-            <input name="active" type="hidden" value={template.active ? "false" : "true"} />
-            <Button type="submit" variant="secondary">
-              {template.active ? "Deactivate Template" : "Activate Template"}
-            </Button>
-          </form>
+          <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem", flexWrap: "wrap" }}>
+            {isEditable ? (
+              <Link href={`/report-templates/${template.id}/edit`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+                Edit Template
+              </Link>
+            ) : null}
+            <form action={setReportTemplateActive}>
+              <input name="template_id" type="hidden" value={template.id} />
+              <input name="active" type="hidden" value={template.active ? "false" : "true"} />
+              <Button type="submit" variant="secondary">
+                {template.active ? "Deactivate Template" : "Activate Template"}
+              </Button>
+            </form>
+          </div>
         ) : null}
       </Card>
 

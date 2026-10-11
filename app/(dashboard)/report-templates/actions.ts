@@ -33,6 +33,7 @@ export async function createReportTemplate(formData: FormData) {
   }
 
   const selectedSectionIds = new Set(formData.getAll("section_id").filter((entry): entry is string => typeof entry === "string"));
+  const sectionOrderIds = orderedSectionIds(formData);
   const sectionTitles = new Map(
     reportTemplateSections.map((section) => [section.id, value(formData, `section_title_${section.id}`) ?? section.defaultTitle])
   );
@@ -40,6 +41,7 @@ export async function createReportTemplate(formData: FormData) {
     description,
     name,
     preset,
+    sectionOrderIds,
     sectionTitles,
     selectedSectionIds
   });
@@ -64,6 +66,96 @@ export async function createReportTemplate(formData: FormData) {
   revalidatePath("/report-templates");
   revalidatePath("/reports");
   redirect("/report-templates?created=1");
+}
+
+function orderedSectionIds(formData: FormData) {
+  return reportTemplateSections
+    .map((section, index) => {
+      const order = Number(value(formData, `section_order_${section.id}`) ?? index + 1);
+
+      return {
+        id: section.id,
+        order: Number.isFinite(order) ? order : index + 1
+      };
+    })
+    .sort((a, b) => a.order - b.order)
+    .map((section) => section.id);
+}
+
+export async function updateReportTemplate(formData: FormData) {
+  const profile = await requireProfile();
+
+  if (!canAccessManagement(profile.role)) {
+    redirect("/dashboard");
+  }
+
+  const templateId = value(formData, "template_id");
+  const name = value(formData, "name");
+  const description = value(formData, "description");
+
+  if (!templateId) {
+    redirect("/report-templates?error=missing-template");
+  }
+
+  if (!name) {
+    redirect(`/report-templates/${templateId}/edit?error=missing-name`);
+  }
+
+  const supabase = await createClient();
+  const [{ data: template, error: templateError }, { count: reportCount }] = await Promise.all([
+    supabase
+      .from("report_templates")
+      .select("id,is_default")
+      .eq("id", templateId)
+      .eq("organisation_id", profile.organisation_id)
+      .single(),
+    supabase
+      .from("reports")
+      .select("id", { count: "exact", head: true })
+      .eq("template_id", templateId)
+  ]);
+
+  if (templateError || !template) {
+    redirect("/report-templates?error=template-not-found");
+  }
+
+  if (template.is_default || (reportCount ?? 0) > 0) {
+    redirect(`/report-templates/${templateId}?error=template-locked`);
+  }
+
+  const selectedSectionIds = new Set(formData.getAll("section_id").filter((entry): entry is string => typeof entry === "string"));
+  const sectionOrderIds = orderedSectionIds(formData);
+  const sectionTitles = new Map(
+    reportTemplateSections.map((section) => [section.id, value(formData, `section_title_${section.id}`) ?? section.defaultTitle])
+  );
+  const layout = buildReportLayoutDefinition({
+    description,
+    name,
+    preset: "custom",
+    sectionOrderIds,
+    sectionTitles,
+    selectedSectionIds
+  });
+  const { error } = await supabase
+    .from("report_templates")
+    .update({
+      description,
+      layout,
+      name,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", templateId)
+    .eq("organisation_id", profile.organisation_id);
+
+  if (error) {
+    redirect(`/report-templates/${templateId}/edit?error=${encodeURIComponent(error.code ?? "update-failed")}`);
+  }
+
+  revalidatePath("/report-templates");
+  revalidatePath(`/report-templates/${templateId}`);
+  revalidatePath(`/report-templates/${templateId}/edit`);
+  revalidatePath("/reports");
+  redirect(`/report-templates/${templateId}?updated=1`);
 }
 
 export async function setReportTemplateActive(formData: FormData) {

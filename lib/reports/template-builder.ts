@@ -66,17 +66,21 @@ export function buildReportLayoutDefinition({
   description,
   name,
   preset,
+  sectionOrderIds,
   sectionTitles,
   selectedSectionIds
 }: {
   description: string | null;
   name: string;
   preset: TemplatePreset;
+  sectionOrderIds?: string[];
   sectionTitles: Map<string, string>;
   selectedSectionIds: Set<string>;
 }): ReportLayoutDefinition {
   const presetIds = presetSectionIds[preset] ?? presetSectionIds.custom;
   const selectedIds = selectedSectionIds.size > 0 ? selectedSectionIds : new Set(presetIds);
+  const orderedIds = sectionOrderIds && sectionOrderIds.length > 0 ? sectionOrderIds : reportTemplateSections.map((section) => section.id);
+  const sectionById = new Map(reportTemplateSections.map((section) => [section.id, section]));
   const sections: ReportLayoutSection[] = [
     {
       sectionId: "report_header",
@@ -90,7 +94,9 @@ export function buildReportLayoutDefinition({
         fields: ["reportNumber", "title", "status", "issuedAt"]
       }
     },
-    ...reportTemplateSections
+    ...orderedIds
+      .map((sectionId) => sectionById.get(sectionId))
+      .filter((section): section is NonNullable<ReturnType<typeof sectionById.get>> => Boolean(section))
       .filter((section) => selectedIds.has(section.id))
       .map((section) => ({
         sectionId: section.id,
