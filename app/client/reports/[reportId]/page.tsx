@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ReportDownloadLinks } from "@/components/reports/report-download-links";
 import { ReportLayoutRenderer } from "@/components/reports/report-layout-renderer";
+import { ReportOutputNote } from "@/components/reports/report-output-note";
 import { PrintButton } from "@/components/ui/print-button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { requireProfile } from "@/lib/auth/current-user";
@@ -51,6 +52,7 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
       </div>
 
       <ReportLayoutRenderer data={reportData} layout={standardMaintenanceReportLayout} />
+      <ReportOutputNote />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { issueReport, reviewReport } from "@/app/(dashboard)/reports/actions";
 import { ReportDownloadLinks } from "@/components/reports/report-download-links";
 import { ReportLayoutRenderer } from "@/components/reports/report-layout-renderer";
+import { ReportOutputNote } from "@/components/reports/report-output-note";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PrintButton } from "@/components/ui/print-button";
@@ -62,6 +63,7 @@ export default async function ReportDetailPage({ params }: ReportDetailPageProps
       </div>
 
       <ReportLayoutRenderer data={reportData} layout={standardMaintenanceReportLayout} />
+      <ReportOutputNote />
 
       <Card className="no-print">
         <h2 style={{ fontSize: "1rem", margin: "0 0 1rem" }}>4. Report action</h2>
