@@ -3,7 +3,7 @@ import { getCurrentProfile } from "@/lib/auth/current-user";
 import { canAccessClientPortal, canAccessManagement } from "@/lib/permissions/roles";
 import { fetchIssuedReportData } from "@/lib/reports/issued-report-data";
 import { renderReportHtml } from "@/lib/reports/report-html";
-import { renderReportPdf } from "@/lib/reports/report-pdf";
+import { renderReportPdfWithImages } from "@/lib/reports/report-pdf";
 import { standardMaintenanceReportLayout } from "@/lib/reports/standard-maintenance-report-layout";
 import { createClient } from "@/lib/supabase/server";
 
@@ -41,7 +41,7 @@ export async function GET(request: Request, { params }: DownloadReportRouteProps
   const format = new URL(request.url).searchParams.get("format");
 
   if (format === "pdf") {
-    const pdf = renderReportPdf(data, standardMaintenanceReportLayout);
+    const pdf = await renderReportPdfWithImages(data, standardMaintenanceReportLayout);
 
     return new NextResponse(pdf, {
       headers: {
