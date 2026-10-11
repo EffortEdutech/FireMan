@@ -1,6 +1,7 @@
 import { formatDate } from "@/lib/format/date";
 import type { IssuedReportData } from "@/lib/reports/issued-report-data";
 import type { ReportLayoutDefinition, ReportLayoutSection } from "@/lib/reports/report-layout";
+import sharp from "sharp";
 
 const page = {
   width: 595.28,
@@ -435,7 +436,8 @@ async function fetchPdfPhotoAssets(data: IssuedReportData) {
           return;
         }
 
-        const buffer = Buffer.from(await response.arrayBuffer());
+        const originalBuffer = Buffer.from(await response.arrayBuffer());
+        const buffer = readJpegDimensions(originalBuffer) ? originalBuffer : await sharp(originalBuffer).jpeg({ quality: 82 }).toBuffer();
         const dimensions = readJpegDimensions(buffer);
 
         if (!dimensions) {

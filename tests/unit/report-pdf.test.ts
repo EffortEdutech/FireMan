@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { IssuedReportData } from "@/lib/reports/issued-report-data";
 import { buildReportPdfTextLines, renderReportPdf, renderReportPdfWithImages } from "@/lib/reports/report-pdf";
 import { standardMaintenanceReportLayout } from "@/lib/reports/standard-maintenance-report-layout";
+import sharp from "sharp";
 
 const reportData: IssuedReportData = {
   report: {
@@ -139,6 +140,32 @@ describe("report PDF renderer", () => {
     const rendered = pdf.toString("latin1");
 
     expect(fetchMock).toHaveBeenCalledWith("https://storage.test/pressure-gauge");
+    expect(rendered).toContain("/Subtype /Image");
+    expect(rendered).toContain("/Filter /DCTDecode");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("converts PNG and WebP photo evidence before embedding in PDFs", async () => {
+    const webp = await sharp({
+      create: {
+        background: "#d32f2f",
+        channels: 3,
+        height: 8,
+        width: 8
+      }
+    })
+      .webp()
+      .toBuffer();
+    const fetchMock = vi.fn().mockResolvedValue({
+      arrayBuffer: async () => webp.buffer.slice(webp.byteOffset, webp.byteOffset + webp.byteLength),
+      ok: true
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const pdf = await renderReportPdfWithImages(reportData, standardMaintenanceReportLayout);
+    const rendered = pdf.toString("latin1");
+
     expect(rendered).toContain("/Subtype /Image");
     expect(rendered).toContain("/Filter /DCTDecode");
 
