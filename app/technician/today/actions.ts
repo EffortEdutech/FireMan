@@ -19,6 +19,16 @@ function value(formData: FormData, name: string) {
   return text.length > 0 ? text : null;
 }
 
+function optionalPhoto(formData: FormData, name: string) {
+  const entry = formData.get(name);
+
+  if (!(entry instanceof File) || entry.size === 0) {
+    return null;
+  }
+
+  return entry;
+}
+
 function nextPath(formData: FormData) {
   const next = value(formData, "next");
   return next?.startsWith("/technician/") ? next : "/technician/today";
@@ -133,7 +143,7 @@ export async function addFinding(formData: FormData) {
     }
   }
 
-  const { error } = await supabase.from("findings").insert({
+  const { data: finding, error } = await supabase.from("findings").insert({
     organisation_id: job.organisation_id,
     job_id: job.id,
     equipment_id: equipmentId,
@@ -142,10 +152,38 @@ export async function addFinding(formData: FormData) {
     description: value(formData, "description"),
     recommendation: value(formData, "recommendation"),
     created_by: profile.id
-  });
+  }).select("id").single();
 
-  if (error) {
+  if (error || !finding) {
     redirect(`/technician/today?error=${encodeURIComponent(error.code ?? "finding-failed")}`);
+  }
+
+  const photo = optionalPhoto(formData, "photo");
+
+  if (photo) {
+    const extension = photo.name.split(".").pop()?.replace(/[^a-z0-9]/gi, "").toLowerCase() || "jpg";
+    const storagePath = `${job.organisation_id}/${job.id}/${finding.id}/${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await supabase.storage
+      .from("inspection-photos")
+      .upload(storagePath, photo, {
+        contentType: photo.type || "image/jpeg",
+        upsert: false
+      });
+
+    if (uploadError) {
+      redirect(`${redirectTo}?error=${encodeURIComponent(uploadError.message ?? "photo-upload-failed")}`);
+    }
+
+    const { error: photoError } = await supabase.from("finding_photos").insert({
+      organisation_id: job.organisation_id,
+      finding_id: finding.id,
+      storage_path: storagePath,
+      caption: value(formData, "photo_caption")
+    });
+
+    if (photoError) {
+      redirect(`${redirectTo}?error=${encodeURIComponent(photoError.code ?? "photo-save-failed")}`);
+    }
   }
 
   revalidatePath("/technician/today");

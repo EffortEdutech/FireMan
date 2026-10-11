@@ -76,6 +76,14 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
       .eq("job_id", job.id)
       .order("created_at", { ascending: true })
   ]);
+  const findingIds = findings?.map((finding) => finding.id) ?? [];
+  const { data: findingPhotos, error: findingPhotosError } =
+    findingIds.length > 0
+      ? await supabase
+          .from("finding_photos")
+          .select("id,finding_id,caption")
+          .in("finding_id", findingIds)
+      : { data: [], error: null };
   const inspectionIds = jobEquipment?.map((asset) => asset.id) ?? [];
   const { data: inspections, error: inspectionsError } =
     inspectionIds.length > 0
@@ -103,8 +111,13 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
       : { data: [], error: null };
 
   const inspectionsByAssetId = new Map(inspections?.map((inspection) => [inspection.job_equipment_id, inspection]) ?? []);
+  const photoCountByFindingId = new Map<string, number>();
   const itemsByTemplateId = new Map<string, NonNullable<typeof templateItems>>();
   const resultByInspectionAndItem = new Map<string, NonNullable<typeof inspectionResults>[number]>();
+
+  findingPhotos?.forEach((photo) => {
+    photoCountByFindingId.set(photo.finding_id, (photoCountByFindingId.get(photo.finding_id) ?? 0) + 1);
+  });
 
   templateItems?.forEach((item) => {
     const current = itemsByTemplateId.get(item.template_id) ?? [];
@@ -400,6 +413,8 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
             </select>
             <input aria-label="Description" disabled={job.status !== "IN_PROGRESS"} name="description" placeholder="Description" style={fieldStyle} />
             <input aria-label="Recommendation" disabled={job.status !== "IN_PROGRESS"} name="recommendation" placeholder="Recommendation" style={fieldStyle} />
+            <input accept="image/*" aria-label="Finding photo" disabled={job.status !== "IN_PROGRESS"} name="photo" style={fieldStyle} type="file" />
+            <input aria-label="Photo caption" disabled={job.status !== "IN_PROGRESS"} name="photo_caption" placeholder="Photo caption" style={fieldStyle} />
           </div>
           <div>
             <Button disabled={job.status !== "IN_PROGRESS"} type="submit">
@@ -439,7 +454,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
 
       <Card>
         <h2 style={{ fontSize: "1rem", margin: "0 0 1rem" }}>Captured findings</h2>
-        {findingsError ? (
+        {findingsError || findingPhotosError ? (
           <EmptyState title="Findings unavailable" message="Captured findings could not be loaded." />
         ) : findings && findings.length > 0 ? (
           <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -451,6 +466,9 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
                 </div>
                 <div style={{ color: "var(--muted)", marginTop: 4 }}>{finding.status} / {formatDate(finding.created_at)}</div>
                 {finding.equipment?.asset_code ? <div style={{ color: "var(--muted)", marginTop: 4 }}>Asset: {finding.equipment.asset_code}</div> : null}
+                <div style={{ color: "var(--muted)", marginTop: 4 }}>
+                  Photos: {photoCountByFindingId.get(finding.id) ?? 0}
+                </div>
                 {finding.description ? <div style={{ marginTop: 8 }}>{finding.description}</div> : null}
                 {finding.recommendation ? <div style={{ color: "var(--muted)", marginTop: 8 }}>Recommendation: {finding.recommendation}</div> : null}
               </div>
