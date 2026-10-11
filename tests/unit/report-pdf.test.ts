@@ -51,7 +51,17 @@ const reportData: IssuedReportData = {
       recommendation: "Replace or recharge extinguisher.",
       severity: "CRITICAL",
       status: "OPEN",
-      title: "Pressure failure"
+      title: "Pressure failure",
+      photos: [
+        {
+          caption: "Pressure gauge photo",
+          createdAt: "2026-10-08",
+          id: "photo-1",
+          signedUrl: "https://storage.test/pressure-gauge",
+          storagePath: "org/job/finding/photo.jpg",
+          takenAt: null
+        }
+      ]
     }
   ],
   checklistGroups: [
@@ -76,6 +86,7 @@ const reportData: IssuedReportData = {
   ],
   loadErrors: {
     findings: false,
+    findingPhotos: false,
     inspectionResults: false,
     inspections: false,
     templateItems: false
@@ -106,6 +117,8 @@ describe("report PDF renderer", () => {
     expect(lines).toContain("Type: Fire Extinguisher");
     expect(lines).toContain("Finding 1: Pressure failure");
     expect(lines).toContain("Severity: CRITICAL");
+    expect(lines).toContain("Photos: 1");
+    expect(lines).toContain("Photo 1: Pressure gauge photo");
     expect(lines).toContain("Checklist 1: CLIENT-A-EXT-001");
     expect(lines).toContain("- Pressure indicator is in acceptable range where applicable: FAIL");
   });

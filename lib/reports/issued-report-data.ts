@@ -33,6 +33,15 @@ type FindingRow = {
   created_at: string;
 };
 
+type FindingPhotoRow = {
+  id: string;
+  finding_id: string;
+  storage_path: string;
+  caption: string | null;
+  taken_at: string | null;
+  created_at: string;
+};
+
 type JobEquipmentRow = {
   id: string;
   equipment: {
@@ -78,6 +87,16 @@ export type IssuedReportFinding = {
   status: string;
   description: string | null;
   recommendation: string | null;
+  createdAt: string;
+  photos: IssuedReportFindingPhoto[];
+};
+
+export type IssuedReportFindingPhoto = {
+  id: string;
+  storagePath: string;
+  signedUrl: string | null;
+  caption: string | null;
+  takenAt: string | null;
   createdAt: string;
 };
 
@@ -137,6 +156,7 @@ export type IssuedReportData = {
   checklistGroups: IssuedReportChecklistGroup[];
   loadErrors: {
     findings: boolean;
+    findingPhotos: boolean;
     inspections: boolean;
     templateItems: boolean;
     inspectionResults: boolean;
@@ -186,6 +206,54 @@ export async function fetchIssuedReportData(
     .order("created_at", { ascending: true });
 
   const findings = (findingsResult ?? []) as FindingRow[];
+  const findingIds = findings.map((finding) => finding.id);
+  const { data: findingPhotosResult, error: findingPhotosError } =
+    findingIds.length > 0
+      ? await supabase
+          .from("finding_photos")
+          .select("id,finding_id,storage_path,caption,taken_at,created_at")
+          .in("finding_id", findingIds)
+          .order("created_at", { ascending: true })
+      : { data: [], error: null };
+
+  const findingPhotos = (findingPhotosResult ?? []) as FindingPhotoRow[];
+  const signedPhotoUrlByPath = new Map<string, string>();
+  let signedPhotoUrlError = false;
+
+  await Promise.all(
+    findingPhotos.map(async (photo) => {
+      const { data: signedPhoto, error: signedPhotoError } = await supabase.storage
+        .from("inspection-photos")
+        .createSignedUrl(photo.storage_path, 60 * 60);
+
+      if (signedPhotoError) {
+        signedPhotoUrlError = true;
+        return;
+      }
+
+      if (signedPhoto?.signedUrl) {
+        signedPhotoUrlByPath.set(photo.storage_path, signedPhoto.signedUrl);
+      }
+    })
+  );
+
+  const photosByFindingId = new Map<string, IssuedReportFindingPhoto[]>();
+
+  findingPhotos.forEach((photo) => {
+    const current = photosByFindingId.get(photo.finding_id) ?? [];
+    photosByFindingId.set(photo.finding_id, [
+      ...current,
+      {
+        id: photo.id,
+        storagePath: photo.storage_path,
+        signedUrl: signedPhotoUrlByPath.get(photo.storage_path) ?? null,
+        caption: photo.caption,
+        takenAt: photo.taken_at,
+        createdAt: photo.created_at
+      }
+    ]);
+  });
+
   const jobEquipment = (jobEquipmentResult ?? []) as JobEquipmentRow[];
   const jobEquipmentIds = jobEquipment.map((asset) => asset.id);
   const { data: inspectionsResult, error: inspectionsError } =
@@ -302,11 +370,13 @@ export async function fetchIssuedReportData(
       status: finding.status,
       description: finding.description,
       recommendation: finding.recommendation,
-      createdAt: finding.created_at
+      createdAt: finding.created_at,
+      photos: photosByFindingId.get(finding.id) ?? []
     })),
     checklistGroups,
     loadErrors: {
       findings: Boolean(findingsError),
+      findingPhotos: Boolean(findingPhotosError || signedPhotoUrlError),
       inspections: Boolean(inspectionsError),
       templateItems: Boolean(templateItemsError),
       inspectionResults: Boolean(resultsError)

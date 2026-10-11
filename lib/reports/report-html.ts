@@ -113,7 +113,11 @@ function renderFieldEvidence(data: IssuedReportData) {
     return `<p class="muted">This report was generated without field findings.</p>`;
   }
 
-  return data.findings
+  const photoWarning = data.loadErrors.findingPhotos ? `<p class="muted">Some finding photos could not be loaded.</p>` : "";
+
+  return (
+    photoWarning +
+    data.findings
     .map(
       (finding) => `
         <div class="evidence-item">
@@ -124,10 +128,31 @@ function renderFieldEvidence(data: IssuedReportData) {
           <div class="muted">${escapeHtml(finding.status)} / ${escapeHtml(formatDate(finding.createdAt))}</div>
           ${finding.description ? `<p>${escapeHtml(finding.description)}</p>` : ""}
           ${finding.recommendation ? `<p class="muted">Recommendation: ${escapeHtml(finding.recommendation)}</p>` : ""}
+          ${
+            finding.photos.length > 0
+              ? `<div class="photo-grid">
+                  ${finding.photos
+                    .map(
+                      (photo, index) => `
+                        <figure class="photo-card">
+                          ${
+                            photo.signedUrl
+                              ? `<img alt="${escapeHtml(photo.caption ?? `${finding.title} photo ${index + 1}`)}" src="${escapeHtml(photo.signedUrl)}" />`
+                              : `<div class="photo-placeholder">Photo unavailable</div>`
+                          }
+                          <figcaption>${escapeHtml(photo.caption ?? `Photo ${index + 1}`)}</figcaption>
+                        </figure>
+                      `
+                    )
+                    .join("")}
+                </div>`
+              : ""
+          }
         </div>
       `
     )
-    .join("");
+    .join("")
+  );
 }
 
 function renderChecklistEvidence(data: IssuedReportData) {
@@ -317,6 +342,43 @@ export function renderReportHtml(data: IssuedReportData, layout: ReportLayoutDef
       .label,
       .muted {
         color: #52616b;
+      }
+
+      .photo-card {
+        margin: 0;
+      }
+
+      .photo-card figcaption {
+        color: #52616b;
+        font-size: 13px;
+        margin-top: 6px;
+      }
+
+      .photo-card img,
+      .photo-placeholder {
+        aspect-ratio: 4 / 3;
+        border-radius: 6px;
+        width: 100%;
+      }
+
+      .photo-card img {
+        object-fit: cover;
+      }
+
+      .photo-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        margin-top: 12px;
+      }
+
+      .photo-placeholder {
+        align-items: center;
+        background: #f6f8f9;
+        border: 1px solid #d9e1e7;
+        color: #52616b;
+        display: flex;
+        justify-content: center;
       }
 
       .label {

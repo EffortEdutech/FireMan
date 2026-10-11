@@ -70,6 +70,7 @@ const reportData = {
   findings: [],
   loadErrors: {
     findings: false,
+    findingPhotos: false,
     inspectionResults: false,
     inspections: false,
     templateItems: false

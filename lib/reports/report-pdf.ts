@@ -122,7 +122,16 @@ function findingLines(data: IssuedReportData): PdfLine[] {
     { text: `    Status: ${finding.status}` },
     { text: `    Captured: ${formatDate(finding.createdAt)}` },
     ...(finding.description ? [{ text: `    Description: ${finding.description}` }] : []),
-    ...(finding.recommendation ? [{ text: `    Recommendation: ${finding.recommendation}` }] : [])
+    ...(finding.recommendation ? [{ text: `    Recommendation: ${finding.recommendation}` }] : []),
+    ...(finding.photos.length > 0
+      ? [
+          { text: `    Photos: ${finding.photos.length}` },
+          ...finding.photos.map((photo, photoIndex) => ({
+            text: `      Photo ${photoIndex + 1}: ${photo.caption ?? photo.storagePath}`
+          }))
+        ]
+      : []),
+    ...(data.loadErrors.findingPhotos ? [{ text: "    Some finding photos could not be loaded." }] : [])
   ]);
 }
 

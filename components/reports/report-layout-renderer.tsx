@@ -118,6 +118,9 @@ function FieldEvidence({ data }: { data: IssuedReportData }) {
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
+      {data.loadErrors.findingPhotos ? (
+        <div style={{ color: "var(--muted)" }}>Some finding photos could not be loaded.</div>
+      ) : null}
       {data.findings.map((finding) => (
         <div key={finding.id} style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
@@ -129,6 +132,41 @@ function FieldEvidence({ data }: { data: IssuedReportData }) {
           </div>
           {finding.description ? <div style={{ marginTop: 8 }}>{finding.description}</div> : null}
           {finding.recommendation ? <div style={{ color: "var(--muted)", marginTop: 8 }}>Recommendation: {finding.recommendation}</div> : null}
+          {finding.photos.length > 0 ? (
+            <div style={{ display: "grid", gap: "0.5rem", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", marginTop: 12 }}>
+              {finding.photos.map((photo, index) => (
+                <figure key={photo.id} style={{ margin: 0 }}>
+                  {photo.signedUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      alt={photo.caption ?? `${finding.title} photo ${index + 1}`}
+                      src={photo.signedUrl}
+                      style={{ aspectRatio: "4 / 3", borderRadius: 6, objectFit: "cover", width: "100%" }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        alignItems: "center",
+                        aspectRatio: "4 / 3",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 6,
+                        color: "var(--muted)",
+                        display: "flex",
+                        justifyContent: "center",
+                        textAlign: "center"
+                      }}
+                    >
+                      Photo unavailable
+                    </div>
+                  )}
+                  <figcaption style={{ color: "var(--muted)", fontSize: "0.85rem", marginTop: 4 }}>
+                    {photo.caption ?? `Photo ${index + 1}`}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          ) : null}
         </div>
       ))}
     </div>
