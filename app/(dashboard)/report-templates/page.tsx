@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { createReportTemplate } from "@/app/(dashboard)/report-templates/actions";
+import Link from "next/link";
+import { createReportTemplate, setReportTemplateActive } from "@/app/(dashboard)/report-templates/actions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState, ErrorState, SuccessState } from "@/components/ui/states";
@@ -11,6 +12,8 @@ import { createClient } from "@/lib/supabase/server";
 type ReportTemplatesPageProps = {
   searchParams?: Promise<{
     created?: string;
+    activated?: string;
+    deactivated?: string;
     error?: string;
   }>;
 };
@@ -26,6 +29,14 @@ function errorMessage(error: string) {
   switch (error) {
     case "missing-name":
       return "Template name is required.";
+    case "missing-template":
+      return "Template is required.";
+    case "template-not-found":
+      return "Template was not found.";
+    case "default-template":
+      return "The default template must stay active.";
+    case "update-failed":
+      return "The template status could not be updated.";
     case "create-failed":
       return "The template could not be created.";
     default:
@@ -44,7 +55,7 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
   const supabase = await createClient();
   const { data: templates, error } = await supabase
     .from("report_templates")
-    .select("id,name,description,slug,is_default,active,created_at")
+    .select("id,name,description,slug,is_default,active,created_at,reports(id)")
     .order("is_default", { ascending: false })
     .order("created_at", { ascending: false });
 
@@ -58,6 +69,8 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
       </div>
 
       {params?.created ? <SuccessState message="Report template created. It is now available when generating a report shell." /> : null}
+      {params?.activated ? <SuccessState message="Report template activated. It is available for new report shells." /> : null}
+      {params?.deactivated ? <SuccessState message="Report template deactivated. Existing reports still keep their selected template." /> : null}
       {params?.error ? <ErrorState title="Template not saved" message={errorMessage(params.error)} /> : null}
 
       <Card>
@@ -120,19 +133,37 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
                 <th>Template</th>
                 <th>Description</th>
                 <th>Status</th>
+                <th>Reports</th>
                 <th>Slug</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {templates.map((template) => (
                 <tr key={template.id}>
                   <td>
-                    <strong>{template.name}</strong>
+                    <Link href={`/report-templates/${template.id}`}>
+                      <strong>{template.name}</strong>
+                    </Link>
                     {template.is_default ? <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>Default</div> : null}
                   </td>
                   <td>{template.description ?? "No description"}</td>
                   <td>{template.active ? "Active" : "Inactive"}</td>
+                  <td>{template.reports?.length ?? 0}</td>
                   <td>{template.slug}</td>
+                  <td>
+                    {template.is_default ? (
+                      "Default"
+                    ) : (
+                      <form action={setReportTemplateActive}>
+                        <input name="template_id" type="hidden" value={template.id} />
+                        <input name="active" type="hidden" value={template.active ? "false" : "true"} />
+                        <Button type="submit" variant="secondary">
+                          {template.active ? "Deactivate" : "Activate"}
+                        </Button>
+                      </form>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

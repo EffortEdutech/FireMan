@@ -65,3 +65,52 @@ export async function createReportTemplate(formData: FormData) {
   revalidatePath("/reports");
   redirect("/report-templates?created=1");
 }
+
+export async function setReportTemplateActive(formData: FormData) {
+  const profile = await requireProfile();
+
+  if (!canAccessManagement(profile.role)) {
+    redirect("/dashboard");
+  }
+
+  const templateId = value(formData, "template_id");
+  const active = value(formData, "active") === "true";
+
+  if (!templateId) {
+    redirect("/report-templates?error=missing-template");
+  }
+
+  const supabase = await createClient();
+  const { data: template, error: templateError } = await supabase
+    .from("report_templates")
+    .select("id,is_default")
+    .eq("id", templateId)
+    .eq("organisation_id", profile.organisation_id)
+    .single();
+
+  if (templateError || !template) {
+    redirect("/report-templates?error=template-not-found");
+  }
+
+  if (template.is_default && !active) {
+    redirect("/report-templates?error=default-template");
+  }
+
+  const { error } = await supabase
+    .from("report_templates")
+    .update({
+      active,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", templateId)
+    .eq("organisation_id", profile.organisation_id);
+
+  if (error) {
+    redirect(`/report-templates?error=${encodeURIComponent(error.code ?? "update-failed")}`);
+  }
+
+  revalidatePath("/report-templates");
+  revalidatePath(`/report-templates/${templateId}`);
+  revalidatePath("/reports");
+  redirect(`/report-templates?${active ? "activated" : "deactivated"}=1`);
+}

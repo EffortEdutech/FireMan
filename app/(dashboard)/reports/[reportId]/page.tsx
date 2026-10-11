@@ -51,6 +51,7 @@ export default async function ReportDetailPage({ params }: ReportDetailPageProps
           </Link>
           <h1 style={{ margin: "0.5rem 0 0", fontSize: "1.75rem" }}>{reportData.report.reportNumber}</h1>
           <div style={{ color: "var(--muted)", marginTop: 4 }}>{reportData.report.title ?? "Untitled report"}</div>
+          <div style={{ color: "var(--muted)", marginTop: 4 }}>Template: {reportData.report.templateName}</div>
         </div>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <div className="no-print">
