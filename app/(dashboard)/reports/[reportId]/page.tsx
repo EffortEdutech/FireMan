@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { issueReport, reviewReport } from "@/app/(dashboard)/reports/actions";
+import { ReportDownloadLinks } from "@/components/reports/report-download-links";
 import { ReportLayoutRenderer } from "@/components/reports/report-layout-renderer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -55,12 +56,7 @@ export default async function ReportDetailPage({ params }: ReportDetailPageProps
           <div className="no-print">
             <PrintButton />
           </div>
-          <Link
-            className="no-print inline-flex min-h-11 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--surface)] px-4 py-2 font-medium text-[var(--foreground)]"
-            href={`/api/reports/${reportData.report.id}/download?format=pdf`}
-          >
-            Download PDF
-          </Link>
+          <ReportDownloadLinks reportId={reportData.report.id} />
           <StatusBadge>{reportStatusLabel[reportData.report.status] ?? reportData.report.status}</StatusBadge>
         </div>
       </div>

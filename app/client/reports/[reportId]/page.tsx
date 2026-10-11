@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ReportDownloadLinks } from "@/components/reports/report-download-links";
 import { ReportLayoutRenderer } from "@/components/reports/report-layout-renderer";
 import { PrintButton } from "@/components/ui/print-button";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -44,12 +45,7 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
           <div className="no-print">
             <PrintButton />
           </div>
-          <Link
-            className="no-print inline-flex min-h-11 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--surface)] px-4 py-2 font-medium text-[var(--foreground)]"
-            href={`/api/reports/${reportData.report.id}/download?format=pdf`}
-          >
-            Download PDF
-          </Link>
+          <ReportDownloadLinks reportId={reportData.report.id} />
           <StatusBadge>Issued</StatusBadge>
         </div>
       </div>
