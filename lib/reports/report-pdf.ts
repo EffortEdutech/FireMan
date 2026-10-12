@@ -121,6 +121,23 @@ function sectionPhotoLimit(section: ReportLayoutSection) {
   return clampedColumns * clampedRows;
 }
 
+function checklistCounts(items: { resultStatus: string | null }[]) {
+  return items.reduce(
+    (counts, item) => {
+      const status = item.resultStatus ?? "Not answered";
+
+      if (status === "PASS") counts.pass += 1;
+      else if (status === "FAIL") counts.fail += 1;
+      else if (status === "ATTENTION") counts.attention += 1;
+      else if (status === "NA") counts.na += 1;
+      else counts.open += 1;
+
+      return counts;
+    },
+    { attention: 0, fail: 0, na: 0, open: 0, pass: 0 }
+  );
+}
+
 function assetLines(data: IssuedReportData): PdfLine[] {
   if (data.assets.length === 0) {
     return [{ text: "This report has no assigned assets attached." }];
@@ -149,6 +166,7 @@ function findingLines(data: IssuedReportData, section: ReportLayoutSection): Pdf
 
   return data.findings.flatMap((finding, index) => {
     const visiblePhotos = finding.photos.slice(0, photoLimit);
+    const hiddenPhotoCount = finding.photos.length - visiblePhotos.length;
 
     return [
       { size: 11, text: `  Finding ${index + 1}: ${finding.title}` },
@@ -175,6 +193,7 @@ function findingLines(data: IssuedReportData, section: ReportLayoutSection): Pdf
             ])
           ]
         : []),
+      ...(hiddenPhotoCount > 0 ? [{ text: `    Hidden by template layout: ${hiddenPhotoCount} additional photo${hiddenPhotoCount === 1 ? "" : "s"}` }] : []),
       ...(data.loadErrors.findingPhotos ? [{ text: "    Some finding photos could not be loaded." }] : [])
     ];
   });
@@ -189,14 +208,21 @@ function checklistLines(data: IssuedReportData): PdfLine[] {
     return [{ text: "This report has no structured checklist results attached." }];
   }
 
-  return data.checklistGroups.flatMap((group, index) => [
-    { size: 11, text: `  Checklist ${index + 1}: ${group.assetCode}` },
-    { text: `    Template: ${group.checklistName}` },
-    { text: `    Status: ${group.status}` },
-    ...group.items.map((item) => ({
-      text: `    - ${item.prompt}: ${item.resultStatus ?? "Not answered"}`
-    }))
-  ]);
+  return data.checklistGroups.flatMap((group, index) => {
+    const counts = checklistCounts(group.items);
+
+    return [
+      { size: 11, text: `  Checklist ${index + 1}: ${group.assetCode}` },
+      { text: `    Template: ${group.checklistName}` },
+      { text: `    Status: ${group.status}` },
+      {
+        text: `    Result summary: ${counts.pass} PASS | ${counts.fail} FAIL | ${counts.attention} ATTENTION | ${counts.open} OPEN | ${counts.na} NA`
+      },
+      ...group.items.map((item) => ({
+        text: `    - ${item.prompt}: ${item.resultStatus ?? "Not answered"}`
+      }))
+    ];
+  });
 }
 
 function signatureLines(section: ReportLayoutSection): PdfLine[] {

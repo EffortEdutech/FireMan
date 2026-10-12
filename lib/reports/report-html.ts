@@ -123,6 +123,35 @@ function renderAssetTable(data: IssuedReportData) {
   `;
 }
 
+function badgeClass(value: string) {
+  if (value === "CRITICAL" || value === "FAIL" || value === "ATTENTION" || value === "Not answered") {
+    return "badge badge-alert";
+  }
+
+  if (value === "PASS" || value === "COMPLETED") {
+    return "badge badge-pass";
+  }
+
+  return "badge";
+}
+
+function checklistCounts(items: { resultStatus: string | null }[]) {
+  return items.reduce(
+    (counts, item) => {
+      const status = item.resultStatus ?? "Not answered";
+
+      if (status === "PASS") counts.pass += 1;
+      else if (status === "FAIL") counts.fail += 1;
+      else if (status === "ATTENTION") counts.attention += 1;
+      else if (status === "NA") counts.na += 1;
+      else counts.open += 1;
+
+      return counts;
+    },
+    { attention: 0, fail: 0, na: 0, open: 0, pass: 0 }
+  );
+}
+
 function renderFieldEvidence(data: IssuedReportData, section: ReportLayoutSection) {
   if (data.loadErrors.findings) {
     return `<p class="muted">Captured findings could not be loaded.</p>`;
@@ -141,20 +170,28 @@ function renderFieldEvidence(data: IssuedReportData, section: ReportLayoutSectio
     photoWarning +
     data.findings
     .map(
-      (finding) => `
-        <div class="evidence-item">
+      (finding) => {
+        const visiblePhotos = finding.photos.slice(0, photoLimit);
+        const hiddenPhotoCount = finding.photos.length - visiblePhotos.length;
+
+        return `
+        <div class="evidence-item ${finding.severity === "CRITICAL" ? "evidence-alert" : ""}">
           <div class="row">
-            <strong>${escapeHtml(finding.title)}</strong>
-            <span class="badge">${escapeHtml(finding.severity)}</span>
+            <div>
+              <strong>${escapeHtml(finding.title)}</strong>
+              <div class="muted">${escapeHtml(formatDate(finding.createdAt))} / ${finding.photos.length} photo${finding.photos.length === 1 ? "" : "s"}</div>
+            </div>
+            <div class="badge-row">
+              <span class="${badgeClass(finding.severity)}">${escapeHtml(finding.severity)}</span>
+              <span class="${badgeClass(finding.status)}">${escapeHtml(finding.status)}</span>
+            </div>
           </div>
-          <div class="muted">${escapeHtml(finding.status)} / ${escapeHtml(formatDate(finding.createdAt))}</div>
           ${finding.description ? `<p>${escapeHtml(finding.description)}</p>` : ""}
           ${finding.recommendation ? `<p class="muted">Recommendation: ${escapeHtml(finding.recommendation)}</p>` : ""}
           ${
             finding.photos.length > 0
               ? `<div class="photo-grid" style="grid-template-columns: repeat(${photoColumns}, minmax(0, 1fr));">
-                  ${finding.photos
-                    .slice(0, photoLimit)
+                  ${visiblePhotos
                     .map(
                       (photo, index) => `
                         <figure class="photo-card">
@@ -171,8 +208,10 @@ function renderFieldEvidence(data: IssuedReportData, section: ReportLayoutSectio
                 </div>`
               : ""
           }
+          ${hiddenPhotoCount > 0 ? `<p class="muted">${hiddenPhotoCount} additional photo${hiddenPhotoCount === 1 ? "" : "s"} hidden by this template layout.</p>` : ""}
         </div>
-      `
+      `;
+      }
     )
     .join("")
   );
@@ -188,29 +227,39 @@ function renderChecklistEvidence(data: IssuedReportData) {
   }
 
   return data.checklistGroups
-    .map(
-      (group) => `
-        <div class="checklist-group">
+    .map((group) => {
+      const counts = checklistCounts(group.items);
+      const needsAttention = counts.fail + counts.attention + counts.open;
+
+      return `
+        <div class="checklist-group ${needsAttention ? "checklist-alert" : ""}">
           <div class="row">
             <div>
               <strong>${escapeHtml(group.assetCode)}</strong>
               <div class="muted">${escapeHtml(group.checklistName)}</div>
             </div>
-            <span class="badge">${escapeHtml(group.status)}</span>
+            <span class="${badgeClass(group.status)}">${escapeHtml(group.status)}</span>
+          </div>
+          <div class="badge-row">
+            <span class="${badgeClass("PASS")}">${counts.pass} PASS</span>
+            ${counts.fail ? `<span class="${badgeClass("FAIL")}">${counts.fail} FAIL</span>` : ""}
+            ${counts.attention ? `<span class="${badgeClass("ATTENTION")}">${counts.attention} ATTENTION</span>` : ""}
+            ${counts.open ? `<span class="${badgeClass("Not answered")}">${counts.open} OPEN</span>` : ""}
+            ${counts.na ? `<span class="${badgeClass("NA")}">${counts.na} NA</span>` : ""}
           </div>
           ${group.items
             .map(
               (item) => `
-                <div class="checklist-item">
+                <div class="checklist-item ${item.resultStatus === "FAIL" || item.resultStatus === "ATTENTION" || !item.resultStatus ? "checklist-item-alert" : ""}">
                   <span>${escapeHtml(item.prompt)}</span>
-                  <span class="badge">${escapeHtml(item.resultStatus ?? "Not answered")}</span>
+                  <span class="${badgeClass(item.resultStatus ?? "Not answered")}">${escapeHtml(item.resultStatus ?? "Not answered")}</span>
                 </div>
               `
             )
             .join("")}
         </div>
-      `
-    )
+      `;
+    })
     .join("");
 }
 
@@ -334,6 +383,23 @@ export function renderReportHtml(data: IssuedReportData, layout: ReportLayoutDef
         white-space: nowrap;
       }
 
+      .badge-alert {
+        background: #fff1f0;
+        color: #8a1f17;
+      }
+
+      .badge-pass {
+        background: #edf7ee;
+        color: #22543d;
+      }
+
+      .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-end;
+      }
+
       .card {
         border: 1px solid #d9e1e7;
         border-radius: 8px;
@@ -348,6 +414,11 @@ export function renderReportHtml(data: IssuedReportData, layout: ReportLayoutDef
         padding: 16px;
       }
 
+      .checklist-alert,
+      .evidence-alert {
+        border-color: #f0b4ae;
+      }
+
       .checklist-item {
         align-items: center;
         border-top: 1px solid #d9e1e7;
@@ -358,9 +429,14 @@ export function renderReportHtml(data: IssuedReportData, layout: ReportLayoutDef
         margin-top: 10px;
       }
 
+      .checklist-item-alert {
+        background: #fffafa;
+      }
+
       .evidence-item {
-        border-bottom: 1px solid #d9e1e7;
-        padding: 0 0 12px;
+        border: 1px solid #d9e1e7;
+        border-radius: 8px;
+        padding: 16px;
         margin-bottom: 12px;
       }
 
@@ -370,23 +446,26 @@ export function renderReportHtml(data: IssuedReportData, layout: ReportLayoutDef
       }
 
       .photo-card {
+        border: 1px solid #d9e1e7;
+        border-radius: 6px;
         margin: 0;
+        overflow: hidden;
       }
 
       .photo-card figcaption {
         color: #52616b;
         font-size: 13px;
-        margin-top: 6px;
+        padding: 8px;
       }
 
       .photo-card img,
       .photo-placeholder {
         aspect-ratio: 4 / 3;
-        border-radius: 6px;
         width: 100%;
       }
 
       .photo-card img {
+        display: block;
         object-fit: cover;
       }
 
