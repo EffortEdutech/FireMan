@@ -4,7 +4,10 @@ import { duplicateReportTemplate, setReportTemplateActive } from "@/app/(dashboa
 import { ReportTemplatePreviewPanel } from "@/components/reports/report-template-preview-panel";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/states";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { requireProfile } from "@/lib/auth/current-user";
+import { formatDate } from "@/lib/format/date";
 import { canAccessManagement } from "@/lib/permissions/roles";
 import { resolveReportLayout } from "@/lib/reports/report-template";
 import { createClient } from "@/lib/supabase/server";
@@ -29,7 +32,7 @@ export default async function ReportTemplateDetailPage({ params, searchParams }:
   const { templateId } = await params;
   const pageParams = await searchParams;
   const supabase = await createClient();
-  const [{ data: template, error }, { count: reportCount }] = await Promise.all([
+  const [{ data: template, error }, { data: usedReports, count: reportCount }] = await Promise.all([
     supabase
       .from("report_templates")
       .select("id,name,description,slug,is_default,active,layout,created_at")
@@ -37,8 +40,12 @@ export default async function ReportTemplateDetailPage({ params, searchParams }:
       .single(),
     supabase
       .from("reports")
-      .select("id", { count: "exact", head: true })
+      .select(
+        "id,report_number,title,status,generated_at,issued_at,maintenance_jobs(job_number,scheduled_date,clients(name),sites(name))",
+        { count: "exact" }
+      )
       .eq("template_id", templateId)
+      .order("created_at", { ascending: false })
   ]);
 
   if (error || !template) {
@@ -130,6 +137,74 @@ export default async function ReportTemplateDetailPage({ params, searchParams }:
 
       <Card>
         <ReportTemplatePreviewPanel layout={layout} />
+      </Card>
+
+      <Card style={{ padding: 0 }}>
+        <div style={{ padding: "1rem 1rem 0" }}>
+          <h2 style={{ fontSize: "1rem", margin: 0 }}>Reports using this template</h2>
+          <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: 4 }}>
+            These generated or issued reports lock the template layout. Duplicate the template to make a new version.
+          </div>
+        </div>
+        {usedReports && usedReports.length > 0 ? (
+          <div className="table-scroll">
+            <table className="data-table">
+              <colgroup>
+                <col style={{ width: 150 }} />
+                <col style={{ width: 240 }} />
+                <col style={{ width: 120 }} />
+                <col style={{ width: 170 }} />
+                <col style={{ width: 130 }} />
+                <col style={{ width: 150 }} />
+                <col style={{ width: 110 }} />
+                <col style={{ width: 110 }} />
+                <col style={{ width: 120 }} />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Report</th>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Job</th>
+                  <th>Client</th>
+                  <th>Site</th>
+                  <th>Generated</th>
+                  <th>Issued</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usedReports.map((report) => (
+                  <tr key={report.id}>
+                    <td>
+                      <Link href={`/reports/${report.id}`}>
+                        <strong>{report.report_number}</strong>
+                      </Link>
+                    </td>
+                    <td>{report.title ?? "Untitled report"}</td>
+                    <td>
+                      <StatusBadge>{report.status}</StatusBadge>
+                    </td>
+                    <td>{report.maintenance_jobs?.job_number ?? "Not set"}</td>
+                    <td>{report.maintenance_jobs?.clients?.name ?? "Not set"}</td>
+                    <td>{report.maintenance_jobs?.sites?.name ?? "Not set"}</td>
+                    <td>{formatDate(report.generated_at)}</td>
+                    <td>{formatDate(report.issued_at)}</td>
+                    <td>
+                      <Link href={`/reports/${report.id}`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+                        Open Report
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={{ padding: "1rem" }}>
+            <EmptyState title="No reports use this template yet" message="This template can still be edited until a report is generated with it." />
+          </div>
+        )}
       </Card>
     </div>
   );
