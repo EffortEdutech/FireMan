@@ -1,4 +1,5 @@
 import type { ReportLayoutDefinition, ReportLayoutSection } from "@/lib/reports/report-layout";
+import { reportTemplateSections } from "@/lib/reports/template-builder";
 
 type ReportTemplatePreviewPanelProps = {
   compact?: boolean;
@@ -46,21 +47,44 @@ function optionSummary(section: ReportLayoutSection) {
 
 function bindingSummary(section: ReportLayoutSection) {
   const source = section.binding.source ? [section.binding.source] : [];
-  const fields = section.binding.fields?.slice(0, 4) ?? [];
+  const fields = selectedFieldLabels(section).slice(0, 4);
   const extra = section.binding.fields && section.binding.fields.length > fields.length ? [`+${section.binding.fields.length - fields.length}`] : [];
 
   return [...source, ...fields, ...extra];
 }
 
+function sectionDefinition(section: ReportLayoutSection) {
+  return reportTemplateSections.find((definition) => definition.id === section.sectionId);
+}
+
+function fieldLabel(section: ReportLayoutSection, field: string) {
+  const labels = sectionDefinition(section)?.fieldLabels as Record<string, string> | undefined;
+
+  return labels?.[field] ?? field;
+}
+
+function selectedFieldLabels(section: ReportLayoutSection) {
+  return (section.binding.fields ?? []).map((field) => fieldLabel(section, field));
+}
+
+function hiddenFieldLabels(section: ReportLayoutSection) {
+  const selected = new Set(section.binding.fields ?? []);
+
+  return (sectionDefinition(section)?.fields ?? []).filter((field) => !selected.has(field)).map((field) => fieldLabel(section, field));
+}
+
 function MiniBlock({ section }: { section: ReportLayoutSection }) {
   const columns = Math.min(4, Math.max(1, optionNumber(section, "columns", section.blockType === "summary_grid" ? 3 : 2)));
   const photoRows = Math.min(4, Math.max(1, optionNumber(section, "photoRows", 2)));
+  const selectedLabels = selectedFieldLabels(section);
 
   if (section.blockType === "summary_grid") {
     return (
       <div style={{ display: "grid", gap: 6, gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
-        {Array.from({ length: Math.min(columns * 2, 6) }).map((_, index) => (
-          <div key={index} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, minHeight: 34 }} />
+        {selectedLabels.slice(0, Math.min(columns * 2, 6)).map((label) => (
+          <div key={label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, minHeight: 34, padding: 8 }}>
+            <div style={{ color: "var(--muted)", fontSize: "0.7rem", fontWeight: 700 }}>{label}</div>
+          </div>
         ))}
       </div>
     );
@@ -82,9 +106,15 @@ function MiniBlock({ section }: { section: ReportLayoutSection }) {
   if (section.blockType === "asset_table" || section.blockType === "checklist_evidence") {
     return (
       <div style={{ display: "grid", gap: 6 }}>
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} style={{ background: index === 0 ? "#eef2f6" : "var(--surface)", border: "1px solid var(--border)", borderRadius: 4, minHeight: 24 }} />
-        ))}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {selectedLabels.map((label) => (
+            <div key={label} style={{ background: "#eef2f6", border: "1px solid var(--border)", borderRadius: 4, color: "var(--muted)", fontSize: "0.7rem", fontWeight: 700, padding: "0.3rem 0.45rem" }}>
+              {label}
+            </div>
+          ))}
+        </div>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 4, minHeight: 28 }} />
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 4, minHeight: 28 }} />
       </div>
     );
   }
@@ -118,6 +148,52 @@ function Chip({ children }: { children: string }) {
     >
       {children}
     </span>
+  );
+}
+
+function FieldSummary({ section }: { section: ReportLayoutSection }) {
+  const included = selectedFieldLabels(section);
+  const hidden = hiddenFieldLabels(section);
+
+  if (included.length === 0 && hidden.length === 0) {
+    return null;
+  }
+
+  return (
+    <div style={{ display: "grid", gap: "0.4rem", marginTop: "0.75rem" }}>
+      {included.length > 0 ? (
+        <div>
+          <div style={{ color: "var(--muted)", fontSize: "0.7rem", fontWeight: 700, marginBottom: 4 }}>Included fields</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+            {included.map((field) => (
+              <Chip key={field}>{field}</Chip>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {hidden.length > 0 ? (
+        <div>
+          <div style={{ color: "var(--muted)", fontSize: "0.7rem", fontWeight: 700, marginBottom: 4 }}>Hidden fields</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+            {hidden.map((field) => (
+              <span
+                key={field}
+                style={{
+                  border: "1px dashed var(--border)",
+                  borderRadius: 999,
+                  color: "var(--muted)",
+                  display: "inline-flex",
+                  fontSize: "0.75rem",
+                  padding: "0.2rem 0.55rem"
+                }}
+              >
+                {field}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -181,6 +257,7 @@ export function ReportTemplatePreviewPanel({ compact = false, layout }: ReportTe
                 </div>
               </div>
               {section.content.description ? <p style={{ color: "var(--muted)", margin: "0.5rem 0" }}>{section.content.description}</p> : null}
+              <FieldSummary section={section} />
               <div style={{ marginTop: "0.75rem" }}>
                 <MiniBlock section={section} />
               </div>
