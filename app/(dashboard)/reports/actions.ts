@@ -78,30 +78,35 @@ export async function generateReportShell(formData: FormData) {
   }
 
   const title = value(formData, "title") ?? `Maintenance Report ${job.job_number}`;
-  const { error } = await supabase.from("reports").insert({
-    organisation_id: profile.organisation_id,
-    job_id: job.id,
-    report_number: reportNumber,
-    report_type: "MAINTENANCE",
-    status: "GENERATED",
-    template_id: template.id,
-    title,
-    generated_at: new Date().toISOString(),
-    generated_by: profile.id,
-    report_data: {
-      source: "management-report-shell",
-      job_number: job.job_number,
-      template_name: template.name
-    }
-  });
+  const { data: report, error } = await supabase
+    .from("reports")
+    .insert({
+      organisation_id: profile.organisation_id,
+      job_id: job.id,
+      report_number: reportNumber,
+      report_type: "MAINTENANCE",
+      status: "GENERATED",
+      template_id: template.id,
+      title,
+      generated_at: new Date().toISOString(),
+      generated_by: profile.id,
+      report_data: {
+        source: "management-report-shell",
+        job_number: job.job_number,
+        template_name: template.name
+      }
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    redirect(`/reports?error=${encodeURIComponent(error.code ?? "create-failed")}`);
+  if (error || !report) {
+    redirect(`/reports?error=${encodeURIComponent(error?.code ?? "create-failed")}`);
   }
 
   revalidatePath("/reports");
+  revalidatePath(`/reports/${report.id}`);
   revalidatePath("/dashboard");
-  redirect("/reports?created=1");
+  redirect(`/reports/${report.id}?created=1`);
 }
 
 export async function reviewReport(formData: FormData) {

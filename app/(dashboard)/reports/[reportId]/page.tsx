@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PrintButton } from "@/components/ui/print-button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { SuccessState } from "@/components/ui/states";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
 import { fetchIssuedReportData } from "@/lib/reports/issued-report-data";
@@ -16,6 +17,9 @@ import { createClient } from "@/lib/supabase/server";
 type ReportDetailPageProps = {
   params: Promise<{
     reportId: string;
+  }>;
+  searchParams?: Promise<{
+    created?: string;
   }>;
 };
 
@@ -27,7 +31,7 @@ const reportStatusLabel = {
   VOID: "Void"
 };
 
-export default async function ReportDetailPage({ params }: ReportDetailPageProps) {
+export default async function ReportDetailPage({ params, searchParams }: ReportDetailPageProps) {
   const profile = await requireProfile();
 
   if (!canAccessManagement(profile.role)) {
@@ -35,6 +39,7 @@ export default async function ReportDetailPage({ params }: ReportDetailPageProps
   }
 
   const { reportId } = await params;
+  const pageParams = await searchParams;
   const supabase = await createClient();
   const { data: reportData, error } = await fetchIssuedReportData(supabase, reportId);
 
@@ -61,6 +66,10 @@ export default async function ReportDetailPage({ params }: ReportDetailPageProps
           <StatusBadge>{reportStatusLabel[reportData.report.status] ?? reportData.report.status}</StatusBadge>
         </div>
       </div>
+
+      {pageParams?.created ? (
+        <SuccessState message="Report shell generated. Review the evidence below, then mark it reviewed when ready." />
+      ) : null}
 
       <ReportLayoutRenderer data={reportData} layout={reportData.layout} />
       <ReportOutputNote />
