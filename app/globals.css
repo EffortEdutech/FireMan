@@ -87,6 +87,27 @@ select {
   max-width: 100%;
 }
 
+.template-form-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+}
+
+.template-preview-pane {
+  align-content: start;
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 980px) {
+  .template-preview-pane {
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+    position: sticky;
+    top: 1rem;
+  }
+}
+
 @media (max-width: 760px) {
   body {
     font-size: 15px;

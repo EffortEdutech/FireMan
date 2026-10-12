@@ -236,7 +236,7 @@ export function ReportTemplateFormWorkspace({
   return (
     <form action={action} style={{ display: "grid", gap: "1rem" }}>
       {children}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(360px, 100%), 1fr))", gap: "1rem" }}>
+      <div className="template-form-grid">
         <div style={{ alignContent: "start", display: "grid", gap: "1rem" }}>
           {topControls ? topControls({ description, fieldStyle, name, setDescription, setName }) : null}
 
@@ -282,7 +282,7 @@ export function ReportTemplateFormWorkspace({
           </div>
         </div>
 
-        <div style={{ alignContent: "start", display: "grid", gap: "0.75rem" }}>
+        <div className="template-preview-pane">
           <div>
             <h3 style={{ fontSize: "1rem", margin: 0 }}>Live Preview</h3>
             <p style={{ color: "var(--muted)", margin: "0.35rem 0 0" }}>{previewHelp}</p>
