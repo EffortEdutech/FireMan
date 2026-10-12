@@ -1,6 +1,7 @@
 import type { ReportLayoutDefinition, ReportLayoutSection } from "@/lib/reports/report-layout";
 
 type ReportTemplatePreviewPanelProps = {
+  compact?: boolean;
   layout: ReportLayoutDefinition;
 };
 
@@ -120,12 +121,12 @@ function Chip({ children }: { children: string }) {
   );
 }
 
-export function ReportTemplatePreviewPanel({ layout }: ReportTemplatePreviewPanelProps) {
+export function ReportTemplatePreviewPanel({ compact = false, layout }: ReportTemplatePreviewPanelProps) {
   const sections = layout.sections.filter((section) => section.blockType !== "header");
 
   return (
-    <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "minmax(220px, 0.45fr) minmax(320px, 1fr)" }}>
-      <div style={{ display: "grid", gap: "0.75rem", alignContent: "start" }}>
+    <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: compact ? "1fr" : "minmax(220px, 0.45fr) minmax(320px, 1fr)" }}>
+      {compact ? null : <div style={{ display: "grid", gap: "0.75rem", alignContent: "start" }}>
         <div>
           <h2 style={{ fontSize: "1rem", margin: 0 }}>Section Order</h2>
           <p style={{ color: "var(--muted)", margin: "0.35rem 0 0" }}>This is the sequence used when a report is generated.</p>
@@ -143,7 +144,7 @@ export function ReportTemplatePreviewPanel({ layout }: ReportTemplatePreviewPane
             </div>
           </div>
         ))}
-      </div>
+      </div>}
 
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "1rem" }}>
         <div

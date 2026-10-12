@@ -5,14 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { PageHeader } from "@/components/ui/page-header";
+import { ReportGenerationForm } from "@/components/reports/report-generation-form";
 import { ReportOutputStatus } from "@/components/reports/report-output-status";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState, ErrorState, SuccessState } from "@/components/ui/states";
 import { requireProfile } from "@/lib/auth/current-user";
 import { formatDate } from "@/lib/format/date";
 import { canAccessManagement } from "@/lib/permissions/roles";
-import { resolveReportLayout } from "@/lib/reports/report-template";
-import type { Json } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 
 type ReportsPageProps = {
@@ -23,13 +22,6 @@ type ReportsPageProps = {
     reviewed?: string;
     status?: string;
   }>;
-};
-
-const fieldStyle = {
-  minHeight: 44,
-  border: "1px solid var(--border)",
-  borderRadius: 6,
-  padding: 12
 };
 
 const reportStatusLabel = {
@@ -49,23 +41,6 @@ const reportStatusFilters = [
 ];
 
 const activeReportStatuses = new Set(["GENERATED", "REVIEWED"]);
-
-function templateSummary(template: { layout: Json }) {
-  const layout = resolveReportLayout(template.layout);
-  const sections = layout.sections.filter((section) => section.blockType !== "header");
-  const evidenceSection = sections.find((section) => section.blockType === "field_evidence");
-  const columns = evidenceSection?.options?.columns;
-  const photoRows = evidenceSection?.options?.photoRows;
-
-  return {
-    sectionCount: sections.length,
-    evidenceLayout:
-      evidenceSection && typeof columns === "number" && typeof photoRows === "number"
-        ? `${columns} x ${photoRows} evidence photo grid`
-        : "Standard evidence layout",
-    sections: sections.map((section) => section.content.title ?? section.sectionId).slice(0, 4)
-  };
-}
 
 export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const profile = await requireProfile();
@@ -146,10 +121,8 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
 
   const reportedJobIds = new Set(reports?.filter((report) => report.status !== "VOID").map((report) => report.job_id) ?? []);
   const reportableJobs = jobs?.filter((job) => !reportedJobIds.has(job.id)) ?? [];
-  const hasJobs = reportableJobs.length > 0;
   const sortedTemplates = templates ?? [];
   const defaultTemplateId = sortedTemplates.find((template) => template.is_default)?.id ?? sortedTemplates[0]?.id ?? "";
-  const defaultTemplate = sortedTemplates.find((template) => template.id === defaultTemplateId);
   const selectedStatus = reportStatusFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
   const reportCounts = new Map<string, number>();
   const filteredReports =
@@ -214,86 +187,12 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
         <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginBottom: "1rem" }}>
           Select a job under management review, then choose the report setting that controls the generated layout.
         </div>
-        <form action={generateReportShell} style={{ display: "grid", gap: "1rem" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
-            <select aria-label="Maintenance job" disabled={!hasJobs} name="job_id" required style={fieldStyle}>
-              <option value="">{hasJobs ? "Select job under review" : "No reviewed jobs ready for report"}</option>
-              {reportableJobs.map((job) => (
-                <option key={job.id} value={job.id}>
-                  {job.job_number} - {job.clients?.name ?? "Client"} / {job.sites?.name ?? "Site"}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="Report template"
-              defaultValue={defaultTemplateId}
-              disabled={!hasJobs || sortedTemplates.length === 0}
-              name="template_id"
-              required
-              style={fieldStyle}
-            >
-              <option value="">{sortedTemplates.length > 0 ? "Select report template" : "No report templates"}</option>
-              {sortedTemplates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.name}
-                  {template.is_default ? " (default)" : ""}
-                </option>
-              ))}
-            </select>
-            <input aria-label="Report title" disabled={!hasJobs} name="title" placeholder="Report title" style={fieldStyle} />
-          </div>
-          <div>
-            <Button disabled={!hasJobs} type="submit">
-              Generate Report Shell
-            </Button>
-          </div>
-        </form>
-        {defaultTemplate ? (
-          <div style={{ borderTop: "1px solid var(--border)", marginTop: "1rem", paddingTop: "1rem" }}>
-            <h3 style={{ fontSize: "0.95rem", margin: "0 0 0.75rem" }}>Template awareness</h3>
-            <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-              {sortedTemplates.map((template) => {
-                const summary = templateSummary(template);
-
-                return (
-                  <div key={template.id} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "0.875rem" }}>
-                    <div style={{ alignItems: "flex-start", display: "flex", gap: "0.75rem", justifyContent: "space-between" }}>
-                      <div>
-                        <strong>{template.name}</strong>
-                        {template.is_default ? <div style={{ color: "var(--muted)", fontSize: "0.8rem" }}>Default selection</div> : null}
-                      </div>
-                      <Link href={`/report-templates/${template.id}`} style={{ color: "var(--accent)", fontSize: "0.875rem", fontWeight: 700 }}>
-                        Preview
-                      </Link>
-                    </div>
-                    {template.description ? <p style={{ color: "var(--muted)", margin: "0.5rem 0" }}>{template.description}</p> : null}
-                    <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
-                      {summary.sectionCount} sections / {summary.evidenceLayout}
-                    </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginTop: "0.625rem" }}>
-                      {summary.sections.map((section) => (
-                        <span
-                          key={section}
-                          style={{
-                            background: "var(--surface)",
-                            border: "1px solid var(--border)",
-                            borderRadius: 999,
-                            color: "var(--muted)",
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            padding: "0.2rem 0.55rem"
-                          }}
-                        >
-                          {section}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
+        <ReportGenerationForm
+          action={generateReportShell}
+          defaultTemplateId={defaultTemplateId}
+          jobs={reportableJobs}
+          templates={sortedTemplates}
+        />
       </Card>
       <h2 style={{ fontSize: "1rem", margin: "0.5rem 0 0" }}>2. Review and issue reports</h2>
       {reportsError ? (
