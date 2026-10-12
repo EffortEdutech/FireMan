@@ -122,7 +122,7 @@ export function ReportTemplateSectionCard({
         </span>
       </div>
 
-      <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
+      <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
         <div>
           <label style={labelStyle}>Order</label>
           <div style={{ display: "grid", gap: "0.5rem", gridTemplateColumns: "minmax(74px, 1fr) auto auto" }}>
@@ -147,6 +147,28 @@ export function ReportTemplateSectionCard({
             </button>
           </div>
         </div>
+        <div>
+          <label style={labelStyle}>Section Title</label>
+          <input
+            aria-label={`${section.defaultTitle} section title`}
+            name={`section_title_${section.id}`}
+            {...(title === undefined
+              ? { defaultValue: existing?.section.content.title ?? section.defaultTitle }
+              : {
+                  onChange: (event: ChangeEvent<HTMLInputElement>) => onTitleChange?.(event.target.value),
+                  value: title
+                })}
+            style={{ ...fieldStyle, width: "100%" }}
+          />
+        </div>
+      </div>
+
+      <details style={{ borderTop: "1px solid var(--border)", paddingTop: "0.875rem" }}>
+        <summary style={{ color: "var(--muted)", cursor: "pointer", fontSize: "0.875rem", fontWeight: 700 }}>
+          Layout and fields
+        </summary>
+        <div style={{ display: "grid", gap: "0.875rem", marginTop: "0.875rem" }}>
+          <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
         <div>
           <label style={labelStyle}>Columns</label>
           <input
@@ -183,20 +205,6 @@ export function ReportTemplateSectionCard({
             />
           </div>
         ) : null}
-        <div style={{ gridColumn: "span 2" }}>
-          <label style={labelStyle}>Section Title</label>
-          <input
-            aria-label={`${section.defaultTitle} section title`}
-            name={`section_title_${section.id}`}
-            {...(title === undefined
-              ? { defaultValue: existing?.section.content.title ?? section.defaultTitle }
-              : {
-                  onChange: (event: ChangeEvent<HTMLInputElement>) => onTitleChange?.(event.target.value),
-                  value: title
-                })}
-            style={{ ...fieldStyle, width: "100%" }}
-          />
-        </div>
       </div>
 
       {section.supportsPhotoOptions ? (
@@ -253,6 +261,8 @@ export function ReportTemplateSectionCard({
           </div>
         </div>
       ) : null}
+        </div>
+      </details>
     </div>
   );
 }
