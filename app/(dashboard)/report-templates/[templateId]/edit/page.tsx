@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { updateReportTemplate } from "@/app/(dashboard)/report-templates/actions";
-import { ReportTemplateSectionCard } from "@/components/reports/report-template-section-card";
-import { Button } from "@/components/ui/button";
+import { ReportTemplateEditForm } from "@/components/reports/report-template-edit-form";
 import { Card } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/states";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
 import { resolveReportLayout } from "@/lib/reports/report-template";
-import { reportTemplateSections } from "@/lib/reports/template-builder";
 import { createClient } from "@/lib/supabase/server";
 
 type EditReportTemplatePageProps = {
@@ -19,13 +17,6 @@ type EditReportTemplatePageProps = {
     duplicated?: string;
     error?: string;
   }>;
-};
-
-const fieldStyle = {
-  minHeight: 44,
-  border: "1px solid var(--border)",
-  borderRadius: 6,
-  padding: 12
 };
 
 function errorMessage(error: string) {
@@ -67,7 +58,6 @@ export default async function EditReportTemplatePage({ params, searchParams }: E
   }
 
   const layout = resolveReportLayout(template.layout);
-  const sectionById = new Map(layout.sections.map((section, index) => [section.sectionId, { section, index }]));
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -89,31 +79,7 @@ export default async function EditReportTemplatePage({ params, searchParams }: E
       ) : null}
 
       <Card>
-        <form action={updateReportTemplate} style={{ display: "grid", gap: "1rem" }}>
-          <input name="template_id" type="hidden" value={template.id} />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
-            <input aria-label="Template name" defaultValue={template.name} name="name" required style={fieldStyle} />
-            <textarea
-              aria-label="Template description"
-              defaultValue={template.description ?? ""}
-              name="description"
-              placeholder="Short description"
-              style={{ ...fieldStyle, minHeight: 80, resize: "vertical" }}
-            />
-          </div>
-
-          <div style={{ display: "grid", gap: "0.75rem" }}>
-            {reportTemplateSections.map((section, defaultIndex) => {
-              const existing = sectionById.get(section.id);
-
-              return <ReportTemplateSectionCard defaultIndex={defaultIndex} existing={existing} key={section.id} section={section} />;
-            })}
-          </div>
-
-          <div>
-            <Button type="submit">Save Template</Button>
-          </div>
-        </form>
+        <ReportTemplateEditForm action={updateReportTemplate} layout={layout} template={template} />
       </Card>
     </div>
   );
