@@ -1,6 +1,7 @@
 import { formatDate } from "@/lib/format/date";
 import type { IssuedReportData } from "@/lib/reports/issued-report-data";
 import type { ReportLayoutDefinition, ReportLayoutSection } from "@/lib/reports/report-layout";
+import { reportTemplateStats } from "@/lib/reports/report-template-stats";
 import sharp from "sharp";
 
 const page = {
@@ -304,12 +305,15 @@ export function buildReportPdfTextLines(data: IssuedReportData, layout: ReportLa
 }
 
 function buildDocumentLines(data: IssuedReportData, layout: ReportLayoutDefinition): PdfLine[] {
+  const templateStats = reportTemplateStats(layout);
   const lines: PdfLine[] = [
     { size: 10, text: "FireMaint Formal Maintenance Report" },
     { size: 18, text: data.report.reportNumber },
     { size: 12, text: data.report.title ?? "Maintenance report" },
     { size: 10, text: `Status: ${data.report.status}` },
     { size: 10, text: `Template: ${data.report.templateName}` },
+    { size: 10, text: "Template version behavior: Frozen on report" },
+    { size: 10, text: `Template sections: ${templateStats.sectionCount} | Selected fields: ${templateStats.fieldCount}` },
     { size: 10, text: `Client: ${data.client.name} | Site: ${data.site.name}` },
     { text: "" }
   ];

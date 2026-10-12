@@ -1,6 +1,7 @@
 import { formatDate } from "@/lib/format/date";
 import type { IssuedReportData } from "@/lib/reports/issued-report-data";
 import type { ReportLayoutDefinition, ReportLayoutSection } from "@/lib/reports/report-layout";
+import { reportTemplateStats } from "@/lib/reports/report-template-stats";
 
 function escapeHtml(value: string | null | undefined) {
   return (value ?? "")
@@ -357,6 +358,7 @@ function renderSections(data: IssuedReportData, layout: ReportLayoutDefinition) 
 
 export function renderReportHtml(data: IssuedReportData, layout: ReportLayoutDefinition) {
   const title = `${data.report.reportNumber} - ${data.report.title ?? "Maintenance Report"}`;
+  const templateStats = reportTemplateStats(layout);
 
   return `<!doctype html>
 <html lang="en">
@@ -557,6 +559,16 @@ export function renderReportHtml(data: IssuedReportData, layout: ReportLayoutDef
         padding-top: 8px;
       }
 
+      .template-context {
+        border: 1px solid #d9e1e7;
+        border-radius: 8px;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        margin-top: 16px;
+        padding: 16px;
+      }
+
       @media print {
         body {
           background: #ffffff;
@@ -584,6 +596,24 @@ export function renderReportHtml(data: IssuedReportData, layout: ReportLayoutDef
             <p class="muted">Template: ${escapeHtml(data.report.templateName)}</p>
           </div>
           <span class="badge">${escapeHtml(data.report.status)}</span>
+        </div>
+        <div class="template-context">
+          <div>
+            <div class="label">Template</div>
+            <strong>${escapeHtml(data.report.templateName)}</strong>
+          </div>
+          <div>
+            <div class="label">Version Behavior</div>
+            <strong>Frozen on report</strong>
+          </div>
+          <div>
+            <div class="label">Sections</div>
+            <strong>${templateStats.sectionCount}</strong>
+          </div>
+          <div>
+            <div class="label">Selected Fields</div>
+            <strong>${templateStats.fieldCount}</strong>
+          </div>
         </div>
       </header>
       ${renderSections(data, layout)}

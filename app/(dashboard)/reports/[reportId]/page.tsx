@@ -12,6 +12,7 @@ import { SuccessState } from "@/components/ui/states";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
 import { fetchIssuedReportData } from "@/lib/reports/issued-report-data";
+import { reportTemplateStats } from "@/lib/reports/report-template-stats";
 import { createClient } from "@/lib/supabase/server";
 
 type ReportDetailPageProps = {
@@ -50,16 +51,6 @@ function countChecklistAttention(
   );
 }
 
-function countTemplateSections(layout: { sections: { blockType: string; binding: { fields?: string[] } }[] }) {
-  const sections = layout.sections.filter((section) => section.blockType !== "header");
-  const fieldCount = sections.reduce((count, section) => count + (section.binding.fields?.length ?? 0), 0);
-
-  return {
-    fieldCount,
-    sectionCount: sections.length
-  };
-}
-
 export default async function ReportDetailPage({ params, searchParams }: ReportDetailPageProps) {
   const profile = await requireProfile();
 
@@ -81,7 +72,7 @@ export default async function ReportDetailPage({ params, searchParams }: ReportD
   const hasLoadWarnings = Object.values(reportData.loadErrors).some(Boolean);
   const canReview = reportData.report.status === "GENERATED";
   const canIssue = reportData.report.status === "REVIEWED";
-  const templateStats = countTemplateSections(reportData.layout);
+  const templateStats = reportTemplateStats(reportData.layout);
 
   return (
     <div className="print-sheet" style={{ display: "grid", gap: "1rem" }}>
