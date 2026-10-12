@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { IssuedReportData } from "@/lib/reports/issued-report-data";
+import { renderReportHtml } from "@/lib/reports/report-html";
 import { buildReportPdfTextLines, renderReportPdf, renderReportPdfWithImages } from "@/lib/reports/report-pdf";
 import { standardMaintenanceReportLayout } from "@/lib/reports/standard-maintenance-report-layout";
 import sharp from "sharp";
@@ -124,7 +125,23 @@ describe("report PDF renderer", () => {
     expect(lines).toContain("Photos: 1");
     expect(lines).toContain("Photo 1: Pressure gauge photo");
     expect(lines).toContain("Checklist 1: CLIENT-A-EXT-001");
+    expect(lines).toContain("Result summary: 1 PASS | 1 FAIL | 0 ATTENTION | 0 OPEN | 0 NA");
     expect(lines).toContain("- Pressure indicator is in acceptable range where applicable: FAIL");
+  });
+
+  it("renders scan-friendly evidence summaries in HTML exports", () => {
+    const html = renderReportHtml(reportData, standardMaintenanceReportLayout);
+
+    expect(html).toContain("evidence-item evidence-alert");
+    expect(html).toContain("Pressure failure");
+    expect(html).toContain("1 photo");
+    expect(html).toContain("badge badge-alert\">CRITICAL");
+    expect(html).toContain("photo-card");
+    expect(html).toContain("Pressure gauge photo");
+    expect(html).toContain("checklist-alert");
+    expect(html).toContain("1 PASS");
+    expect(html).toContain("1 FAIL");
+    expect(html).toContain("checklist-item checklist-item-alert");
   });
 
   it("embeds JPEG photo evidence in generated PDFs", async () => {
