@@ -31,6 +31,25 @@ const reportStatusLabel = {
   VOID: "Void"
 };
 
+function countCriticalFindings(findings: { severity: string }[]) {
+  return findings.filter((finding) => finding.severity === "CRITICAL").length;
+}
+
+function countChecklistAttention(
+  groups: {
+    items: {
+      resultStatus: string | null;
+    }[];
+  }[]
+) {
+  return groups.reduce(
+    (count, group) =>
+      count +
+      group.items.filter((item) => item.resultStatus === "FAIL" || item.resultStatus === "ATTENTION").length,
+    0
+  );
+}
+
 export default async function ReportDetailPage({ params, searchParams }: ReportDetailPageProps) {
   const profile = await requireProfile();
 
@@ -46,6 +65,12 @@ export default async function ReportDetailPage({ params, searchParams }: ReportD
   if (error || !reportData) {
     notFound();
   }
+
+  const criticalFindingCount = countCriticalFindings(reportData.findings);
+  const checklistAttentionCount = countChecklistAttention(reportData.checklistGroups);
+  const hasLoadWarnings = Object.values(reportData.loadErrors).some(Boolean);
+  const canReview = reportData.report.status === "GENERATED";
+  const canIssue = reportData.report.status === "REVIEWED";
 
   return (
     <div className="print-sheet" style={{ display: "grid", gap: "1rem" }}>
@@ -71,42 +96,76 @@ export default async function ReportDetailPage({ params, searchParams }: ReportD
         <SuccessState message="Report shell generated. Review the evidence below, then mark it reviewed when ready." />
       ) : null}
 
-      <ReportLayoutRenderer data={reportData} layout={reportData.layout} />
-      <ReportOutputNote />
-
       <Card className="no-print">
-        <h2 style={{ fontSize: "1rem", margin: "0 0 1rem" }}>4. Report action</h2>
-        {reportData.report.status === "GENERATED" ? (
-          <div style={{ display: "grid", gap: "0.75rem" }}>
-            <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
-              Mark reviewed after confirming the field evidence and checklist evidence above.
+        <div style={{ alignItems: "flex-start", display: "flex", gap: "1rem", justifyContent: "space-between" }}>
+          <div>
+            <h2 style={{ fontSize: "1rem", margin: 0 }}>Review workspace</h2>
+            <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: 4 }}>
+              Confirm the report evidence, checklist results, and output before moving to the next status.
             </div>
+          </div>
+          <StatusBadge>{reportStatusLabel[reportData.report.status] ?? reportData.report.status}</StatusBadge>
+        </div>
+
+        <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", marginTop: "1rem" }}>
+          {[
+            ["Client", reportData.client.name],
+            ["Site", reportData.site.name],
+            ["Job", reportData.job.jobNumber],
+            ["Assets", `${reportData.assets.length}`],
+            ["Findings", `${reportData.findings.length}`],
+            ["Checklist Results", `${reportData.summary.checklistResultCount}`]
+          ].map(([label, value]) => (
+            <div key={label} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "0.75rem" }}>
+              <div style={{ color: "var(--muted)", fontSize: "0.75rem", fontWeight: 700 }}>{label}</div>
+              <strong>{value}</strong>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "grid", gap: "0.5rem", marginTop: "1rem" }}>
+          {criticalFindingCount > 0 ? (
+            <div style={{ color: "#8a1f17" }}>{criticalFindingCount} critical finding{criticalFindingCount === 1 ? "" : "s"} included.</div>
+          ) : null}
+          {checklistAttentionCount > 0 ? (
+            <div style={{ color: "#8a1f17" }}>
+              {checklistAttentionCount} checklist result{checklistAttentionCount === 1 ? "" : "s"} need attention or failed.
+            </div>
+          ) : null}
+          {hasLoadWarnings ? (
+            <div style={{ color: "#8a1f17" }}>Some evidence could not be loaded. Recheck before reviewing or issuing.</div>
+          ) : null}
+          {!criticalFindingCount && !checklistAttentionCount && !hasLoadWarnings ? (
+            <div style={{ color: "var(--muted)" }}>No critical findings, failed checklist results, or evidence load warnings detected.</div>
+          ) : null}
+        </div>
+
+        <div style={{ borderTop: "1px solid var(--border)", display: "grid", gap: "0.75rem", marginTop: "1rem", paddingTop: "1rem" }}>
+          {canReview ? (
             <form action={reviewReport}>
               <input name="report_id" type="hidden" value={reportData.report.id} />
-              <Button type="submit" variant="secondary">
+              <Button type="submit">
                 Mark Reviewed
               </Button>
             </form>
-          </div>
-        ) : null}
-        {reportData.report.status === "REVIEWED" ? (
-          <div style={{ display: "grid", gap: "0.75rem" }}>
-            <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
-              Issue this report to make it visible in the client portal. Issuing also closes the maintenance job.
-            </div>
+          ) : null}
+          {canIssue ? (
             <form action={issueReport}>
               <input name="report_id" type="hidden" value={reportData.report.id} />
               <Button type="submit">Issue Report</Button>
             </form>
-          </div>
-        ) : null}
-        {reportData.report.status === "ISSUED" ? (
-          <div>Issued reports are visible to the scoped client portal. The maintenance job is closed after issue.</div>
-        ) : null}
-        {reportData.report.status !== "GENERATED" && reportData.report.status !== "REVIEWED" && reportData.report.status !== "ISSUED" ? (
-          <div style={{ color: "var(--muted)" }}>No action is available for this report state.</div>
-        ) : null}
+          ) : null}
+          {reportData.report.status === "ISSUED" ? (
+            <div>Issued reports are visible to the scoped client portal. The maintenance job is closed after issue.</div>
+          ) : null}
+          {reportData.report.status !== "GENERATED" && reportData.report.status !== "REVIEWED" && reportData.report.status !== "ISSUED" ? (
+            <div style={{ color: "var(--muted)" }}>No action is available for this report state.</div>
+          ) : null}
+        </div>
       </Card>
+
+      <ReportLayoutRenderer data={reportData} layout={reportData.layout} />
+      <ReportOutputNote />
     </div>
   );
 }
