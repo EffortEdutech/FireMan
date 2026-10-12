@@ -13,10 +13,12 @@ type ReportTemplateSectionCardProps = {
   } | undefined;
   onColumnsChange?: (columns: number) => void;
   onFieldChange?: (field: string, checked: boolean) => void;
+  onOrderChange?: (order: number) => void;
   onPhotoRowsChange?: (rows: number) => void;
   onSectionChange?: (checked: boolean) => void;
   onShowCaptionsChange?: (showCaptions: boolean) => void;
   onTitleChange?: (title: string) => void;
+  order?: number;
   photoRows?: number;
   section: ReportTemplateSectionDefinition;
   showCaptions?: boolean;
@@ -59,10 +61,12 @@ export function ReportTemplateSectionCard({
   fieldChecked,
   onColumnsChange,
   onFieldChange,
+  onOrderChange,
   onPhotoRowsChange,
   onSectionChange,
   onShowCaptionsChange,
   onTitleChange,
+  order: controlledOrder,
   photoRows: controlledPhotoRows,
   section,
   showCaptions,
@@ -70,6 +74,7 @@ export function ReportTemplateSectionCard({
 }: ReportTemplateSectionCardProps) {
   const enabled = checked ?? (existing ? Boolean(existing) : true);
   const columns = Number(controlledColumns ?? existing?.section.options?.columns ?? section.defaultColumns ?? 1);
+  const order = Number(controlledOrder ?? (existing?.index ?? defaultIndex) + 1);
   const photoRows = Number(controlledPhotoRows ?? existing?.section.options?.photoRows ?? section.defaultPhotoRows ?? 2);
   const photoSlots = section.supportsPhotoOptions ? Math.max(1, columns) * Math.max(1, photoRows) : null;
   const existingFields = new Set(existing?.section.binding.fields ?? section.fields ?? []);
@@ -118,9 +123,14 @@ export function ReportTemplateSectionCard({
           <label style={labelStyle}>Order</label>
           <input
             aria-label={`${section.defaultTitle} section order`}
-            defaultValue={(existing?.index ?? defaultIndex) + 1}
             min={1}
             name={`section_order_${section.id}`}
+            {...(controlledOrder === undefined
+              ? { defaultValue: order }
+              : {
+                  onChange: (event: ChangeEvent<HTMLInputElement>) => onOrderChange?.(Number(event.target.value)),
+                  value: order
+                })}
             style={fieldStyle}
             type="number"
           />

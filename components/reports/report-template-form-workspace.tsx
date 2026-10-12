@@ -15,6 +15,7 @@ export type ReportTemplateFormState = {
   sectionPhotoRows: Map<string, number>;
   sectionShowCaptions: Map<string, boolean>;
   sectionById?: Map<string, { section: ReportLayoutSection; index: number }>;
+  sectionOrder: Map<string, number>;
   sectionTitles: Map<string, string>;
   selectedFieldsBySection: Map<string, Set<string>>;
   selectedSectionIds: Set<string>;
@@ -65,13 +66,9 @@ function booleanSettingPayload(settings: Map<string, boolean>) {
   return new Map(settings);
 }
 
-function defaultSectionOrder(sectionById?: Map<string, { section: ReportLayoutSection; index: number }>) {
-  if (!sectionById) {
-    return reportTemplateSections.map((section) => section.id);
-  }
-
+function orderedSectionIds(sectionOrder: Map<string, number>) {
   return [...reportTemplateSections]
-    .sort((a, b) => (sectionById.get(a.id)?.index ?? 999) - (sectionById.get(b.id)?.index ?? 999))
+    .sort((a, b) => (sectionOrder.get(a.id) ?? 999) - (sectionOrder.get(b.id) ?? 999))
     .map((section) => section.id);
 }
 
@@ -93,6 +90,7 @@ export function ReportTemplateFormWorkspace({
   const [sectionColumns, setSectionColumns] = useState(initialState.sectionColumns);
   const [sectionPhotoRows, setSectionPhotoRows] = useState(initialState.sectionPhotoRows);
   const [sectionShowCaptions, setSectionShowCaptions] = useState(initialState.sectionShowCaptions);
+  const [sectionOrder, setSectionOrder] = useState(initialState.sectionOrder);
   const [sectionTitles, setSectionTitles] = useState(initialState.sectionTitles);
   const [selectedSectionIds, setSelectedSectionIds] = useState(initialState.selectedSectionIds);
   const [selectedFieldsBySection, setSelectedFieldsBySection] = useState(initialState.selectedFieldsBySection);
@@ -111,16 +109,16 @@ export function ReportTemplateFormWorkspace({
         sectionFields: sectionFieldsPayload(selectedFieldsBySection),
         sectionPhotoRows: numberSettingPayload(sectionPhotoRows),
         sectionShowCaptions: booleanSettingPayload(sectionShowCaptions),
-        sectionOrderIds: defaultSectionOrder(initialState.sectionById),
+        sectionOrderIds: orderedSectionIds(sectionOrder),
         sectionTitles: sectionTitlesPayload(sectionTitles),
         selectedSectionIds
       }),
     [
       description,
-      initialState.sectionById,
       name,
       previewFallbackName,
       sectionColumns,
+      sectionOrder,
       sectionPhotoRows,
       sectionShowCaptions,
       sectionTitles,
@@ -164,6 +162,15 @@ export function ReportTemplateFormWorkspace({
       const next = new Map(current);
 
       next.set(sectionId, title);
+      return next;
+    });
+  }
+
+  function updateSectionOrder(sectionId: string, order: number) {
+    setSectionOrder((current) => {
+      const next = new Map(current);
+
+      next.set(sectionId, order);
       return next;
     });
   }
@@ -220,8 +227,10 @@ export function ReportTemplateFormWorkspace({
                   fieldChecked={Object.fromEntries((section.fields ?? []).map((field) => [field, selectedFields.has(field)]))}
                   key={section.id}
                   columns={sectionColumns.get(section.id) ?? section.defaultColumns ?? 1}
+                  order={sectionOrder.get(section.id) ?? defaultIndex + 1}
                   onFieldChange={(field, checked) => toggleField(section.id, field, checked)}
                   onColumnsChange={(columns) => updateSectionColumns(section.id, columns)}
+                  onOrderChange={(order) => updateSectionOrder(section.id, order)}
                   onPhotoRowsChange={(rows) => updateSectionPhotoRows(section.id, rows)}
                   onSectionChange={(checked) => toggleSection(section.id, checked)}
                   onShowCaptionsChange={(showCaptions) => updateSectionShowCaptions(section.id, showCaptions)}

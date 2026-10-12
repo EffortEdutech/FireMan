@@ -22,6 +22,7 @@ function presetState(preset: TemplatePreset): ReportTemplateFormState {
     description: "",
     name: "",
     sectionColumns: new Map(reportTemplateSections.map((section) => [section.id, section.defaultColumns ?? 1] as const)),
+    sectionOrder: new Map(reportTemplateSections.map((section, index) => [section.id, index + 1] as const)),
     sectionPhotoRows: new Map(reportTemplateSections.map((section) => [section.id, section.defaultPhotoRows ?? 2] as const)),
     sectionShowCaptions: new Map(reportTemplateSections.map((section) => [section.id, true] as const)),
     sectionTitles: new Map(reportTemplateSections.map((section) => [section.id, section.defaultTitle] as const)),

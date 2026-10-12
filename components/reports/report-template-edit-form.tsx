@@ -31,6 +31,12 @@ function initialState(layout: ReportLayoutDefinition, template: ReportTemplateEd
         Number(sectionById.get(section.id)?.section.options?.columns ?? section.defaultColumns ?? 1)
       ] as const)
     ),
+    sectionOrder: new Map(
+      reportTemplateSections.map((section, index) => [
+        section.id,
+        (sectionById.get(section.id)?.index ?? index) + 1
+      ] as const)
+    ),
     sectionPhotoRows: new Map(
       reportTemplateSections.map((section) => [
         section.id,
