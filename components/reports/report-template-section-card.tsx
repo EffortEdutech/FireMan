@@ -4,16 +4,22 @@ import type { ReportTemplateSectionDefinition } from "@/lib/reports/template-bui
 
 type ReportTemplateSectionCardProps = {
   checked?: boolean;
+  columns?: number;
   defaultIndex: number;
   fieldChecked?: Record<string, boolean>;
   existing?: {
     index: number;
     section: ReportLayoutSection;
   } | undefined;
+  onColumnsChange?: (columns: number) => void;
   onFieldChange?: (field: string, checked: boolean) => void;
+  onPhotoRowsChange?: (rows: number) => void;
   onSectionChange?: (checked: boolean) => void;
+  onShowCaptionsChange?: (showCaptions: boolean) => void;
   onTitleChange?: (title: string) => void;
+  photoRows?: number;
   section: ReportTemplateSectionDefinition;
+  showCaptions?: boolean;
   title?: string;
 };
 
@@ -47,20 +53,27 @@ function blockLabel(blockType: string) {
 
 export function ReportTemplateSectionCard({
   checked,
+  columns: controlledColumns,
   defaultIndex,
   existing,
   fieldChecked,
+  onColumnsChange,
   onFieldChange,
+  onPhotoRowsChange,
   onSectionChange,
+  onShowCaptionsChange,
   onTitleChange,
+  photoRows: controlledPhotoRows,
   section,
+  showCaptions,
   title
 }: ReportTemplateSectionCardProps) {
   const enabled = checked ?? (existing ? Boolean(existing) : true);
-  const columns = Number(existing?.section.options?.columns ?? section.defaultColumns ?? 1);
-  const photoRows = Number(existing?.section.options?.photoRows ?? section.defaultPhotoRows ?? 2);
+  const columns = Number(controlledColumns ?? existing?.section.options?.columns ?? section.defaultColumns ?? 1);
+  const photoRows = Number(controlledPhotoRows ?? existing?.section.options?.photoRows ?? section.defaultPhotoRows ?? 2);
   const photoSlots = section.supportsPhotoOptions ? Math.max(1, columns) * Math.max(1, photoRows) : null;
   const existingFields = new Set(existing?.section.binding.fields ?? section.fields ?? []);
+  const captionsChecked = showCaptions ?? existing?.section.options?.showCaptions !== false;
   const sectionInputProps =
     checked === undefined
       ? { defaultChecked: enabled }
@@ -116,10 +129,15 @@ export function ReportTemplateSectionCard({
           <label style={labelStyle}>Columns</label>
           <input
             aria-label={`${section.defaultTitle} columns per row`}
-            defaultValue={columns}
             max={4}
             min={1}
             name={`section_columns_${section.id}`}
+            {...(controlledColumns === undefined
+              ? { defaultValue: columns }
+              : {
+                  onChange: (event: ChangeEvent<HTMLInputElement>) => onColumnsChange?.(Number(event.target.value)),
+                  value: columns
+                })}
             style={fieldStyle}
             type="number"
           />
@@ -129,10 +147,15 @@ export function ReportTemplateSectionCard({
             <label style={labelStyle}>Photo Rows</label>
             <input
               aria-label={`${section.defaultTitle} photo rows`}
-              defaultValue={photoRows}
               max={8}
               min={1}
               name={`section_photo_rows_${section.id}`}
+              {...(controlledPhotoRows === undefined
+                ? { defaultValue: photoRows }
+                : {
+                    onChange: (event: ChangeEvent<HTMLInputElement>) => onPhotoRowsChange?.(Number(event.target.value)),
+                    value: photoRows
+                  })}
               style={fieldStyle}
               type="number"
             />
@@ -158,8 +181,13 @@ export function ReportTemplateSectionCard({
         <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.75rem", justifyContent: "space-between" }}>
           <label style={{ alignItems: "center", display: "flex", gap: "0.5rem" }}>
             <input
-              defaultChecked={existing?.section.options?.showCaptions !== false}
               name={`section_show_captions_${section.id}`}
+              {...(showCaptions === undefined
+                ? { defaultChecked: captionsChecked }
+                : {
+                    checked: captionsChecked,
+                    onChange: (event: ChangeEvent<HTMLInputElement>) => onShowCaptionsChange?.(event.target.checked)
+                  })}
               type="checkbox"
               value="true"
             />

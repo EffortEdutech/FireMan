@@ -11,6 +11,9 @@ import { buildReportLayoutDefinition, reportTemplateSections, type TemplatePrese
 export type ReportTemplateFormState = {
   description: string;
   name: string;
+  sectionColumns: Map<string, number>;
+  sectionPhotoRows: Map<string, number>;
+  sectionShowCaptions: Map<string, boolean>;
   sectionById?: Map<string, { section: ReportLayoutSection; index: number }>;
   sectionTitles: Map<string, string>;
   selectedFieldsBySection: Map<string, Set<string>>;
@@ -54,6 +57,14 @@ function sectionTitlesPayload(sectionTitles: Map<string, string>) {
   );
 }
 
+function numberSettingPayload(settings: Map<string, number>) {
+  return new Map(settings);
+}
+
+function booleanSettingPayload(settings: Map<string, boolean>) {
+  return new Map(settings);
+}
+
 function defaultSectionOrder(sectionById?: Map<string, { section: ReportLayoutSection; index: number }>) {
   if (!sectionById) {
     return reportTemplateSections.map((section) => section.id);
@@ -79,6 +90,9 @@ export function ReportTemplateFormWorkspace({
 }: ReportTemplateFormWorkspaceProps) {
   const [description, setDescription] = useState(initialState.description);
   const [name, setName] = useState(initialState.name);
+  const [sectionColumns, setSectionColumns] = useState(initialState.sectionColumns);
+  const [sectionPhotoRows, setSectionPhotoRows] = useState(initialState.sectionPhotoRows);
+  const [sectionShowCaptions, setSectionShowCaptions] = useState(initialState.sectionShowCaptions);
   const [sectionTitles, setSectionTitles] = useState(initialState.sectionTitles);
   const [selectedSectionIds, setSelectedSectionIds] = useState(initialState.selectedSectionIds);
   const [selectedFieldsBySection, setSelectedFieldsBySection] = useState(initialState.selectedFieldsBySection);
@@ -93,12 +107,26 @@ export function ReportTemplateFormWorkspace({
         description: description.trim() || null,
         name: name.trim() || previewFallbackName,
         preset: "custom" as TemplatePreset,
+        sectionColumns: numberSettingPayload(sectionColumns),
         sectionFields: sectionFieldsPayload(selectedFieldsBySection),
+        sectionPhotoRows: numberSettingPayload(sectionPhotoRows),
+        sectionShowCaptions: booleanSettingPayload(sectionShowCaptions),
         sectionOrderIds: defaultSectionOrder(initialState.sectionById),
         sectionTitles: sectionTitlesPayload(sectionTitles),
         selectedSectionIds
       }),
-    [description, initialState.sectionById, name, previewFallbackName, sectionTitles, selectedFieldsBySection, selectedSectionIds]
+    [
+      description,
+      initialState.sectionById,
+      name,
+      previewFallbackName,
+      sectionColumns,
+      sectionPhotoRows,
+      sectionShowCaptions,
+      sectionTitles,
+      selectedFieldsBySection,
+      selectedSectionIds
+    ]
   );
 
   function toggleSection(sectionId: string, checked: boolean) {
@@ -140,6 +168,33 @@ export function ReportTemplateFormWorkspace({
     });
   }
 
+  function updateSectionColumns(sectionId: string, columns: number) {
+    setSectionColumns((current) => {
+      const next = new Map(current);
+
+      next.set(sectionId, columns);
+      return next;
+    });
+  }
+
+  function updateSectionPhotoRows(sectionId: string, rows: number) {
+    setSectionPhotoRows((current) => {
+      const next = new Map(current);
+
+      next.set(sectionId, rows);
+      return next;
+    });
+  }
+
+  function updateSectionShowCaptions(sectionId: string, showCaptions: boolean) {
+    setSectionShowCaptions((current) => {
+      const next = new Map(current);
+
+      next.set(sectionId, showCaptions);
+      return next;
+    });
+  }
+
   return (
     <form action={action} style={{ display: "grid", gap: "1rem" }}>
       {children}
@@ -164,10 +219,16 @@ export function ReportTemplateFormWorkspace({
                   existing={existing}
                   fieldChecked={Object.fromEntries((section.fields ?? []).map((field) => [field, selectedFields.has(field)]))}
                   key={section.id}
+                  columns={sectionColumns.get(section.id) ?? section.defaultColumns ?? 1}
                   onFieldChange={(field, checked) => toggleField(section.id, field, checked)}
+                  onColumnsChange={(columns) => updateSectionColumns(section.id, columns)}
+                  onPhotoRowsChange={(rows) => updateSectionPhotoRows(section.id, rows)}
                   onSectionChange={(checked) => toggleSection(section.id, checked)}
+                  onShowCaptionsChange={(showCaptions) => updateSectionShowCaptions(section.id, showCaptions)}
                   onTitleChange={(title) => updateSectionTitle(section.id, title)}
+                  photoRows={sectionPhotoRows.get(section.id) ?? section.defaultPhotoRows ?? 2}
                   section={section}
+                  showCaptions={sectionShowCaptions.get(section.id) ?? true}
                   title={sectionTitles.get(section.id) ?? section.defaultTitle}
                 />
               );

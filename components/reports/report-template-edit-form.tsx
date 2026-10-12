@@ -25,6 +25,24 @@ function initialState(layout: ReportLayoutDefinition, template: ReportTemplateEd
     description: template.description ?? "",
     name: template.name,
     sectionById,
+    sectionColumns: new Map(
+      reportTemplateSections.map((section) => [
+        section.id,
+        Number(sectionById.get(section.id)?.section.options?.columns ?? section.defaultColumns ?? 1)
+      ] as const)
+    ),
+    sectionPhotoRows: new Map(
+      reportTemplateSections.map((section) => [
+        section.id,
+        Number(sectionById.get(section.id)?.section.options?.photoRows ?? section.defaultPhotoRows ?? 2)
+      ] as const)
+    ),
+    sectionShowCaptions: new Map(
+      reportTemplateSections.map((section) => [
+        section.id,
+        sectionById.get(section.id)?.section.options?.showCaptions !== false
+      ] as const)
+    ),
     sectionTitles: new Map(
       reportTemplateSections.map((section) => [
         section.id,
