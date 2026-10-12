@@ -112,6 +112,15 @@ function summaryLines(data: IssuedReportData, section: ReportLayoutSection): Pdf
   }));
 }
 
+function sectionPhotoLimit(section: ReportLayoutSection) {
+  const columns = Number(section.options?.columns ?? 2);
+  const rows = Number(section.options?.photoRows ?? 2);
+  const clampedColumns = Number.isFinite(columns) ? Math.min(4, Math.max(1, Math.round(columns))) : 2;
+  const clampedRows = Number.isFinite(rows) ? Math.min(8, Math.max(1, Math.round(rows))) : 2;
+
+  return clampedColumns * clampedRows;
+}
+
 function assetLines(data: IssuedReportData): PdfLine[] {
   if (data.assets.length === 0) {
     return [{ text: "This report has no assigned assets attached." }];
@@ -126,7 +135,7 @@ function assetLines(data: IssuedReportData): PdfLine[] {
   ]);
 }
 
-function findingLines(data: IssuedReportData): PdfLine[] {
+function findingLines(data: IssuedReportData, section: ReportLayoutSection): PdfLine[] {
   if (data.loadErrors.findings) {
     return [{ text: "Captured findings could not be loaded." }];
   }
@@ -135,29 +144,40 @@ function findingLines(data: IssuedReportData): PdfLine[] {
     return [{ text: "This report was generated without field findings." }];
   }
 
-  return data.findings.flatMap((finding, index) => [
-    { size: 11, text: `  Finding ${index + 1}: ${finding.title}` },
-    { text: `    Severity: ${finding.severity}` },
-    { text: `    Status: ${finding.status}` },
-    { text: `    Captured: ${formatDate(finding.createdAt)}` },
-    ...(finding.description ? [{ text: `    Description: ${finding.description}` }] : []),
-    ...(finding.recommendation ? [{ text: `    Recommendation: ${finding.recommendation}` }] : []),
-    ...(finding.photos.length > 0
-      ? [
-          { text: `    Photos: ${finding.photos.length}` },
-          ...finding.photos.flatMap((photo, photoIndex) => [
-            {
-              text: `      Photo ${photoIndex + 1}: ${photo.caption ?? photo.storagePath}`
-            },
-            {
-              imageId: photo.id,
-              text: ""
-            }
-          ])
-        ]
-      : []),
-    ...(data.loadErrors.findingPhotos ? [{ text: "    Some finding photos could not be loaded." }] : [])
-  ]);
+  const photoLimit = sectionPhotoLimit(section);
+  const showCaptions = section.options?.showCaptions !== false;
+
+  return data.findings.flatMap((finding, index) => {
+    const visiblePhotos = finding.photos.slice(0, photoLimit);
+
+    return [
+      { size: 11, text: `  Finding ${index + 1}: ${finding.title}` },
+      { text: `    Severity: ${finding.severity}` },
+      { text: `    Status: ${finding.status}` },
+      { text: `    Captured: ${formatDate(finding.createdAt)}` },
+      ...(finding.description ? [{ text: `    Description: ${finding.description}` }] : []),
+      ...(finding.recommendation ? [{ text: `    Recommendation: ${finding.recommendation}` }] : []),
+      ...(visiblePhotos.length > 0
+        ? [
+            { text: `    Photos: ${visiblePhotos.length}${finding.photos.length > visiblePhotos.length ? ` of ${finding.photos.length}` : ""}` },
+            ...visiblePhotos.flatMap((photo, photoIndex) => [
+              ...(showCaptions
+                ? [
+                    {
+                      text: `      Photo ${photoIndex + 1}: ${photo.caption ?? photo.storagePath}`
+                    }
+                  ]
+                : []),
+              {
+                imageId: photo.id,
+                text: ""
+              }
+            ])
+          ]
+        : []),
+      ...(data.loadErrors.findingPhotos ? [{ text: "    Some finding photos could not be loaded." }] : [])
+    ];
+  });
 }
 
 function checklistLines(data: IssuedReportData): PdfLine[] {
@@ -194,7 +214,7 @@ function sectionLines(data: IssuedReportData, section: ReportLayoutSection): Pdf
     case "asset_table":
       return assetLines(data);
     case "field_evidence":
-      return findingLines(data);
+      return findingLines(data, section);
     case "checklist_evidence":
       return checklistLines(data);
     case "signature_box":

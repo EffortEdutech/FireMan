@@ -26,6 +26,14 @@ function sectionColumns(section: ReportLayoutSection, fallback: number) {
   return Math.min(4, Math.max(1, Math.round(columns)));
 }
 
+function sectionPhotoLimit(section: ReportLayoutSection) {
+  const columns = sectionColumns(section, 2);
+  const rows = Number(section.options?.photoRows ?? 2);
+  const clampedRows = Number.isFinite(rows) ? Math.min(8, Math.max(1, Math.round(rows))) : 2;
+
+  return columns * clampedRows;
+}
+
 function renderSummaryValue(data: IssuedReportData, field: string) {
   switch (field) {
     case "clientName":
@@ -147,7 +155,7 @@ function FieldEvidence({ data, section }: { data: IssuedReportData; section: Rep
           {finding.recommendation ? <div style={{ color: "var(--muted)", marginTop: 8 }}>Recommendation: {finding.recommendation}</div> : null}
           {finding.photos.length > 0 ? (
             <div style={{ display: "grid", gap: "0.5rem", gridTemplateColumns: `repeat(${photoColumns}, minmax(0, 1fr))`, marginTop: 12 }}>
-              {finding.photos.map((photo, index) => (
+              {finding.photos.slice(0, sectionPhotoLimit(section)).map((photo, index) => (
                 <figure key={photo.id} style={{ margin: 0 }}>
                   {photo.signedUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -173,9 +181,11 @@ function FieldEvidence({ data, section }: { data: IssuedReportData; section: Rep
                       Photo unavailable
                     </div>
                   )}
-                  <figcaption style={{ color: "var(--muted)", fontSize: "0.85rem", marginTop: 4 }}>
-                    {photo.caption ?? `Photo ${index + 1}`}
-                  </figcaption>
+                  {section.options?.showCaptions !== false ? (
+                    <figcaption style={{ color: "var(--muted)", fontSize: "0.85rem", marginTop: 4 }}>
+                      {photo.caption ?? `Photo ${index + 1}`}
+                    </figcaption>
+                  ) : null}
                 </figure>
               ))}
             </div>

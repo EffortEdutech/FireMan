@@ -114,7 +114,7 @@ export default async function EditReportTemplatePage({ params, searchParams }: E
                     borderRadius: 6,
                     display: "grid",
                     gap: "0.75rem",
-                    gridTemplateColumns: "minmax(170px, 220px) 96px 112px minmax(0, 1fr)",
+                    gridTemplateColumns: "minmax(170px, 220px) 96px 112px 112px minmax(0, 1fr)",
                     padding: "0.75rem"
                   }}
                 >
@@ -139,12 +139,36 @@ export default async function EditReportTemplatePage({ params, searchParams }: E
                     style={fieldStyle}
                     type="number"
                   />
+                  {section.supportsPhotoOptions ? (
+                    <input
+                      aria-label={`${section.defaultTitle} photo rows`}
+                      defaultValue={Number(existing?.section.options?.photoRows ?? section.defaultPhotoRows ?? 2)}
+                      max={8}
+                      min={1}
+                      name={`section_photo_rows_${section.id}`}
+                      style={fieldStyle}
+                      type="number"
+                    />
+                  ) : (
+                    <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>Rows n/a</div>
+                  )}
                   <input
                     aria-label={`${section.defaultTitle} section title`}
                     defaultValue={existing?.section.content.title ?? section.defaultTitle}
                     name={`section_title_${section.id}`}
                     style={fieldStyle}
                   />
+                  {section.supportsPhotoOptions ? (
+                    <label style={{ alignItems: "center", display: "flex", gap: "0.5rem", gridColumn: "2 / -1" }}>
+                      <input
+                        defaultChecked={existing?.section.options?.showCaptions !== false}
+                        name={`section_show_captions_${section.id}`}
+                        type="checkbox"
+                        value="true"
+                      />
+                      Show photo captions in report output
+                    </label>
+                  ) : null}
                 </div>
               );
             })}

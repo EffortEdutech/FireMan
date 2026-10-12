@@ -21,6 +21,14 @@ function sectionColumns(section: ReportLayoutSection, fallback: number) {
   return Math.min(4, Math.max(1, Math.round(columns)));
 }
 
+function sectionPhotoLimit(section: ReportLayoutSection) {
+  const columns = sectionColumns(section, 2);
+  const rows = Number(section.options?.photoRows ?? 2);
+  const clampedRows = Number.isFinite(rows) ? Math.min(8, Math.max(1, Math.round(rows))) : 2;
+
+  return columns * clampedRows;
+}
+
 function renderSummaryValue(data: IssuedReportData, field: string) {
   switch (field) {
     case "clientName":
@@ -126,6 +134,8 @@ function renderFieldEvidence(data: IssuedReportData, section: ReportLayoutSectio
 
   const photoWarning = data.loadErrors.findingPhotos ? `<p class="muted">Some finding photos could not be loaded.</p>` : "";
   const photoColumns = sectionColumns(section, 2);
+  const photoLimit = sectionPhotoLimit(section);
+  const showCaptions = section.options?.showCaptions !== false;
 
   return (
     photoWarning +
@@ -144,6 +154,7 @@ function renderFieldEvidence(data: IssuedReportData, section: ReportLayoutSectio
             finding.photos.length > 0
               ? `<div class="photo-grid" style="grid-template-columns: repeat(${photoColumns}, minmax(0, 1fr));">
                   ${finding.photos
+                    .slice(0, photoLimit)
                     .map(
                       (photo, index) => `
                         <figure class="photo-card">
@@ -152,7 +163,7 @@ function renderFieldEvidence(data: IssuedReportData, section: ReportLayoutSectio
                               ? `<img alt="${escapeHtml(photo.caption ?? `${finding.title} photo ${index + 1}`)}" src="${escapeHtml(photo.signedUrl)}" />`
                               : `<div class="photo-placeholder">Photo unavailable</div>`
                           }
-                          <figcaption>${escapeHtml(photo.caption ?? `Photo ${index + 1}`)}</figcaption>
+                          ${showCaptions ? `<figcaption>${escapeHtml(photo.caption ?? `Photo ${index + 1}`)}</figcaption>` : ""}
                         </figure>
                       `
                     )

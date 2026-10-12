@@ -5,6 +5,8 @@ export type TemplatePreset = "client_summary" | "detailed_evidence" | "custom";
 type SectionDefinition = {
   id: string;
   defaultColumns?: number;
+  defaultPhotoRows?: number;
+  supportsPhotoOptions?: boolean;
   defaultTitle: string;
   blockType: ReportBlockType;
   source?: ReportDataBinding;
@@ -30,8 +32,10 @@ export const reportTemplateSections = [
   {
     id: "field_evidence",
     defaultColumns: 2,
+    defaultPhotoRows: 2,
     defaultTitle: "Field Evidence",
     blockType: "field_evidence",
+    supportsPhotoOptions: true,
     source: "findings",
     fields: ["title", "severity", "status", "description", "recommendation", "createdAt"]
   },
@@ -71,6 +75,8 @@ export function buildReportLayoutDefinition({
   name,
   preset,
   sectionColumns,
+  sectionPhotoRows,
+  sectionShowCaptions,
   sectionOrderIds,
   sectionTitles,
   selectedSectionIds
@@ -79,6 +85,8 @@ export function buildReportLayoutDefinition({
   name: string;
   preset: TemplatePreset;
   sectionColumns?: Map<string, number>;
+  sectionPhotoRows?: Map<string, number>;
+  sectionShowCaptions?: Map<string, boolean>;
   sectionOrderIds?: string[];
   sectionTitles: Map<string, string>;
   selectedSectionIds: Set<string>;
@@ -106,8 +114,15 @@ export function buildReportLayoutDefinition({
       .filter((section) => selectedIds.has(section.id))
       .map((section) => {
         const columns = clampColumns(sectionColumns?.get(section.id) ?? section.defaultColumns);
+        const photoRows = clampRows(sectionPhotoRows?.get(section.id) ?? section.defaultPhotoRows);
         const options = {
           ...(columns ? { columns } : {}),
+          ...(section.supportsPhotoOptions
+            ? {
+                photoRows: photoRows ?? 2,
+                showCaptions: sectionShowCaptions?.get(section.id) ?? true
+              }
+            : {}),
           ...(section.id === "sign_off" ? { layout: columns === 1 ? "single_column" : "two_column" } : {})
         };
 
@@ -152,4 +167,12 @@ export function clampColumns(value: number | null | undefined) {
   }
 
   return Math.min(4, Math.max(1, Math.round(value)));
+}
+
+export function clampRows(value: number | null | undefined) {
+  if (!value || !Number.isFinite(value)) {
+    return null;
+  }
+
+  return Math.min(8, Math.max(1, Math.round(value)));
 }

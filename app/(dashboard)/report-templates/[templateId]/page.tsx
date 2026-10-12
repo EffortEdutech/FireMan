@@ -135,6 +135,8 @@ export default async function ReportTemplateDetailPage({ params, searchParams }:
                   <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: 6 }}>
                     {Number.isFinite(columns) ? `${columns} column${columns === 1 ? "" : "s"}` : null}
                     {section.options.layout ? `${Number.isFinite(columns) ? " / " : ""}${section.options.layout}` : null}
+                    {section.options.photoRows ? `${Number.isFinite(columns) || section.options.layout ? " / " : ""}${section.options.photoRows} photo row${section.options.photoRows === 1 ? "" : "s"}` : null}
+                    {section.options.showCaptions === false ? " / captions hidden" : null}
                   </div>
                 ) : null}
               </div>

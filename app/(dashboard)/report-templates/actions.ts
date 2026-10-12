@@ -7,6 +7,7 @@ import { canAccessManagement } from "@/lib/permissions/roles";
 import {
   buildReportLayoutDefinition,
   clampColumns,
+  clampRows,
   reportTemplateSections,
   slugifyTemplateName,
   type TemplatePreset
@@ -40,6 +41,8 @@ export async function createReportTemplate(formData: FormData) {
 
   const selectedSectionIds = new Set(formData.getAll("section_id").filter((entry): entry is string => typeof entry === "string"));
   const sectionColumns = sectionColumnSettings(formData);
+  const sectionPhotoRows = sectionPhotoRowSettings(formData);
+  const sectionShowCaptions = sectionCaptionSettings(formData);
   const sectionOrderIds = orderedSectionIds(formData);
   const sectionTitles = new Map(
     reportTemplateSections.map((section) => [section.id, value(formData, `section_title_${section.id}`) ?? section.defaultTitle])
@@ -49,6 +52,8 @@ export async function createReportTemplate(formData: FormData) {
     name,
     preset,
     sectionColumns,
+    sectionPhotoRows,
+    sectionShowCaptions,
     sectionOrderIds,
     sectionTitles,
     selectedSectionIds
@@ -83,6 +88,25 @@ function sectionColumnSettings(formData: FormData) {
 
       return [section.id, clampColumns(columns) ?? section.defaultColumns ?? 1] as const;
     })
+  );
+}
+
+function sectionPhotoRowSettings(formData: FormData) {
+  return new Map(
+    reportTemplateSections.map((section) => {
+      const rows = Number(value(formData, `section_photo_rows_${section.id}`) ?? section.defaultPhotoRows ?? 2);
+
+      return [section.id, clampRows(rows) ?? section.defaultPhotoRows ?? 2] as const;
+    })
+  );
+}
+
+function sectionCaptionSettings(formData: FormData) {
+  return new Map(
+    reportTemplateSections.map((section) => [
+      section.id,
+      section.supportsPhotoOptions ? value(formData, `section_show_captions_${section.id}`) === "true" : true
+    ])
   );
 }
 
@@ -143,6 +167,8 @@ export async function updateReportTemplate(formData: FormData) {
 
   const selectedSectionIds = new Set(formData.getAll("section_id").filter((entry): entry is string => typeof entry === "string"));
   const sectionColumns = sectionColumnSettings(formData);
+  const sectionPhotoRows = sectionPhotoRowSettings(formData);
+  const sectionShowCaptions = sectionCaptionSettings(formData);
   const sectionOrderIds = orderedSectionIds(formData);
   const sectionTitles = new Map(
     reportTemplateSections.map((section) => [section.id, value(formData, `section_title_${section.id}`) ?? section.defaultTitle])
@@ -152,6 +178,8 @@ export async function updateReportTemplate(formData: FormData) {
     name,
     preset: "custom",
     sectionColumns,
+    sectionPhotoRows,
+    sectionShowCaptions,
     sectionOrderIds,
     sectionTitles,
     selectedSectionIds
