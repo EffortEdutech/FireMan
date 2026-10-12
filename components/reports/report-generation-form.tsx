@@ -43,15 +43,26 @@ function templateSummary(template: ReportTemplateOption) {
   const evidenceSection = sections.find((section) => section.blockType === "field_evidence");
   const columns = evidenceSection?.options?.columns;
   const photoRows = evidenceSection?.options?.photoRows;
+  const fieldCount = sections.reduce((count, section) => count + (section.binding.fields?.length ?? 0), 0);
 
   return {
     evidenceLayout:
       evidenceSection && typeof columns === "number" && typeof photoRows === "number"
         ? `${columns} x ${photoRows} evidence photo grid`
         : "Standard evidence layout",
+    fieldCount,
     layout,
     sectionCount: sections.length
   };
+}
+
+function ContextPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "0.65rem 0.75rem" }}>
+      <div style={{ color: "var(--muted)", fontSize: "0.7rem", fontWeight: 700 }}>{label}</div>
+      <strong>{value}</strong>
+    </div>
+  );
 }
 
 export function ReportGenerationForm({ action, defaultTemplateId, jobs, templates }: ReportGenerationFormProps) {
@@ -107,7 +118,7 @@ export function ReportGenerationForm({ action, defaultTemplateId, jobs, template
             <div>
               <h3 style={{ fontSize: "0.95rem", margin: 0 }}>{selectedTemplate.name}</h3>
               <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: 4 }}>
-                {selectedSummary.sectionCount} sections / {selectedSummary.evidenceLayout}
+                This exact template version will be saved on the report shell when generated.
               </div>
               {selectedTemplate.description ? (
                 <p style={{ color: "var(--muted)", margin: "0.5rem 0 0" }}>{selectedTemplate.description}</p>
@@ -116,6 +127,19 @@ export function ReportGenerationForm({ action, defaultTemplateId, jobs, template
             <Link href={`/report-templates/${selectedTemplate.id}`} style={{ color: "var(--accent)", fontSize: "0.875rem", fontWeight: 700 }}>
               Open full preview
             </Link>
+          </div>
+          <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", marginBottom: "1rem" }}>
+            <ContextPill label="Template Type" value={selectedTemplate.is_default ? "Default" : "Custom"} />
+            <ContextPill label="Version Behavior" value="Frozen on report" />
+            <ContextPill
+              label="Sections"
+              value={`${selectedSummary.sectionCount} section${selectedSummary.sectionCount === 1 ? "" : "s"}`}
+            />
+            <ContextPill
+              label="Selected Fields"
+              value={`${selectedSummary.fieldCount} field${selectedSummary.fieldCount === 1 ? "" : "s"}`}
+            />
+            <ContextPill label="Evidence Layout" value={selectedSummary.evidenceLayout} />
           </div>
           <ReportTemplatePreviewPanel compact layout={selectedSummary.layout} />
         </div>
