@@ -25,6 +25,12 @@ function initialState(layout: ReportLayoutDefinition, template: ReportTemplateEd
     description: template.description ?? "",
     name: template.name,
     sectionById,
+    sectionTitles: new Map(
+      reportTemplateSections.map((section) => [
+        section.id,
+        sectionById.get(section.id)?.section.content.title ?? section.defaultTitle
+      ] as const)
+    ),
     selectedFieldsBySection: new Map(
       reportTemplateSections.map((section) => {
         const existingFields = sectionById.get(section.id)?.section.binding.fields ?? section.fields ?? [];

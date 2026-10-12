@@ -21,6 +21,7 @@ function presetState(preset: TemplatePreset): ReportTemplateFormState {
   return {
     description: "",
     name: "",
+    sectionTitles: new Map(reportTemplateSections.map((section) => [section.id, section.defaultTitle] as const)),
     selectedFieldsBySection,
     selectedSectionIds
   };

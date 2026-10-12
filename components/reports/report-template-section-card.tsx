@@ -12,7 +12,9 @@ type ReportTemplateSectionCardProps = {
   } | undefined;
   onFieldChange?: (field: string, checked: boolean) => void;
   onSectionChange?: (checked: boolean) => void;
+  onTitleChange?: (title: string) => void;
   section: ReportTemplateSectionDefinition;
+  title?: string;
 };
 
 const fieldStyle = {
@@ -50,7 +52,9 @@ export function ReportTemplateSectionCard({
   fieldChecked,
   onFieldChange,
   onSectionChange,
-  section
+  onTitleChange,
+  section,
+  title
 }: ReportTemplateSectionCardProps) {
   const enabled = checked ?? (existing ? Boolean(existing) : true);
   const columns = Number(existing?.section.options?.columns ?? section.defaultColumns ?? 1);
@@ -138,8 +142,13 @@ export function ReportTemplateSectionCard({
           <label style={labelStyle}>Section Title</label>
           <input
             aria-label={`${section.defaultTitle} section title`}
-            defaultValue={existing?.section.content.title ?? section.defaultTitle}
             name={`section_title_${section.id}`}
+            {...(title === undefined
+              ? { defaultValue: existing?.section.content.title ?? section.defaultTitle }
+              : {
+                  onChange: (event: ChangeEvent<HTMLInputElement>) => onTitleChange?.(event.target.value),
+                  value: title
+                })}
             style={{ ...fieldStyle, width: "100%" }}
           />
         </div>

@@ -12,6 +12,7 @@ export type ReportTemplateFormState = {
   description: string;
   name: string;
   sectionById?: Map<string, { section: ReportLayoutSection; index: number }>;
+  sectionTitles: Map<string, string>;
   selectedFieldsBySection: Map<string, Set<string>>;
   selectedSectionIds: Set<string>;
 };
@@ -43,12 +44,13 @@ function sectionFieldsPayload(selectedFieldsBySection: Map<string, Set<string>>)
   return new Map(Array.from(selectedFieldsBySection.entries()).map(([sectionId, fields]) => [sectionId, Array.from(fields)] as const));
 }
 
-function defaultSectionTitles(sectionById?: Map<string, { section: ReportLayoutSection; index: number }>) {
+function sectionTitlesPayload(sectionTitles: Map<string, string>) {
   return new Map(
-    reportTemplateSections.map((section) => [
-      section.id,
-      sectionById?.get(section.id)?.section.content.title ?? section.defaultTitle
-    ] as const)
+    reportTemplateSections.map((section) => {
+      const title = sectionTitles.get(section.id)?.trim();
+
+      return [section.id, title && title.length > 0 ? title : section.defaultTitle] as const;
+    })
   );
 }
 
@@ -77,6 +79,7 @@ export function ReportTemplateFormWorkspace({
 }: ReportTemplateFormWorkspaceProps) {
   const [description, setDescription] = useState(initialState.description);
   const [name, setName] = useState(initialState.name);
+  const [sectionTitles, setSectionTitles] = useState(initialState.sectionTitles);
   const [selectedSectionIds, setSelectedSectionIds] = useState(initialState.selectedSectionIds);
   const [selectedFieldsBySection, setSelectedFieldsBySection] = useState(initialState.selectedFieldsBySection);
   const selectedCount = selectedSectionIds.size;
@@ -92,10 +95,10 @@ export function ReportTemplateFormWorkspace({
         preset: "custom" as TemplatePreset,
         sectionFields: sectionFieldsPayload(selectedFieldsBySection),
         sectionOrderIds: defaultSectionOrder(initialState.sectionById),
-        sectionTitles: defaultSectionTitles(initialState.sectionById),
+        sectionTitles: sectionTitlesPayload(sectionTitles),
         selectedSectionIds
       }),
-    [description, initialState.sectionById, name, previewFallbackName, selectedFieldsBySection, selectedSectionIds]
+    [description, initialState.sectionById, name, previewFallbackName, sectionTitles, selectedFieldsBySection, selectedSectionIds]
   );
 
   function toggleSection(sectionId: string, checked: boolean) {
@@ -128,6 +131,15 @@ export function ReportTemplateFormWorkspace({
     });
   }
 
+  function updateSectionTitle(sectionId: string, title: string) {
+    setSectionTitles((current) => {
+      const next = new Map(current);
+
+      next.set(sectionId, title);
+      return next;
+    });
+  }
+
   return (
     <form action={action} style={{ display: "grid", gap: "1rem" }}>
       {children}
@@ -154,7 +166,9 @@ export function ReportTemplateFormWorkspace({
                   key={section.id}
                   onFieldChange={(field, checked) => toggleField(section.id, field, checked)}
                   onSectionChange={(checked) => toggleSection(section.id, checked)}
+                  onTitleChange={(title) => updateSectionTitle(section.id, title)}
                   section={section}
+                  title={sectionTitles.get(section.id) ?? section.defaultTitle}
                 />
               );
             })}
