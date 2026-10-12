@@ -72,6 +72,10 @@ function orderedSectionIds(sectionOrder: Map<string, number>) {
     .map((section) => section.id);
 }
 
+function normalizeSectionOrder(sectionIds: string[]) {
+  return new Map(sectionIds.map((sectionId, index) => [sectionId, index + 1] as const));
+}
+
 export function sectionMapFromLayout(layout: ReportLayoutDefinition) {
   return new Map(layout.sections.map((section, index) => [section.sectionId, { section, index }]));
 }
@@ -175,6 +179,33 @@ export function ReportTemplateFormWorkspace({
     });
   }
 
+  function moveSection(sectionId: string, direction: -1 | 1) {
+    setSectionOrder((current) => {
+      const orderedIds = orderedSectionIds(current);
+      const currentIndex = orderedIds.indexOf(sectionId);
+
+      if (currentIndex < 0) {
+        return current;
+      }
+
+      const targetIndex = currentIndex + direction;
+
+      if (targetIndex < 0 || targetIndex >= orderedIds.length) {
+        return current;
+      }
+
+      const nextIds = [...orderedIds];
+      const [moved] = nextIds.splice(currentIndex, 1);
+
+      if (!moved) {
+        return current;
+      }
+
+      nextIds.splice(targetIndex, 0, moved);
+      return normalizeSectionOrder(nextIds);
+    });
+  }
+
   function updateSectionColumns(sectionId: string, columns: number) {
     setSectionColumns((current) => {
       const next = new Map(current);
@@ -230,6 +261,8 @@ export function ReportTemplateFormWorkspace({
                   order={sectionOrder.get(section.id) ?? defaultIndex + 1}
                   onFieldChange={(field, checked) => toggleField(section.id, field, checked)}
                   onColumnsChange={(columns) => updateSectionColumns(section.id, columns)}
+                  onMoveDown={() => moveSection(section.id, 1)}
+                  onMoveUp={() => moveSection(section.id, -1)}
                   onOrderChange={(order) => updateSectionOrder(section.id, order)}
                   onPhotoRowsChange={(rows) => updateSectionPhotoRows(section.id, rows)}
                   onSectionChange={(checked) => toggleSection(section.id, checked)}

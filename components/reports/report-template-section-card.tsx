@@ -14,6 +14,8 @@ type ReportTemplateSectionCardProps = {
   onColumnsChange?: (columns: number) => void;
   onFieldChange?: (field: string, checked: boolean) => void;
   onOrderChange?: (order: number) => void;
+  onMoveDown?: () => void;
+  onMoveUp?: () => void;
   onPhotoRowsChange?: (rows: number) => void;
   onSectionChange?: (checked: boolean) => void;
   onShowCaptionsChange?: (showCaptions: boolean) => void;
@@ -62,6 +64,8 @@ export function ReportTemplateSectionCard({
   onColumnsChange,
   onFieldChange,
   onOrderChange,
+  onMoveDown,
+  onMoveUp,
   onPhotoRowsChange,
   onSectionChange,
   onShowCaptionsChange,
@@ -121,19 +125,27 @@ export function ReportTemplateSectionCard({
       <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
         <div>
           <label style={labelStyle}>Order</label>
-          <input
-            aria-label={`${section.defaultTitle} section order`}
-            min={1}
-            name={`section_order_${section.id}`}
-            {...(controlledOrder === undefined
-              ? { defaultValue: order }
-              : {
-                  onChange: (event: ChangeEvent<HTMLInputElement>) => onOrderChange?.(Number(event.target.value)),
-                  value: order
-                })}
-            style={fieldStyle}
-            type="number"
-          />
+          <div style={{ display: "grid", gap: "0.5rem", gridTemplateColumns: "minmax(74px, 1fr) auto auto" }}>
+            <input
+              aria-label={`${section.defaultTitle} section order`}
+              min={1}
+              name={`section_order_${section.id}`}
+              {...(controlledOrder === undefined
+                ? { defaultValue: order }
+                : {
+                    onChange: (event: ChangeEvent<HTMLInputElement>) => onOrderChange?.(Number(event.target.value)),
+                    value: order
+                  })}
+              style={{ ...fieldStyle, width: "100%" }}
+              type="number"
+            />
+            <button aria-label={`Move ${section.defaultTitle} up`} onClick={onMoveUp} style={fieldStyle} type="button">
+              Up
+            </button>
+            <button aria-label={`Move ${section.defaultTitle} down`} onClick={onMoveDown} style={fieldStyle} type="button">
+              Down
+            </button>
+          </div>
         </div>
         <div>
           <label style={labelStyle}>Columns</label>
