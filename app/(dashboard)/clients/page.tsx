@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClientRecord } from "@/app/(dashboard)/clients/actions";
+import { createClientRecord, updateClientReportTemplate } from "@/app/(dashboard)/clients/actions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterBar } from "@/components/ui/filter-bar";
@@ -14,6 +14,7 @@ type ClientsPageProps = {
     created?: string;
     error?: string;
     status?: string;
+    template?: string;
   }>;
 };
 
@@ -39,10 +40,19 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
 
   const params = await searchParams;
   const supabase = await createClient();
-  const { data: clients, error } = await supabase
-    .from("clients")
-    .select("id,name,registration_no,industry,phone,email,active,created_at")
-    .order("created_at", { ascending: false });
+  const [{ data: clients, error }, { data: templates }] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("id,name,registration_no,industry,phone,email,active,created_at,default_report_template_id,report_templates(name)")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("report_templates")
+      .select("id,name,is_default")
+      .eq("active", true)
+      .eq("report_type", "MAINTENANCE")
+      .order("is_default", { ascending: false })
+      .order("name", { ascending: true })
+  ]);
   const selectedStatus = clientFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
   const activeClientCount = clients?.filter((client) => client.active).length ?? 0;
   const inactiveClientCount = clients?.filter((client) => !client.active).length ?? 0;
@@ -72,10 +82,19 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
         {params?.created ? (
           <SuccessState message="Client created." />
         ) : null}
+        {params?.template ? (
+          <SuccessState message="Client report template preference updated." />
+        ) : null}
         {params?.error ? (
           <ErrorState
             title="Client not saved"
-            message={params.error === "missing-name" ? "Client name is required." : "The client could not be saved."}
+            message={
+              params.error === "missing-name"
+                ? "Client name is required."
+                : params.error === "template-not-found"
+                  ? "The selected report template is unavailable."
+                  : "The client could not be saved."
+            }
           />
         ) : null}
         <Card>
@@ -115,7 +134,9 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
                 <col style={{ width: 150 }} />
                 <col style={{ width: 150 }} />
                 <col style={{ width: 190 }} />
+                <col style={{ width: 240 }} />
                 <col style={{ width: 100 }} />
+                <col style={{ width: 180 }} />
               </colgroup>
               <thead>
                 <tr>
@@ -123,7 +144,9 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
                   <th>Registration</th>
                   <th>Industry</th>
                   <th>Contact</th>
+                  <th>Report Template</th>
                   <th>Status</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,7 +165,32 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
                       {client.email ?? client.phone ?? "Not set"}
                     </td>
                     <td>
+                      {client.report_templates?.name ?? "Standard/default"}
+                    </td>
+                    <td>
                       {client.active ? "Active" : "Inactive"}
+                    </td>
+                    <td>
+                      <form action={updateClientReportTemplate} style={{ display: "grid", gap: "0.5rem" }}>
+                        <input name="client_id" type="hidden" value={client.id} />
+                        <select
+                          aria-label={`${client.name} default report template`}
+                          defaultValue={client.default_report_template_id ?? ""}
+                          name="default_report_template_id"
+                          style={inputStyle}
+                        >
+                          <option value="">Standard/default</option>
+                          {templates?.map((template) => (
+                            <option key={template.id} value={template.id}>
+                              {template.name}
+                              {template.is_default ? " (default)" : ""}
+                            </option>
+                          ))}
+                        </select>
+                        <Button type="submit" variant="secondary">
+                          Save
+                        </Button>
+                      </form>
                     </td>
                   </tr>
                 ))}
