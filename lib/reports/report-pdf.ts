@@ -262,6 +262,7 @@ function buildDocumentLines(data: IssuedReportData, layout: ReportLayoutDefiniti
     { size: 18, text: data.report.reportNumber },
     { size: 12, text: data.report.title ?? "Maintenance report" },
     { size: 10, text: `Status: ${data.report.status}` },
+    { size: 10, text: `Template: ${data.report.templateName}` },
     { size: 10, text: `Client: ${data.client.name} | Site: ${data.site.name}` },
     { text: "" }
   ];

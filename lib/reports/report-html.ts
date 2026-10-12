@@ -542,6 +542,7 @@ export function renderReportHtml(data: IssuedReportData, layout: ReportLayoutDef
           <div>
             <h1>${escapeHtml(data.report.reportNumber)}</h1>
             <p class="muted">${escapeHtml(data.report.title ?? "Maintenance report")}</p>
+            <p class="muted">Template: ${escapeHtml(data.report.templateName)}</p>
           </div>
           <span class="badge">${escapeHtml(data.report.status)}</span>
         </div>

@@ -116,6 +116,7 @@ describe("report PDF renderer", () => {
     expect(lines).toContain("UKB-2026-000004");
     expect(lines).toContain("FireMaint Formal Maintenance Report");
     expect(lines).toContain("Maintenance Report UKB-JOB-20261008-D89B92");
+    expect(lines).toContain("Template: Standard Maintenance Report");
     expect(lines).toContain("Client: Client A | Site: Client A Demo Site");
     expect(lines).toContain("Job: UKB-JOB-20261008-D89B92");
     expect(lines).toContain("Asset 1: CLIENT-A-EXT-001");
@@ -133,6 +134,7 @@ describe("report PDF renderer", () => {
     const html = renderReportHtml(reportData, standardMaintenanceReportLayout);
 
     expect(html).toContain("evidence-item evidence-alert");
+    expect(html).toContain("Template: Standard Maintenance Report");
     expect(html).toContain("Pressure failure");
     expect(html).toContain("1 photo");
     expect(html).toContain("badge badge-alert\">CRITICAL");
