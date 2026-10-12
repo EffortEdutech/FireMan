@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createReportTemplate, setReportTemplateActive } from "@/app/(dashboard)/report-templates/actions";
+import { ReportTemplateCreateForm } from "@/components/reports/report-template-create-form";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ReportTemplateSectionCard } from "@/components/reports/report-template-section-card";
 import { EmptyState, ErrorState, SuccessState } from "@/components/ui/states";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
-import { reportTemplateSections } from "@/lib/reports/template-builder";
 import { createClient } from "@/lib/supabase/server";
 
 type ReportTemplatesPageProps = {
@@ -17,13 +16,6 @@ type ReportTemplatesPageProps = {
     deactivated?: string;
     error?: string;
   }>;
-};
-
-const fieldStyle = {
-  minHeight: 44,
-  border: "1px solid var(--border)",
-  borderRadius: 6,
-  padding: 12
 };
 
 function errorMessage(error: string) {
@@ -78,30 +70,7 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
 
       <Card>
         <h2 style={{ fontSize: "1rem", margin: "0 0 0.5rem" }}>Create Report Setting</h2>
-        <form action={createReportTemplate} style={{ display: "grid", gap: "1rem" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
-            <input aria-label="Template name" name="name" placeholder="Template name" required style={fieldStyle} />
-            <select aria-label="Template preset" name="preset" style={fieldStyle}>
-              <option value="client_summary">Client Summary Report</option>
-              <option value="detailed_evidence">Detailed Evidence Report</option>
-              <option value="custom">Custom Section Set</option>
-            </select>
-          </div>
-          <textarea
-            aria-label="Template description"
-            name="description"
-            placeholder="Short description"
-            style={{ ...fieldStyle, minHeight: 80, resize: "vertical" }}
-          />
-          <div style={{ display: "grid", gap: "0.75rem" }}>
-            {reportTemplateSections.map((section, index) => (
-              <ReportTemplateSectionCard defaultIndex={index} key={section.id} section={section} />
-            ))}
-          </div>
-          <div>
-            <Button type="submit">Create Template</Button>
-          </div>
-        </form>
+        <ReportTemplateCreateForm action={createReportTemplate} />
       </Card>
 
       {error ? (

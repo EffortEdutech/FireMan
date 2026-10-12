@@ -4,6 +4,8 @@ import {
   buildReportLayoutDefinition,
   clampColumns,
   clampRows,
+  presetSectionFields,
+  presetSectionIds,
   slugifyTemplateName
 } from "@/lib/reports/template-builder";
 
@@ -32,6 +34,13 @@ describe("report template builder", () => {
     ]);
     expect(layout.sections.some((section) => section.sectionId === "asset_register")).toBe(false);
     expect(layout.sections.some((section) => section.sectionId === "checklist_results")).toBe(false);
+  });
+
+  it("keeps preset defaults distinct for live template form switching", () => {
+    expect(presetSectionIds.client_summary).toEqual(["report_summary", "field_evidence", "sign_off"]);
+    expect(presetSectionFields.client_summary.field_evidence).toEqual(["title", "severity", "status"]);
+    expect(presetSectionFields.detailed_evidence.field_evidence).toContain("description");
+    expect(presetSectionFields.detailed_evidence.checklist_results).toContain("items");
   });
 
   it("builds a custom report from selected section order, titles, and layout options", () => {

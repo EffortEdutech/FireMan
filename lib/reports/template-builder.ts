@@ -90,6 +90,15 @@ export const presetSectionIds: Record<TemplatePreset, string[]> = {
   custom: reportTemplateSections.map((section) => section.id)
 };
 
+export const presetSectionFields: Record<TemplatePreset, Record<string, string[]>> = {
+  client_summary: {
+    field_evidence: ["title", "severity", "status"],
+    report_summary: ["clientName", "siteName", "jobNumber", "scheduledDate"]
+  },
+  detailed_evidence: Object.fromEntries(reportTemplateSections.map((section) => [section.id, section.fields ?? []])),
+  custom: Object.fromEntries(reportTemplateSections.map((section) => [section.id, section.fields ?? []]))
+};
+
 export function slugifyTemplateName(name: string) {
   return (
     name

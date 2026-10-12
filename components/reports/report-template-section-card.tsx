@@ -1,12 +1,17 @@
+import type { ChangeEvent } from "react";
 import type { ReportLayoutSection } from "@/lib/reports/report-layout";
 import type { ReportTemplateSectionDefinition } from "@/lib/reports/template-builder";
 
 type ReportTemplateSectionCardProps = {
+  checked?: boolean;
   defaultIndex: number;
+  fieldChecked?: Record<string, boolean>;
   existing?: {
     index: number;
     section: ReportLayoutSection;
   } | undefined;
+  onFieldChange?: (field: string, checked: boolean) => void;
+  onSectionChange?: (checked: boolean) => void;
   section: ReportTemplateSectionDefinition;
 };
 
@@ -38,12 +43,27 @@ function blockLabel(blockType: string) {
   return labels[blockType] ?? blockType;
 }
 
-export function ReportTemplateSectionCard({ defaultIndex, existing, section }: ReportTemplateSectionCardProps) {
-  const enabled = existing ? Boolean(existing) : true;
+export function ReportTemplateSectionCard({
+  checked,
+  defaultIndex,
+  existing,
+  fieldChecked,
+  onFieldChange,
+  onSectionChange,
+  section
+}: ReportTemplateSectionCardProps) {
+  const enabled = checked ?? (existing ? Boolean(existing) : true);
   const columns = Number(existing?.section.options?.columns ?? section.defaultColumns ?? 1);
   const photoRows = Number(existing?.section.options?.photoRows ?? section.defaultPhotoRows ?? 2);
   const photoSlots = section.supportsPhotoOptions ? Math.max(1, columns) * Math.max(1, photoRows) : null;
   const existingFields = new Set(existing?.section.binding.fields ?? section.fields ?? []);
+  const sectionInputProps =
+    checked === undefined
+      ? { defaultChecked: enabled }
+      : {
+          checked: enabled,
+          onChange: (event: ChangeEvent<HTMLInputElement>) => onSectionChange?.(event.target.checked)
+        };
 
   return (
     <div
@@ -57,7 +77,7 @@ export function ReportTemplateSectionCard({ defaultIndex, existing, section }: R
     >
       <div style={{ alignItems: "flex-start", display: "flex", gap: "0.75rem", justifyContent: "space-between" }}>
         <label style={{ alignItems: "center", display: "flex", gap: "0.5rem", fontWeight: 700 }}>
-          <input defaultChecked={enabled} name="section_id" type="checkbox" value={section.id} />
+          <input name="section_id" type="checkbox" value={section.id} {...sectionInputProps} />
           {section.defaultTitle}
         </label>
         <span
@@ -158,7 +178,12 @@ export function ReportTemplateSectionCard({ defaultIndex, existing, section }: R
             {section.fields.map((field) => (
               <label key={field} style={{ alignItems: "center", display: "flex", gap: "0.5rem" }}>
                 <input
-                  defaultChecked={existingFields.has(field)}
+                  {...(fieldChecked
+                    ? {
+                        checked: fieldChecked[field] ?? false,
+                        onChange: (event: ChangeEvent<HTMLInputElement>) => onFieldChange?.(field, event.target.checked)
+                      }
+                    : { defaultChecked: existingFields.has(field) })}
                   name={`section_field_${section.id}`}
                   type="checkbox"
                   value={field}
