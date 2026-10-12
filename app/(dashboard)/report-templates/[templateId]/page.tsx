@@ -47,6 +47,13 @@ export default async function ReportTemplateDetailPage({ params, searchParams }:
 
   const layout = resolveReportLayout(template.layout);
   const isEditable = !template.is_default && (reportCount ?? 0) === 0;
+  const sections = layout.sections.filter((section) => section.blockType !== "header");
+  const fieldCount = sections.reduce((count, section) => count + (section.binding.fields?.length ?? 0), 0);
+  const lockedReason = template.is_default
+    ? "Default template"
+    : (reportCount ?? 0) > 0
+      ? "Used by issued/generated reports"
+      : "Not used yet";
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -74,6 +81,19 @@ export default async function ReportTemplateDetailPage({ params, searchParams }:
           <div>
             <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>Status</div>
             <strong>{template.active ? "Active" : "Inactive"}</strong>
+          </div>
+          <div>
+            <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>Editability</div>
+            <strong>{isEditable ? "Editable" : "Locked"}</strong>
+            <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>{lockedReason}</div>
+          </div>
+          <div>
+            <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>Sections</div>
+            <strong>{sections.length}</strong>
+          </div>
+          <div>
+            <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>Selected fields</div>
+            <strong>{fieldCount}</strong>
           </div>
           <div>
             <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>Reports using template</div>

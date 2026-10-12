@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { EmptyState, ErrorState, SuccessState } from "@/components/ui/states";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
+import { resolveReportLayout } from "@/lib/reports/report-template";
+import type { Json } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 
 type ReportTemplatesPageProps = {
@@ -39,6 +41,17 @@ function errorMessage(error: string) {
   }
 }
 
+function templateStats(layoutValue: Json | null | undefined) {
+  const layout = resolveReportLayout(layoutValue);
+  const sections = layout.sections.filter((section) => section.blockType !== "header");
+  const fieldCount = sections.reduce((count, section) => count + (section.binding.fields?.length ?? 0), 0);
+
+  return {
+    fieldCount,
+    sectionCount: sections.length
+  };
+}
+
 export default async function ReportTemplatesPage({ searchParams }: ReportTemplatesPageProps) {
   const profile = await requireProfile();
 
@@ -50,7 +63,7 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
   const supabase = await createClient();
   const { data: templates, error } = await supabase
     .from("report_templates")
-    .select("id,name,description,slug,is_default,active,created_at,reports(id)")
+    .select("id,name,description,slug,is_default,active,created_at,layout,reports(id)")
     .order("is_default", { ascending: false })
     .order("created_at", { ascending: false });
 
@@ -83,39 +96,54 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
                 <th>Template</th>
                 <th>Description</th>
                 <th>Status</th>
+                <th>Layout</th>
                 <th>Reports</th>
                 <th>Slug</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {templates.map((template) => (
-                <tr key={template.id}>
-                  <td>
-                    <Link href={`/report-templates/${template.id}`}>
-                      <strong>{template.name}</strong>
-                    </Link>
-                    {template.is_default ? <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>Default</div> : null}
-                  </td>
-                  <td>{template.description ?? "No description"}</td>
-                  <td>{template.active ? "Active" : "Inactive"}</td>
-                  <td>{template.reports?.length ?? 0}</td>
-                  <td>{template.slug}</td>
-                  <td>
-                    {template.is_default ? (
-                      "Default"
-                    ) : (
-                      <form action={setReportTemplateActive}>
-                        <input name="template_id" type="hidden" value={template.id} />
-                        <input name="active" type="hidden" value={template.active ? "false" : "true"} />
-                        <Button type="submit" variant="secondary">
-                          {template.active ? "Deactivate" : "Activate"}
-                        </Button>
-                      </form>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {templates.map((template) => {
+                const stats = templateStats(template.layout);
+                const reportCount = template.reports?.length ?? 0;
+                const locked = template.is_default || reportCount > 0;
+
+                return (
+                  <tr key={template.id}>
+                    <td>
+                      <Link href={`/report-templates/${template.id}`}>
+                        <strong>{template.name}</strong>
+                      </Link>
+                      <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
+                        {template.is_default ? "Default" : locked ? "Locked after use" : "Editable"}
+                      </div>
+                    </td>
+                    <td>{template.description ?? "No description"}</td>
+                    <td>{template.active ? "Active" : "Inactive"}</td>
+                    <td>
+                      <strong>{stats.sectionCount}</strong> section{stats.sectionCount === 1 ? "" : "s"}
+                      <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
+                        {stats.fieldCount} field{stats.fieldCount === 1 ? "" : "s"}
+                      </div>
+                    </td>
+                    <td>{reportCount}</td>
+                    <td>{template.slug}</td>
+                    <td>
+                      {template.is_default ? (
+                        "Default"
+                      ) : (
+                        <form action={setReportTemplateActive}>
+                          <input name="template_id" type="hidden" value={template.id} />
+                          <input name="active" type="hidden" value={template.active ? "false" : "true"} />
+                          <Button type="submit" variant="secondary">
+                            {template.active ? "Deactivate" : "Activate"}
+                          </Button>
+                        </form>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </Card>
