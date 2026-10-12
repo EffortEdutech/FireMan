@@ -41,6 +41,7 @@ export async function createReportTemplate(formData: FormData) {
 
   const selectedSectionIds = new Set(formData.getAll("section_id").filter((entry): entry is string => typeof entry === "string"));
   const sectionColumns = sectionColumnSettings(formData);
+  const sectionFields = sectionFieldSettings(formData);
   const sectionPhotoRows = sectionPhotoRowSettings(formData);
   const sectionShowCaptions = sectionCaptionSettings(formData);
   const sectionOrderIds = orderedSectionIds(formData);
@@ -52,6 +53,7 @@ export async function createReportTemplate(formData: FormData) {
     name,
     preset,
     sectionColumns,
+    sectionFields,
     sectionPhotoRows,
     sectionShowCaptions,
     sectionOrderIds,
@@ -87,6 +89,17 @@ function sectionColumnSettings(formData: FormData) {
       const columns = Number(value(formData, `section_columns_${section.id}`) ?? section.defaultColumns ?? 1);
 
       return [section.id, clampColumns(columns) ?? section.defaultColumns ?? 1] as const;
+    })
+  );
+}
+
+function sectionFieldSettings(formData: FormData) {
+  return new Map(
+    reportTemplateSections.map((section) => {
+      const selected = formData.getAll(`section_field_${section.id}`).filter((entry): entry is string => typeof entry === "string");
+      const allowed = new Set(section.fields ?? []);
+
+      return [section.id, selected.filter((field) => allowed.has(field))] as const;
     })
   );
 }
@@ -167,6 +180,7 @@ export async function updateReportTemplate(formData: FormData) {
 
   const selectedSectionIds = new Set(formData.getAll("section_id").filter((entry): entry is string => typeof entry === "string"));
   const sectionColumns = sectionColumnSettings(formData);
+  const sectionFields = sectionFieldSettings(formData);
   const sectionPhotoRows = sectionPhotoRowSettings(formData);
   const sectionShowCaptions = sectionCaptionSettings(formData);
   const sectionOrderIds = orderedSectionIds(formData);
@@ -178,6 +192,7 @@ export async function updateReportTemplate(formData: FormData) {
     name,
     preset: "custom",
     sectionColumns,
+    sectionFields,
     sectionPhotoRows,
     sectionShowCaptions,
     sectionOrderIds,

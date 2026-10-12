@@ -46,6 +46,11 @@ describe("report template builder", () => {
       ]),
       sectionPhotoRows: new Map([["field_evidence", 3]]),
       sectionShowCaptions: new Map([["field_evidence", false]]),
+      sectionFields: new Map([
+        ["field_evidence", ["title", "severity"]],
+        ["report_summary", ["clientName", "jobNumber"]],
+        ["sign_off", ["ignored"]]
+      ]),
       sectionOrderIds: ["field_evidence", "report_summary", "sign_off"],
       sectionTitles: new Map([
         ["field_evidence", "Photos & Findings"],
@@ -64,10 +69,12 @@ describe("report template builder", () => {
 
     expect(layout.sections.find((section) => section.sectionId === "field_evidence")).toMatchObject({
       content: { title: "Photos & Findings" },
+      binding: { fields: ["title", "severity"] },
       options: { columns: 4, photoRows: 3, showCaptions: false }
     });
     expect(layout.sections.find((section) => section.sectionId === "report_summary")).toMatchObject({
       content: { title: "Executive Summary" },
+      binding: { fields: ["clientName", "jobNumber"] },
       options: { columns: 2 }
     });
     expect(layout.sections.find((section) => section.sectionId === "sign_off")).toMatchObject({

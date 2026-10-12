@@ -43,6 +43,7 @@ export function ReportTemplateSectionCard({ defaultIndex, existing, section }: R
   const columns = Number(existing?.section.options?.columns ?? section.defaultColumns ?? 1);
   const photoRows = Number(existing?.section.options?.photoRows ?? section.defaultPhotoRows ?? 2);
   const photoSlots = section.supportsPhotoOptions ? Math.max(1, columns) * Math.max(1, photoRows) : null;
+  const existingFields = new Set(existing?.section.binding.fields ?? section.fields ?? []);
 
   return (
     <div
@@ -144,6 +145,30 @@ export function ReportTemplateSectionCard({ defaultIndex, existing, section }: R
           Preview: {columns} column{columns === 1 ? "" : "s"} for this section where the output supports columns.
         </div>
       )}
+
+      {section.fields && section.fields.length > 0 ? (
+        <div style={{ borderTop: "1px solid var(--border)", display: "grid", gap: "0.625rem", paddingTop: "0.875rem" }}>
+          <div>
+            <div style={labelStyle}>Included Fields</div>
+            <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
+              Choose what this section contributes to the generated report.
+            </div>
+          </div>
+          <div style={{ display: "grid", gap: "0.5rem", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+            {section.fields.map((field) => (
+              <label key={field} style={{ alignItems: "center", display: "flex", gap: "0.5rem" }}>
+                <input
+                  defaultChecked={existingFields.has(field)}
+                  name={`section_field_${section.id}`}
+                  type="checkbox"
+                  value={field}
+                />
+                {section.fieldLabels?.[field] ?? field}
+              </label>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

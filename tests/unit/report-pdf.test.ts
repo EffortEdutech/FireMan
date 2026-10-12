@@ -146,6 +146,59 @@ describe("report PDF renderer", () => {
     expect(html).toContain("checklist-item checklist-item-alert");
   });
 
+  it("honors custom selected fields in HTML and PDF exports", () => {
+    const customLayout = {
+      ...standardMaintenanceReportLayout,
+      sections: standardMaintenanceReportLayout.sections.map((section) => {
+        if (section.sectionId === "report_summary") {
+          return {
+            ...section,
+            binding: {
+              ...section.binding,
+              fields: ["clientName", "jobNumber"]
+            }
+          };
+        }
+
+        if (section.sectionId === "field_evidence") {
+          return {
+            ...section,
+            binding: {
+              ...section.binding,
+              fields: ["title", "severity"]
+            }
+          };
+        }
+
+        if (section.sectionId === "checklist_results") {
+          return {
+            ...section,
+            binding: {
+              ...section.binding,
+              fields: ["assetCode", "checklistName", "status"]
+            }
+          };
+        }
+
+        return section;
+      })
+    };
+    const html = renderReportHtml(reportData, customLayout);
+    const lines = buildReportPdfTextLines(reportData, customLayout);
+
+    expect(lines).toContain("Client: Client A");
+    expect(lines).toContain("Job: UKB-JOB-20261008-D89B92");
+    expect(lines).not.toContain("Site: Client A Demo Site");
+    expect(lines).toContain("Severity: CRITICAL");
+    expect(lines).not.toContain("Description: Pressure indicator is below acceptable range.");
+    expect(lines).not.toContain("Recommendation: Replace or recharge extinguisher.");
+    expect(lines).not.toContain("- Pressure indicator is in acceptable range where applicable: FAIL");
+    expect(html).toContain("Pressure failure");
+    expect(html).not.toContain("Pressure indicator is below acceptable range.");
+    expect(html).not.toContain("Replace or recharge extinguisher.");
+    expect(html).not.toContain("Pressure indicator is in acceptable range where applicable");
+  });
+
   it("embeds JPEG photo evidence in generated PDFs", async () => {
     const jpeg = Buffer.from([
       0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x01, 0x00, 0x48, 0x00, 0x48, 0x00,

@@ -105,7 +105,7 @@ function wrapText(text: string, maxChars: number) {
 }
 
 function summaryLines(data: IssuedReportData, section: ReportLayoutSection): PdfLine[] {
-  const fields = [...(section.binding.fields ?? []), "findingCount", "checklistResultCount"];
+  const fields = sectionFields(section, ["clientName", "siteName", "jobNumber", "scheduledDate", "generatedAt", "issuedAt"]);
 
   return fields.map((field) => ({
     text: `  ${renderSummaryLabel(field)}: ${renderSummaryValue(data, field)}`
@@ -119,6 +119,14 @@ function sectionPhotoLimit(section: ReportLayoutSection) {
   const clampedRows = Number.isFinite(rows) ? Math.min(8, Math.max(1, Math.round(rows))) : 2;
 
   return clampedColumns * clampedRows;
+}
+
+function sectionFields(section: ReportLayoutSection, fallback: string[]) {
+  return section.binding.fields && section.binding.fields.length > 0 ? section.binding.fields : fallback;
+}
+
+function hasField(section: ReportLayoutSection, field: string, fallback: string[]) {
+  return sectionFields(section, fallback).includes(field);
 }
 
 function checklistCounts(items: { resultStatus: string | null }[]) {
@@ -138,17 +146,44 @@ function checklistCounts(items: { resultStatus: string | null }[]) {
   );
 }
 
-function assetLines(data: IssuedReportData): PdfLine[] {
+function assetFieldLabel(field: string) {
+  const labels: Record<string, string> = {
+    assetCode: "Asset",
+    equipmentType: "Type",
+    inspectionStatus: "Inspection status",
+    location: "Location",
+    systemName: "System"
+  };
+
+  return labels[field] ?? field;
+}
+
+function assetFieldValue(asset: IssuedReportData["assets"][number], field: string) {
+  const values: Record<string, string> = {
+    assetCode: asset.assetCode,
+    equipmentType: asset.equipmentType,
+    inspectionStatus: asset.inspectionStatus,
+    location: asset.location,
+    systemName: asset.systemName
+  };
+
+  return values[field] ?? "Not set";
+}
+
+function assetLines(data: IssuedReportData, section: ReportLayoutSection): PdfLine[] {
   if (data.assets.length === 0) {
     return [{ text: "This report has no assigned assets attached." }];
   }
 
+  const fields = sectionFields(section, ["assetCode", "equipmentType", "systemName", "location", "inspectionStatus"]);
+
   return data.assets.flatMap((asset, index) => [
     { size: 11, text: `  Asset ${index + 1}: ${asset.assetCode}` },
-    { text: `    Type: ${asset.equipmentType}` },
-    { text: `    System: ${asset.systemName}` },
-    { text: `    Location: ${asset.location}` },
-    { text: `    Inspection status: ${asset.inspectionStatus}` }
+    ...fields
+      .filter((field) => field !== "assetCode")
+      .map((field) => ({
+        text: `    ${assetFieldLabel(field)}: ${assetFieldValue(asset, field)}`
+      }))
   ]);
 }
 
@@ -163,18 +198,25 @@ function findingLines(data: IssuedReportData, section: ReportLayoutSection): Pdf
 
   const photoLimit = sectionPhotoLimit(section);
   const showCaptions = section.options?.showCaptions !== false;
+  const fieldFallback = ["title", "severity", "status", "description", "recommendation", "createdAt"];
+  const showCreatedAt = hasField(section, "createdAt", fieldFallback);
+  const showDescription = hasField(section, "description", fieldFallback);
+  const showRecommendation = hasField(section, "recommendation", fieldFallback);
+  const showSeverity = hasField(section, "severity", fieldFallback);
+  const showStatus = hasField(section, "status", fieldFallback);
+  const showTitle = hasField(section, "title", fieldFallback);
 
   return data.findings.flatMap((finding, index) => {
     const visiblePhotos = finding.photos.slice(0, photoLimit);
     const hiddenPhotoCount = finding.photos.length - visiblePhotos.length;
 
     return [
-      { size: 11, text: `  Finding ${index + 1}: ${finding.title}` },
-      { text: `    Severity: ${finding.severity}` },
-      { text: `    Status: ${finding.status}` },
-      { text: `    Captured: ${formatDate(finding.createdAt)}` },
-      ...(finding.description ? [{ text: `    Description: ${finding.description}` }] : []),
-      ...(finding.recommendation ? [{ text: `    Recommendation: ${finding.recommendation}` }] : []),
+      { size: 11, text: `  Finding ${index + 1}: ${showTitle ? finding.title : "Finding evidence"}` },
+      ...(showSeverity ? [{ text: `    Severity: ${finding.severity}` }] : []),
+      ...(showStatus ? [{ text: `    Status: ${finding.status}` }] : []),
+      ...(showCreatedAt ? [{ text: `    Captured: ${formatDate(finding.createdAt)}` }] : []),
+      ...(showDescription && finding.description ? [{ text: `    Description: ${finding.description}` }] : []),
+      ...(showRecommendation && finding.recommendation ? [{ text: `    Recommendation: ${finding.recommendation}` }] : []),
       ...(visiblePhotos.length > 0
         ? [
             { text: `    Photos: ${visiblePhotos.length}${finding.photos.length > visiblePhotos.length ? ` of ${finding.photos.length}` : ""}` },
@@ -199,7 +241,7 @@ function findingLines(data: IssuedReportData, section: ReportLayoutSection): Pdf
   });
 }
 
-function checklistLines(data: IssuedReportData): PdfLine[] {
+function checklistLines(data: IssuedReportData, section: ReportLayoutSection): PdfLine[] {
   if (data.loadErrors.inspections || data.loadErrors.templateItems || data.loadErrors.inspectionResults) {
     return [{ text: "Structured checklist results could not be loaded." }];
   }
@@ -207,6 +249,9 @@ function checklistLines(data: IssuedReportData): PdfLine[] {
   if (data.checklistGroups.length === 0) {
     return [{ text: "This report has no structured checklist results attached." }];
   }
+
+  const fields = sectionFields(section, ["assetCode", "checklistName", "status", "items"]);
+  const showItems = fields.includes("items");
 
   return data.checklistGroups.flatMap((group, index) => {
     const counts = checklistCounts(group.items);
@@ -218,9 +263,11 @@ function checklistLines(data: IssuedReportData): PdfLine[] {
       {
         text: `    Result summary: ${counts.pass} PASS | ${counts.fail} FAIL | ${counts.attention} ATTENTION | ${counts.open} OPEN | ${counts.na} NA`
       },
-      ...group.items.map((item) => ({
-        text: `    - ${item.prompt}: ${item.resultStatus ?? "Not answered"}`
-      }))
+      ...(showItems
+        ? group.items.map((item) => ({
+            text: `    - ${item.prompt}: ${item.resultStatus ?? "Not answered"}`
+          }))
+        : [])
     ];
   });
 }
@@ -238,11 +285,11 @@ function sectionLines(data: IssuedReportData, section: ReportLayoutSection): Pdf
     case "summary_grid":
       return summaryLines(data, section);
     case "asset_table":
-      return assetLines(data);
+      return assetLines(data, section);
     case "field_evidence":
       return findingLines(data, section);
     case "checklist_evidence":
-      return checklistLines(data);
+      return checklistLines(data, section);
     case "signature_box":
       return signatureLines(section);
     case "static_text":

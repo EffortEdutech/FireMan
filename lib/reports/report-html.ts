@@ -29,6 +29,14 @@ function sectionPhotoLimit(section: ReportLayoutSection) {
   return columns * clampedRows;
 }
 
+function sectionFields(section: ReportLayoutSection, fallback: string[]) {
+  return section.binding.fields && section.binding.fields.length > 0 ? section.binding.fields : fallback;
+}
+
+function hasField(section: ReportLayoutSection, field: string, fallback: string[]) {
+  return sectionFields(section, fallback).includes(field);
+}
+
 function renderSummaryValue(data: IssuedReportData, field: string) {
   switch (field) {
     case "clientName":
@@ -68,8 +76,7 @@ function renderSummaryLabel(field: string) {
 }
 
 function renderSummaryGrid(data: IssuedReportData, section: ReportLayoutSection) {
-  const fields = section.binding.fields ?? [];
-  const summaryFields = [...fields, "findingCount", "checklistResultCount"];
+  const summaryFields = sectionFields(section, ["clientName", "siteName", "jobNumber", "scheduledDate", "generatedAt", "issuedAt"]);
   const columns = sectionColumns(section, 3);
 
   return `
@@ -88,20 +95,38 @@ function renderSummaryGrid(data: IssuedReportData, section: ReportLayoutSection)
   `;
 }
 
-function renderAssetTable(data: IssuedReportData) {
+const assetFieldLabels: Record<string, string> = {
+  assetCode: "Asset",
+  equipmentType: "Type",
+  inspectionStatus: "Inspection",
+  location: "Location",
+  systemName: "System"
+};
+
+function assetFieldValue(asset: IssuedReportData["assets"][number], field: string) {
+  const values: Record<string, string> = {
+    assetCode: asset.assetCode,
+    equipmentType: asset.equipmentType,
+    inspectionStatus: asset.inspectionStatus,
+    location: asset.location,
+    systemName: asset.systemName
+  };
+
+  return values[field] ?? "Not set";
+}
+
+function renderAssetTable(data: IssuedReportData, section: ReportLayoutSection) {
   if (data.assets.length === 0) {
     return `<p class="muted">This report has no assigned assets attached.</p>`;
   }
+
+  const fields = sectionFields(section, ["assetCode", "equipmentType", "systemName", "location", "inspectionStatus"]);
 
   return `
     <table>
       <thead>
         <tr>
-          <th>Asset</th>
-          <th>Type</th>
-          <th>System</th>
-          <th>Location</th>
-          <th>Inspection</th>
+          ${fields.map((field) => `<th>${escapeHtml(assetFieldLabels[field] ?? field)}</th>`).join("")}
         </tr>
       </thead>
       <tbody>
@@ -109,11 +134,13 @@ function renderAssetTable(data: IssuedReportData) {
           .map(
             (asset) => `
               <tr>
-                <td><strong>${escapeHtml(asset.assetCode)}</strong></td>
-                <td>${escapeHtml(asset.equipmentType)}</td>
-                <td>${escapeHtml(asset.systemName)}</td>
-                <td>${escapeHtml(asset.location)}</td>
-                <td>${escapeHtml(asset.inspectionStatus)}</td>
+                ${fields
+                  .map((field) =>
+                    field === "assetCode"
+                      ? `<td><strong>${escapeHtml(asset.assetCode)}</strong></td>`
+                      : `<td>${escapeHtml(assetFieldValue(asset, field))}</td>`
+                  )
+                  .join("")}
               </tr>
             `
           )
@@ -165,6 +192,13 @@ function renderFieldEvidence(data: IssuedReportData, section: ReportLayoutSectio
   const photoColumns = sectionColumns(section, 2);
   const photoLimit = sectionPhotoLimit(section);
   const showCaptions = section.options?.showCaptions !== false;
+  const fieldFallback = ["title", "severity", "status", "description", "recommendation", "createdAt"];
+  const showCreatedAt = hasField(section, "createdAt", fieldFallback);
+  const showDescription = hasField(section, "description", fieldFallback);
+  const showRecommendation = hasField(section, "recommendation", fieldFallback);
+  const showSeverity = hasField(section, "severity", fieldFallback);
+  const showStatus = hasField(section, "status", fieldFallback);
+  const showTitle = hasField(section, "title", fieldFallback);
 
   return (
     photoWarning +
@@ -178,16 +212,16 @@ function renderFieldEvidence(data: IssuedReportData, section: ReportLayoutSectio
         <div class="evidence-item ${finding.severity === "CRITICAL" ? "evidence-alert" : ""}">
           <div class="row">
             <div>
-              <strong>${escapeHtml(finding.title)}</strong>
-              <div class="muted">${escapeHtml(formatDate(finding.createdAt))} / ${finding.photos.length} photo${finding.photos.length === 1 ? "" : "s"}</div>
+              <strong>${escapeHtml(showTitle ? finding.title : "Finding evidence")}</strong>
+              ${showCreatedAt ? `<div class="muted">${escapeHtml(formatDate(finding.createdAt))} / ${finding.photos.length} photo${finding.photos.length === 1 ? "" : "s"}</div>` : ""}
             </div>
             <div class="badge-row">
-              <span class="${badgeClass(finding.severity)}">${escapeHtml(finding.severity)}</span>
-              <span class="${badgeClass(finding.status)}">${escapeHtml(finding.status)}</span>
+              ${showSeverity ? `<span class="${badgeClass(finding.severity)}">${escapeHtml(finding.severity)}</span>` : ""}
+              ${showStatus ? `<span class="${badgeClass(finding.status)}">${escapeHtml(finding.status)}</span>` : ""}
             </div>
           </div>
-          ${finding.description ? `<p>${escapeHtml(finding.description)}</p>` : ""}
-          ${finding.recommendation ? `<p class="muted">Recommendation: ${escapeHtml(finding.recommendation)}</p>` : ""}
+          ${showDescription && finding.description ? `<p>${escapeHtml(finding.description)}</p>` : ""}
+          ${showRecommendation && finding.recommendation ? `<p class="muted">Recommendation: ${escapeHtml(finding.recommendation)}</p>` : ""}
           ${
             finding.photos.length > 0
               ? `<div class="photo-grid" style="grid-template-columns: repeat(${photoColumns}, minmax(0, 1fr));">
@@ -217,7 +251,7 @@ function renderFieldEvidence(data: IssuedReportData, section: ReportLayoutSectio
   );
 }
 
-function renderChecklistEvidence(data: IssuedReportData) {
+function renderChecklistEvidence(data: IssuedReportData, section: ReportLayoutSection) {
   if (data.loadErrors.inspections || data.loadErrors.templateItems || data.loadErrors.inspectionResults) {
     return `<p class="muted">Structured checklist results could not be loaded.</p>`;
   }
@@ -225,6 +259,9 @@ function renderChecklistEvidence(data: IssuedReportData) {
   if (data.checklistGroups.length === 0) {
     return `<p class="muted">This report has no structured checklist results attached.</p>`;
   }
+
+  const fields = sectionFields(section, ["assetCode", "checklistName", "status", "items"]);
+  const showItems = fields.includes("items");
 
   return data.checklistGroups
     .map((group) => {
@@ -248,13 +285,15 @@ function renderChecklistEvidence(data: IssuedReportData) {
             ${counts.na ? `<span class="${badgeClass("NA")}">${counts.na} NA</span>` : ""}
           </div>
           ${group.items
-            .map(
-              (item) => `
+            .map((item) =>
+              showItems
+                ? `
                 <div class="checklist-item ${item.resultStatus === "FAIL" || item.resultStatus === "ATTENTION" || !item.resultStatus ? "checklist-item-alert" : ""}">
                   <span>${escapeHtml(item.prompt)}</span>
                   <span class="${badgeClass(item.resultStatus ?? "Not answered")}">${escapeHtml(item.resultStatus ?? "Not answered")}</span>
                 </div>
               `
+                : ""
             )
             .join("")}
         </div>
@@ -288,11 +327,11 @@ function renderSectionBody(data: IssuedReportData, section: ReportLayoutSection)
     case "summary_grid":
       return renderSummaryGrid(data, section);
     case "asset_table":
-      return renderAssetTable(data);
+      return renderAssetTable(data, section);
     case "field_evidence":
       return renderFieldEvidence(data, section);
     case "checklist_evidence":
-      return renderChecklistEvidence(data);
+      return renderChecklistEvidence(data, section);
     case "signature_box":
       return renderSignatureBox(section);
     case "static_text":

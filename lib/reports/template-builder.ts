@@ -11,6 +11,7 @@ export type ReportTemplateSectionDefinition = {
   blockType: ReportBlockType;
   source?: ReportDataBinding;
   fields?: string[];
+  fieldLabels?: Record<string, string>;
 };
 
 export const reportTemplateSections = [
@@ -20,14 +21,29 @@ export const reportTemplateSections = [
     defaultTitle: "Report Summary",
     blockType: "summary_grid",
     source: "summary",
-    fields: ["clientName", "siteName", "jobNumber", "scheduledDate", "generatedAt", "issuedAt"]
+    fields: ["clientName", "siteName", "jobNumber", "scheduledDate", "generatedAt", "issuedAt"],
+    fieldLabels: {
+      clientName: "Client",
+      generatedAt: "Generated",
+      issuedAt: "Issued",
+      jobNumber: "Job",
+      scheduledDate: "Scheduled",
+      siteName: "Site"
+    }
   },
   {
     id: "asset_register",
     defaultTitle: "Serviced Assets",
     blockType: "asset_table",
     source: "assets",
-    fields: ["assetCode", "equipmentType", "systemName", "location", "inspectionStatus"]
+    fields: ["assetCode", "equipmentType", "systemName", "location", "inspectionStatus"],
+    fieldLabels: {
+      assetCode: "Asset",
+      equipmentType: "Type",
+      inspectionStatus: "Inspection",
+      location: "Location",
+      systemName: "System"
+    }
   },
   {
     id: "field_evidence",
@@ -37,14 +53,28 @@ export const reportTemplateSections = [
     blockType: "field_evidence",
     supportsPhotoOptions: true,
     source: "findings",
-    fields: ["title", "severity", "status", "description", "recommendation", "createdAt"]
+    fields: ["title", "severity", "status", "description", "recommendation", "createdAt"],
+    fieldLabels: {
+      createdAt: "Captured date",
+      description: "Description",
+      recommendation: "Recommendation",
+      severity: "Severity",
+      status: "Status",
+      title: "Finding title"
+    }
   },
   {
     id: "checklist_results",
     defaultTitle: "Checklist Results",
     blockType: "checklist_evidence",
     source: "checklistGroups",
-    fields: ["assetCode", "checklistName", "status", "items"]
+    fields: ["assetCode", "checklistName", "status", "items"],
+    fieldLabels: {
+      assetCode: "Asset",
+      checklistName: "Checklist name",
+      items: "Checklist items",
+      status: "Inspection status"
+    }
   },
   {
     id: "sign_off",
@@ -77,6 +107,7 @@ export function buildReportLayoutDefinition({
   sectionColumns,
   sectionPhotoRows,
   sectionShowCaptions,
+  sectionFields,
   sectionOrderIds,
   sectionTitles,
   selectedSectionIds
@@ -85,6 +116,7 @@ export function buildReportLayoutDefinition({
   name: string;
   preset: TemplatePreset;
   sectionColumns?: Map<string, number>;
+  sectionFields?: Map<string, string[]>;
   sectionPhotoRows?: Map<string, number>;
   sectionShowCaptions?: Map<string, boolean>;
   sectionOrderIds?: string[];
@@ -113,6 +145,7 @@ export function buildReportLayoutDefinition({
       .filter((section): section is NonNullable<ReturnType<typeof sectionById.get>> => Boolean(section))
       .filter((section) => selectedIds.has(section.id))
       .map((section) => {
+        const fields = selectedFields(section, sectionFields?.get(section.id));
         const columns = clampColumns(sectionColumns?.get(section.id) ?? section.defaultColumns);
         const photoRows = clampRows(sectionPhotoRows?.get(section.id) ?? section.defaultPhotoRows);
         const options = {
@@ -135,7 +168,7 @@ export function buildReportLayoutDefinition({
           },
           binding: {
             ...(section.source ? { source: section.source } : {}),
-            ...(section.fields ? { fields: section.fields } : {})
+            ...(fields.length > 0 ? { fields } : {})
           },
           ...(Object.keys(options).length > 0 ? { options } : {})
         };
@@ -159,6 +192,17 @@ export function buildReportLayoutDefinition({
     },
     sections
   };
+}
+
+function selectedFields(section: ReportTemplateSectionDefinition, selected: string[] | undefined) {
+  if (!section.fields || section.fields.length === 0) {
+    return [];
+  }
+
+  const allowed = new Set(section.fields);
+  const filtered = (selected ?? []).filter((field) => allowed.has(field));
+
+  return filtered.length > 0 ? filtered : section.fields;
 }
 
 export function clampColumns(value: number | null | undefined) {

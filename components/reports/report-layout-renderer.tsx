@@ -34,6 +34,14 @@ function sectionPhotoLimit(section: ReportLayoutSection) {
   return columns * clampedRows;
 }
 
+function sectionFields(section: ReportLayoutSection, fallback: string[]) {
+  return section.binding.fields && section.binding.fields.length > 0 ? section.binding.fields : fallback;
+}
+
+function hasField(section: ReportLayoutSection, field: string, fallback: string[]) {
+  return sectionFields(section, fallback).includes(field);
+}
+
 function renderSummaryValue(data: IssuedReportData, field: string) {
   switch (field) {
     case "clientName":
@@ -73,7 +81,7 @@ function renderSummaryLabel(field: string) {
 }
 
 function SummaryGrid({ data, section }: { data: IssuedReportData; section: ReportLayoutSection }) {
-  const fields = section.binding.fields ?? [];
+  const fields = sectionFields(section, ["clientName", "siteName", "jobNumber", "scheduledDate", "generatedAt", "issuedAt"]);
   const columns = sectionColumns(section, 3);
 
   return (
@@ -81,43 +89,53 @@ function SummaryGrid({ data, section }: { data: IssuedReportData; section: Repor
       {fields.map((field) => (
         <SummaryField key={field} label={renderSummaryLabel(field)} value={renderSummaryValue(data, field)} />
       ))}
-      <SummaryField label="Findings" value={`${data.summary.findingCount}`} />
-      <SummaryField
-        label="Checklist"
-        value={`${data.summary.checklistResultCount} result${data.summary.checklistResultCount === 1 ? "" : "s"}`}
-      />
-      <SummaryField label="Type" value="Maintenance" />
     </div>
   );
 }
 
-function AssetTable({ data }: { data: IssuedReportData }) {
+const assetFieldLabels: Record<string, string> = {
+  assetCode: "Asset",
+  equipmentType: "Type",
+  inspectionStatus: "Inspection",
+  location: "Location",
+  systemName: "System"
+};
+
+function assetFieldValue(asset: IssuedReportData["assets"][number], field: string) {
+  const values: Record<string, string> = {
+    assetCode: asset.assetCode,
+    equipmentType: asset.equipmentType,
+    inspectionStatus: asset.inspectionStatus,
+    location: asset.location,
+    systemName: asset.systemName
+  };
+
+  return values[field] ?? "Not set";
+}
+
+function AssetTable({ data, section }: { data: IssuedReportData; section: ReportLayoutSection }) {
   if (data.assets.length === 0) {
     return <EmptyState title="No assets included" message="This report has no assigned assets attached." />;
   }
+
+  const fields = sectionFields(section, ["assetCode", "equipmentType", "systemName", "location", "inspectionStatus"]);
 
   return (
     <div style={{ overflowX: "auto" }}>
       <table>
         <thead>
           <tr>
-            <th>Asset</th>
-            <th>Type</th>
-            <th>System</th>
-            <th>Location</th>
-            <th>Inspection</th>
+            {fields.map((field) => (
+              <th key={field}>{assetFieldLabels[field] ?? field}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {data.assets.map((asset) => (
             <tr key={asset.id}>
-              <td>
-                <strong>{asset.assetCode}</strong>
-              </td>
-              <td>{asset.equipmentType}</td>
-              <td>{asset.systemName}</td>
-              <td>{asset.location}</td>
-              <td>{asset.inspectionStatus}</td>
+              {fields.map((field) => (
+                <td key={field}>{field === "assetCode" ? <strong>{asset.assetCode}</strong> : assetFieldValue(asset, field)}</td>
+              ))}
             </tr>
           ))}
         </tbody>
@@ -137,6 +155,13 @@ function FieldEvidence({ data, section }: { data: IssuedReportData; section: Rep
 
   const photoColumns = sectionColumns(section, 2);
   const photoLimit = sectionPhotoLimit(section);
+  const fieldFallback = ["title", "severity", "status", "description", "recommendation", "createdAt"];
+  const showCreatedAt = hasField(section, "createdAt", fieldFallback);
+  const showDescription = hasField(section, "description", fieldFallback);
+  const showRecommendation = hasField(section, "recommendation", fieldFallback);
+  const showSeverity = hasField(section, "severity", fieldFallback);
+  const showStatus = hasField(section, "status", fieldFallback);
+  const showTitle = hasField(section, "title", fieldFallback);
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -160,18 +185,20 @@ function FieldEvidence({ data, section }: { data: IssuedReportData; section: Rep
         >
           <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "flex-start" }}>
             <div>
-              <strong>{finding.title}</strong>
-              <div style={{ color: "var(--muted)", marginTop: 4 }}>
-                {formatDate(finding.createdAt)} / {finding.photos.length} photo{finding.photos.length === 1 ? "" : "s"}
-              </div>
+              <strong>{showTitle ? finding.title : "Finding evidence"}</strong>
+              {showCreatedAt ? (
+                <div style={{ color: "var(--muted)", marginTop: 4 }}>
+                  {formatDate(finding.createdAt)} / {finding.photos.length} photo{finding.photos.length === 1 ? "" : "s"}
+                </div>
+              ) : null}
             </div>
             <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
-              <StatusBadge>{finding.severity}</StatusBadge>
-              <StatusBadge>{finding.status}</StatusBadge>
+              {showSeverity ? <StatusBadge>{finding.severity}</StatusBadge> : null}
+              {showStatus ? <StatusBadge>{finding.status}</StatusBadge> : null}
             </div>
           </div>
-          {finding.description ? <div>{finding.description}</div> : null}
-          {finding.recommendation ? <div style={{ color: "var(--muted)" }}>Recommendation: {finding.recommendation}</div> : null}
+          {showDescription && finding.description ? <div>{finding.description}</div> : null}
+          {showRecommendation && finding.recommendation ? <div style={{ color: "var(--muted)" }}>Recommendation: {finding.recommendation}</div> : null}
           {finding.photos.length > 0 ? (
             <>
             <div style={{ display: "grid", gap: "0.5rem", gridTemplateColumns: `repeat(${photoColumns}, minmax(0, 1fr))` }}>
@@ -221,16 +248,24 @@ function FieldEvidence({ data, section }: { data: IssuedReportData; section: Rep
   );
 }
 
-function ChecklistEvidence({ data }: { data: IssuedReportData }) {
+function ChecklistEvidence({ data, section }: { data: IssuedReportData; section: ReportLayoutSection }) {
   if (data.loadErrors.inspections || data.loadErrors.templateItems || data.loadErrors.inspectionResults) {
     return <EmptyState title="Checklist unavailable" message="Structured checklist results could not be loaded." />;
   }
+
+  const fields = sectionFields(section, ["assetCode", "checklistName", "status", "items"]);
+  const groups = fields.includes("items")
+    ? data.checklistGroups
+    : data.checklistGroups.map((group) => ({
+        ...group,
+        items: []
+      }));
 
   return (
     <ChecklistResults
       emptyTitle="No checklist results"
       emptyMessage="This report has no structured checklist results attached."
-      groups={data.checklistGroups}
+      groups={groups}
     />
   );
 }
@@ -256,11 +291,11 @@ function renderSection(data: IssuedReportData, section: ReportLayoutSection) {
     case "summary_grid":
       return <SummaryGrid data={data} section={section} />;
     case "asset_table":
-      return <AssetTable data={data} />;
+      return <AssetTable data={data} section={section} />;
     case "field_evidence":
       return <FieldEvidence data={data} section={section} />;
     case "checklist_evidence":
-      return <ChecklistEvidence data={data} />;
+      return <ChecklistEvidence data={data} section={section} />;
     case "signature_box":
       return <SignatureBox section={section} />;
     case "static_text":
