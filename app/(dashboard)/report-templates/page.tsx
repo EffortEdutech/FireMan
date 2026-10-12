@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createReportTemplate, setReportTemplateActive } from "@/app/(dashboard)/report-templates/actions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ReportTemplateSectionCard } from "@/components/reports/report-template-section-card";
 import { EmptyState, ErrorState, SuccessState } from "@/components/ui/states";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
@@ -94,65 +95,7 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
           />
           <div style={{ display: "grid", gap: "0.75rem" }}>
             {reportTemplateSections.map((section, index) => (
-              <div
-                key={section.id}
-                style={{
-                  alignItems: "center",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  display: "grid",
-                  gap: "0.75rem",
-                  gridTemplateColumns: "minmax(180px, 240px) 88px 104px 112px minmax(0, 1fr)",
-                  padding: "0.75rem"
-                }}
-              >
-                <label style={{ display: "flex", gap: "0.5rem", alignItems: "center", fontWeight: 700 }}>
-                  <input defaultChecked name="section_id" type="checkbox" value={section.id} />
-                  {section.defaultTitle}
-                </label>
-                <input
-                  aria-label={`${section.defaultTitle} section order`}
-                  defaultValue={index + 1}
-                  min={1}
-                  name={`section_order_${section.id}`}
-                  style={fieldStyle}
-                  type="number"
-                />
-                <input
-                  aria-label={`${section.defaultTitle} columns per row`}
-                  defaultValue={section.defaultColumns ?? 1}
-                  max={4}
-                  min={1}
-                  name={`section_columns_${section.id}`}
-                  style={fieldStyle}
-                  type="number"
-                />
-                {section.supportsPhotoOptions ? (
-                  <input
-                    aria-label={`${section.defaultTitle} photo rows`}
-                    defaultValue={section.defaultPhotoRows ?? 2}
-                    max={8}
-                    min={1}
-                    name={`section_photo_rows_${section.id}`}
-                    style={fieldStyle}
-                    type="number"
-                  />
-                ) : (
-                  <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>Rows n/a</div>
-                )}
-                <input
-                  aria-label={`${section.defaultTitle} section title`}
-                  defaultValue={section.defaultTitle}
-                  name={`section_title_${section.id}`}
-                  style={fieldStyle}
-                />
-                {section.supportsPhotoOptions ? (
-                  <label style={{ alignItems: "center", display: "flex", gap: "0.5rem", gridColumn: "2 / -1" }}>
-                    <input defaultChecked name={`section_show_captions_${section.id}`} type="checkbox" value="true" />
-                    Show photo captions in report output
-                  </label>
-                ) : null}
-              </div>
+              <ReportTemplateSectionCard defaultIndex={index} key={section.id} section={section} />
             ))}
           </div>
           <div>

@@ -2,7 +2,7 @@ import type { ReportBlockType, ReportDataBinding, ReportLayoutDefinition, Report
 
 export type TemplatePreset = "client_summary" | "detailed_evidence" | "custom";
 
-type SectionDefinition = {
+export type ReportTemplateSectionDefinition = {
   id: string;
   defaultColumns?: number;
   defaultPhotoRows?: number;
@@ -52,7 +52,7 @@ export const reportTemplateSections = [
     defaultTitle: "Sign-off",
     blockType: "signature_box"
   }
-] satisfies SectionDefinition[];
+] satisfies ReportTemplateSectionDefinition[];
 
 export const presetSectionIds: Record<TemplatePreset, string[]> = {
   client_summary: ["report_summary", "field_evidence", "sign_off"],
