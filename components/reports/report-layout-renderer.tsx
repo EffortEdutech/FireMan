@@ -136,33 +136,53 @@ function FieldEvidence({ data, section }: { data: IssuedReportData; section: Rep
   }
 
   const photoColumns = sectionColumns(section, 2);
+  const photoLimit = sectionPhotoLimit(section);
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
       {data.loadErrors.findingPhotos ? (
         <div style={{ color: "var(--muted)" }}>Some finding photos could not be loaded.</div>
       ) : null}
-      {data.findings.map((finding) => (
-        <div key={finding.id} style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
-            <strong>{finding.title}</strong>
-            <StatusBadge>{finding.severity}</StatusBadge>
+      {data.findings.map((finding) => {
+        const visiblePhotos = finding.photos.slice(0, photoLimit);
+        const hiddenPhotoCount = finding.photos.length - visiblePhotos.length;
+
+        return (
+        <div
+          key={finding.id}
+          style={{
+            border: `1px solid ${finding.severity === "CRITICAL" ? "#f0b4ae" : "var(--border)"}`,
+            borderRadius: 8,
+            display: "grid",
+            gap: "0.75rem",
+            padding: "1rem"
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "flex-start" }}>
+            <div>
+              <strong>{finding.title}</strong>
+              <div style={{ color: "var(--muted)", marginTop: 4 }}>
+                {formatDate(finding.createdAt)} / {finding.photos.length} photo{finding.photos.length === 1 ? "" : "s"}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+              <StatusBadge>{finding.severity}</StatusBadge>
+              <StatusBadge>{finding.status}</StatusBadge>
+            </div>
           </div>
-          <div style={{ color: "var(--muted)", marginTop: 4 }}>
-            {finding.status} / {formatDate(finding.createdAt)}
-          </div>
-          {finding.description ? <div style={{ marginTop: 8 }}>{finding.description}</div> : null}
-          {finding.recommendation ? <div style={{ color: "var(--muted)", marginTop: 8 }}>Recommendation: {finding.recommendation}</div> : null}
+          {finding.description ? <div>{finding.description}</div> : null}
+          {finding.recommendation ? <div style={{ color: "var(--muted)" }}>Recommendation: {finding.recommendation}</div> : null}
           {finding.photos.length > 0 ? (
-            <div style={{ display: "grid", gap: "0.5rem", gridTemplateColumns: `repeat(${photoColumns}, minmax(0, 1fr))`, marginTop: 12 }}>
-              {finding.photos.slice(0, sectionPhotoLimit(section)).map((photo, index) => (
-                <figure key={photo.id} style={{ margin: 0 }}>
+            <>
+            <div style={{ display: "grid", gap: "0.5rem", gridTemplateColumns: `repeat(${photoColumns}, minmax(0, 1fr))` }}>
+              {visiblePhotos.map((photo, index) => (
+                <figure key={photo.id} style={{ border: "1px solid var(--border)", borderRadius: 6, margin: 0, overflow: "hidden" }}>
                   {photo.signedUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       alt={photo.caption ?? `${finding.title} photo ${index + 1}`}
                       src={photo.signedUrl}
-                      style={{ aspectRatio: "4 / 3", borderRadius: 6, objectFit: "cover", width: "100%" }}
+                      style={{ aspectRatio: "4 / 3", display: "block", objectFit: "cover", width: "100%" }}
                     />
                   ) : (
                     <div
@@ -170,8 +190,6 @@ function FieldEvidence({ data, section }: { data: IssuedReportData; section: Rep
                         alignItems: "center",
                         aspectRatio: "4 / 3",
                         background: "var(--surface)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 6,
                         color: "var(--muted)",
                         display: "flex",
                         justifyContent: "center",
@@ -182,16 +200,23 @@ function FieldEvidence({ data, section }: { data: IssuedReportData; section: Rep
                     </div>
                   )}
                   {section.options?.showCaptions !== false ? (
-                    <figcaption style={{ color: "var(--muted)", fontSize: "0.85rem", marginTop: 4 }}>
+                    <figcaption style={{ color: "var(--muted)", fontSize: "0.85rem", padding: "0.5rem" }}>
                       {photo.caption ?? `Photo ${index + 1}`}
                     </figcaption>
                   ) : null}
                 </figure>
               ))}
             </div>
+            {hiddenPhotoCount > 0 ? (
+              <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
+                {hiddenPhotoCount} additional photo{hiddenPhotoCount === 1 ? "" : "s"} hidden by this template layout.
+              </div>
+            ) : null}
+            </>
           ) : null}
         </div>
-      ))}
+      );
+      })}
     </div>
   );
 }
