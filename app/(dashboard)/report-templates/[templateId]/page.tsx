@@ -120,7 +120,7 @@ export default async function ReportTemplateDetailPage({ params, searchParams }:
           <form action={duplicateReportTemplate}>
             <input name="template_id" type="hidden" value={template.id} />
             <Button type="submit" variant="secondary">
-              Duplicate Template
+              Duplicate and Edit
             </Button>
           </form>
           {!template.is_default ? (

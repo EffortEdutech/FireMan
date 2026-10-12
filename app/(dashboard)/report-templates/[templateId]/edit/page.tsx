@@ -74,7 +74,7 @@ export default async function EditReportTemplatePage({ params, searchParams }: E
       {pageParams?.error ? <ErrorState title="Template not updated" message={errorMessage(pageParams.error)} /> : null}
       {pageParams?.duplicated ? (
         <Card role="status" style={{ borderColor: "#9cc9a8", color: "#22543d" }}>
-          Template duplicated. Adjust this copy for future reports.
+          Template duplicated. This is a new editable version; adjust it for future reports without changing reports already issued.
         </Card>
       ) : null}
 

@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createReportTemplate, setReportTemplateActive } from "@/app/(dashboard)/report-templates/actions";
+import {
+  createReportTemplate,
+  duplicateReportTemplate,
+  setReportTemplateActive
+} from "@/app/(dashboard)/report-templates/actions";
 import { ReportTemplateCreateForm } from "@/components/reports/report-template-create-form";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -99,7 +103,7 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
                 <th>Layout</th>
                 <th>Reports</th>
                 <th>Slug</th>
-                <th>Action</th>
+                <th>Workflow</th>
               </tr>
             </thead>
             <tbody>
@@ -129,9 +133,24 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
                     <td>{reportCount}</td>
                     <td>{template.slug}</td>
                     <td>
-                      {template.is_default ? (
-                        "Default"
-                      ) : (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
+                        <Link href={`/report-templates/${template.id}`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+                          Inspect
+                        </Link>
+                        {!locked ? (
+                          <Link href={`/report-templates/${template.id}/edit`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+                            Edit
+                          </Link>
+                        ) : null}
+                        {locked ? (
+                          <form action={duplicateReportTemplate}>
+                            <input name="template_id" type="hidden" value={template.id} />
+                            <Button type="submit" variant="secondary">
+                              Duplicate and Edit
+                            </Button>
+                          </form>
+                        ) : null}
+                        {template.is_default ? null : (
                         <form action={setReportTemplateActive}>
                           <input name="template_id" type="hidden" value={template.id} />
                           <input name="active" type="hidden" value={template.active ? "false" : "true"} />
@@ -139,7 +158,8 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
                             {template.active ? "Deactivate" : "Activate"}
                           </Button>
                         </form>
-                      )}
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
