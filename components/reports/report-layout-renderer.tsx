@@ -16,6 +16,16 @@ function sectionTitle(index: number, section: ReportLayoutSection) {
   return `${index}. ${section.content.title ?? section.sectionId}`;
 }
 
+function sectionColumns(section: ReportLayoutSection, fallback: number) {
+  const columns = Number(section.options?.columns ?? fallback);
+
+  if (!Number.isFinite(columns)) {
+    return fallback;
+  }
+
+  return Math.min(4, Math.max(1, Math.round(columns)));
+}
+
 function renderSummaryValue(data: IssuedReportData, field: string) {
   switch (field) {
     case "clientName":
@@ -56,9 +66,10 @@ function renderSummaryLabel(field: string) {
 
 function SummaryGrid({ data, section }: { data: IssuedReportData; section: ReportLayoutSection }) {
   const fields = section.binding.fields ?? [];
+  const columns = sectionColumns(section, 3);
 
   return (
-    <div className="print-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem" }}>
+    <div className="print-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap: "1rem" }}>
       {fields.map((field) => (
         <SummaryField key={field} label={renderSummaryLabel(field)} value={renderSummaryValue(data, field)} />
       ))}
@@ -107,7 +118,7 @@ function AssetTable({ data }: { data: IssuedReportData }) {
   );
 }
 
-function FieldEvidence({ data }: { data: IssuedReportData }) {
+function FieldEvidence({ data, section }: { data: IssuedReportData; section: ReportLayoutSection }) {
   if (data.loadErrors.findings) {
     return <EmptyState title="Evidence unavailable" message="Captured findings could not be loaded." />;
   }
@@ -115,6 +126,8 @@ function FieldEvidence({ data }: { data: IssuedReportData }) {
   if (data.findings.length === 0) {
     return <EmptyState title="No findings included" message="This report was generated without field findings." />;
   }
+
+  const photoColumns = sectionColumns(section, 2);
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -133,7 +146,7 @@ function FieldEvidence({ data }: { data: IssuedReportData }) {
           {finding.description ? <div style={{ marginTop: 8 }}>{finding.description}</div> : null}
           {finding.recommendation ? <div style={{ color: "var(--muted)", marginTop: 8 }}>Recommendation: {finding.recommendation}</div> : null}
           {finding.photos.length > 0 ? (
-            <div style={{ display: "grid", gap: "0.5rem", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", marginTop: 12 }}>
+            <div style={{ display: "grid", gap: "0.5rem", gridTemplateColumns: `repeat(${photoColumns}, minmax(0, 1fr))`, marginTop: 12 }}>
               {finding.photos.map((photo, index) => (
                 <figure key={photo.id} style={{ margin: 0 }}>
                   {photo.signedUrl ? (
@@ -188,8 +201,10 @@ function ChecklistEvidence({ data }: { data: IssuedReportData }) {
 }
 
 function SignatureBox({ section }: { section: ReportLayoutSection }) {
+  const columns = sectionColumns(section, section.options?.layout === "single_column" ? 1 : 2);
+
   return (
-    <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+    <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
       {["Prepared by", "Client acknowledgement"].map((label) => (
         <div key={label} style={{ border: "1px solid var(--border)", borderRadius: 6, minHeight: 120, padding: "1rem" }}>
           <strong>{label}</strong>
@@ -208,7 +223,7 @@ function renderSection(data: IssuedReportData, section: ReportLayoutSection) {
     case "asset_table":
       return <AssetTable data={data} />;
     case "field_evidence":
-      return <FieldEvidence data={data} />;
+      return <FieldEvidence data={data} section={section} />;
     case "checklist_evidence":
       return <ChecklistEvidence data={data} />;
     case "signature_box":

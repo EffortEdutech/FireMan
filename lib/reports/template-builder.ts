@@ -4,6 +4,7 @@ export type TemplatePreset = "client_summary" | "detailed_evidence" | "custom";
 
 type SectionDefinition = {
   id: string;
+  defaultColumns?: number;
   defaultTitle: string;
   blockType: ReportBlockType;
   source?: ReportDataBinding;
@@ -13,6 +14,7 @@ type SectionDefinition = {
 export const reportTemplateSections = [
   {
     id: "report_summary",
+    defaultColumns: 3,
     defaultTitle: "Report Summary",
     blockType: "summary_grid",
     source: "summary",
@@ -27,6 +29,7 @@ export const reportTemplateSections = [
   },
   {
     id: "field_evidence",
+    defaultColumns: 2,
     defaultTitle: "Field Evidence",
     blockType: "field_evidence",
     source: "findings",
@@ -41,6 +44,7 @@ export const reportTemplateSections = [
   },
   {
     id: "sign_off",
+    defaultColumns: 2,
     defaultTitle: "Sign-off",
     blockType: "signature_box"
   }
@@ -66,6 +70,7 @@ export function buildReportLayoutDefinition({
   description,
   name,
   preset,
+  sectionColumns,
   sectionOrderIds,
   sectionTitles,
   selectedSectionIds
@@ -73,6 +78,7 @@ export function buildReportLayoutDefinition({
   description: string | null;
   name: string;
   preset: TemplatePreset;
+  sectionColumns?: Map<string, number>;
   sectionOrderIds?: string[];
   sectionTitles: Map<string, string>;
   selectedSectionIds: Set<string>;
@@ -98,20 +104,27 @@ export function buildReportLayoutDefinition({
       .map((sectionId) => sectionById.get(sectionId))
       .filter((section): section is NonNullable<ReturnType<typeof sectionById.get>> => Boolean(section))
       .filter((section) => selectedIds.has(section.id))
-      .map((section) => ({
-        sectionId: section.id,
-        blockType: section.blockType,
-        content: {
-          title: sectionTitles.get(section.id) ?? section.defaultTitle,
-          ...(section.id === "sign_off" ? { description: "Prepared for client record and audit filing." } : {})
-        },
-        binding: {
-          ...(section.source ? { source: section.source } : {}),
-          ...(section.fields ? { fields: section.fields } : {})
-        },
-        ...(section.id === "report_summary" ? { options: { columns: 3 } } : {}),
-        ...(section.id === "sign_off" ? { options: { layout: "two_column" } } : {})
-      }))
+      .map((section) => {
+        const columns = clampColumns(sectionColumns?.get(section.id) ?? section.defaultColumns);
+        const options = {
+          ...(columns ? { columns } : {}),
+          ...(section.id === "sign_off" ? { layout: columns === 1 ? "single_column" : "two_column" } : {})
+        };
+
+        return {
+          sectionId: section.id,
+          blockType: section.blockType,
+          content: {
+            title: sectionTitles.get(section.id) ?? section.defaultTitle,
+            ...(section.id === "sign_off" ? { description: "Prepared for client record and audit filing." } : {})
+          },
+          binding: {
+            ...(section.source ? { source: section.source } : {}),
+            ...(section.fields ? { fields: section.fields } : {})
+          },
+          ...(Object.keys(options).length > 0 ? { options } : {})
+        };
+      })
   ];
 
   return {
@@ -131,4 +144,12 @@ export function buildReportLayoutDefinition({
     },
     sections
   };
+}
+
+export function clampColumns(value: number | null | undefined) {
+  if (!value || !Number.isFinite(value)) {
+    return null;
+  }
+
+  return Math.min(4, Math.max(1, Math.round(value)));
 }

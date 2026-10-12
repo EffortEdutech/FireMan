@@ -11,6 +11,16 @@ function escapeHtml(value: string | null | undefined) {
     .replaceAll("'", "&#39;");
 }
 
+function sectionColumns(section: ReportLayoutSection, fallback: number) {
+  const columns = Number(section.options?.columns ?? fallback);
+
+  if (!Number.isFinite(columns)) {
+    return fallback;
+  }
+
+  return Math.min(4, Math.max(1, Math.round(columns)));
+}
+
 function renderSummaryValue(data: IssuedReportData, field: string) {
   switch (field) {
     case "clientName":
@@ -52,9 +62,10 @@ function renderSummaryLabel(field: string) {
 function renderSummaryGrid(data: IssuedReportData, section: ReportLayoutSection) {
   const fields = section.binding.fields ?? [];
   const summaryFields = [...fields, "findingCount", "checklistResultCount"];
+  const columns = sectionColumns(section, 3);
 
   return `
-    <div class="summary-grid">
+    <div class="summary-grid" style="grid-template-columns: repeat(${columns}, minmax(0, 1fr));">
       ${summaryFields
         .map(
           (field) => `
@@ -104,7 +115,7 @@ function renderAssetTable(data: IssuedReportData) {
   `;
 }
 
-function renderFieldEvidence(data: IssuedReportData) {
+function renderFieldEvidence(data: IssuedReportData, section: ReportLayoutSection) {
   if (data.loadErrors.findings) {
     return `<p class="muted">Captured findings could not be loaded.</p>`;
   }
@@ -114,6 +125,7 @@ function renderFieldEvidence(data: IssuedReportData) {
   }
 
   const photoWarning = data.loadErrors.findingPhotos ? `<p class="muted">Some finding photos could not be loaded.</p>` : "";
+  const photoColumns = sectionColumns(section, 2);
 
   return (
     photoWarning +
@@ -130,7 +142,7 @@ function renderFieldEvidence(data: IssuedReportData) {
           ${finding.recommendation ? `<p class="muted">Recommendation: ${escapeHtml(finding.recommendation)}</p>` : ""}
           ${
             finding.photos.length > 0
-              ? `<div class="photo-grid">
+              ? `<div class="photo-grid" style="grid-template-columns: repeat(${photoColumns}, minmax(0, 1fr));">
                   ${finding.photos
                     .map(
                       (photo, index) => `
@@ -192,8 +204,10 @@ function renderChecklistEvidence(data: IssuedReportData) {
 }
 
 function renderSignatureBox(section: ReportLayoutSection) {
+  const columns = sectionColumns(section, section.options?.layout === "single_column" ? 1 : 2);
+
   return `
-    <div class="signature-grid">
+    <div class="signature-grid" style="grid-template-columns: repeat(${columns}, minmax(0, 1fr));">
       ${["Prepared by", "Client acknowledgement"]
         .map(
           (label) => `
@@ -216,7 +230,7 @@ function renderSectionBody(data: IssuedReportData, section: ReportLayoutSection)
     case "asset_table":
       return renderAssetTable(data);
     case "field_evidence":
-      return renderFieldEvidence(data);
+      return renderFieldEvidence(data, section);
     case "checklist_evidence":
       return renderChecklistEvidence(data);
     case "signature_box":

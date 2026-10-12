@@ -64,9 +64,9 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       <div>
-        <h1 style={{ fontSize: "1.75rem", margin: 0 }}>Report Templates</h1>
+        <h1 style={{ fontSize: "1.75rem", margin: 0 }}>Report Settings</h1>
         <p style={{ color: "var(--muted)", margin: "0.5rem 0 0" }}>
-          Create controlled report layouts that can be selected when generating maintenance reports.
+          Create controlled report layouts, then choose the layout when generating each maintenance report.
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
       {params?.error ? <ErrorState title="Template not saved" message={errorMessage(params.error)} /> : null}
 
       <Card>
-        <h2 style={{ fontSize: "1rem", margin: "0 0 0.5rem" }}>Create Template</h2>
+        <h2 style={{ fontSize: "1rem", margin: "0 0 0.5rem" }}>Create Report Setting</h2>
         <form action={createReportTemplate} style={{ display: "grid", gap: "1rem" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
             <input aria-label="Template name" name="name" placeholder="Template name" required style={fieldStyle} />
@@ -93,7 +93,7 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
             style={{ ...fieldStyle, minHeight: 80, resize: "vertical" }}
           />
           <div style={{ display: "grid", gap: "0.75rem" }}>
-            {reportTemplateSections.map((section) => (
+            {reportTemplateSections.map((section, index) => (
               <div
                 key={section.id}
                 style={{
@@ -102,7 +102,7 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
                   borderRadius: 6,
                   display: "grid",
                   gap: "0.75rem",
-                  gridTemplateColumns: "minmax(180px, 240px) minmax(0, 1fr)",
+                  gridTemplateColumns: "minmax(180px, 240px) 88px 104px minmax(0, 1fr)",
                   padding: "0.75rem"
                 }}
               >
@@ -110,6 +110,23 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
                   <input defaultChecked name="section_id" type="checkbox" value={section.id} />
                   {section.defaultTitle}
                 </label>
+                <input
+                  aria-label={`${section.defaultTitle} section order`}
+                  defaultValue={index + 1}
+                  min={1}
+                  name={`section_order_${section.id}`}
+                  style={fieldStyle}
+                  type="number"
+                />
+                <input
+                  aria-label={`${section.defaultTitle} columns per row`}
+                  defaultValue={section.defaultColumns ?? 1}
+                  max={4}
+                  min={1}
+                  name={`section_columns_${section.id}`}
+                  style={fieldStyle}
+                  type="number"
+                />
                 <input
                   aria-label={`${section.defaultTitle} section title`}
                   defaultValue={section.defaultTitle}

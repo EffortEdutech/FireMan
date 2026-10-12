@@ -114,7 +114,7 @@ export default async function EditReportTemplatePage({ params, searchParams }: E
                     borderRadius: 6,
                     display: "grid",
                     gap: "0.75rem",
-                    gridTemplateColumns: "minmax(170px, 220px) 96px minmax(0, 1fr)",
+                    gridTemplateColumns: "minmax(170px, 220px) 96px 112px minmax(0, 1fr)",
                     padding: "0.75rem"
                   }}
                 >
@@ -127,6 +127,15 @@ export default async function EditReportTemplatePage({ params, searchParams }: E
                     defaultValue={(existing?.index ?? defaultIndex) + 1}
                     min={1}
                     name={`section_order_${section.id}`}
+                    style={fieldStyle}
+                    type="number"
+                  />
+                  <input
+                    aria-label={`${section.defaultTitle} columns per row`}
+                    defaultValue={Number(existing?.section.options?.columns ?? section.defaultColumns ?? 1)}
+                    max={4}
+                    min={1}
+                    name={`section_columns_${section.id}`}
                     style={fieldStyle}
                     type="number"
                   />

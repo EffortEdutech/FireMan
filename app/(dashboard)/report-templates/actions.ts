@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
-import { buildReportLayoutDefinition, reportTemplateSections, slugifyTemplateName, type TemplatePreset } from "@/lib/reports/template-builder";
+import {
+  buildReportLayoutDefinition,
+  clampColumns,
+  reportTemplateSections,
+  slugifyTemplateName,
+  type TemplatePreset
+} from "@/lib/reports/template-builder";
 import { createClient } from "@/lib/supabase/server";
 
 function value(formData: FormData, name: string) {
@@ -33,6 +39,7 @@ export async function createReportTemplate(formData: FormData) {
   }
 
   const selectedSectionIds = new Set(formData.getAll("section_id").filter((entry): entry is string => typeof entry === "string"));
+  const sectionColumns = sectionColumnSettings(formData);
   const sectionOrderIds = orderedSectionIds(formData);
   const sectionTitles = new Map(
     reportTemplateSections.map((section) => [section.id, value(formData, `section_title_${section.id}`) ?? section.defaultTitle])
@@ -41,6 +48,7 @@ export async function createReportTemplate(formData: FormData) {
     description,
     name,
     preset,
+    sectionColumns,
     sectionOrderIds,
     sectionTitles,
     selectedSectionIds
@@ -66,6 +74,16 @@ export async function createReportTemplate(formData: FormData) {
   revalidatePath("/report-templates");
   revalidatePath("/reports");
   redirect("/report-templates?created=1");
+}
+
+function sectionColumnSettings(formData: FormData) {
+  return new Map(
+    reportTemplateSections.map((section) => {
+      const columns = Number(value(formData, `section_columns_${section.id}`) ?? section.defaultColumns ?? 1);
+
+      return [section.id, clampColumns(columns) ?? section.defaultColumns ?? 1] as const;
+    })
+  );
 }
 
 function orderedSectionIds(formData: FormData) {
@@ -124,6 +142,7 @@ export async function updateReportTemplate(formData: FormData) {
   }
 
   const selectedSectionIds = new Set(formData.getAll("section_id").filter((entry): entry is string => typeof entry === "string"));
+  const sectionColumns = sectionColumnSettings(formData);
   const sectionOrderIds = orderedSectionIds(formData);
   const sectionTitles = new Map(
     reportTemplateSections.map((section) => [section.id, value(formData, `section_title_${section.id}`) ?? section.defaultTitle])
@@ -132,6 +151,7 @@ export async function updateReportTemplate(formData: FormData) {
     description,
     name,
     preset: "custom",
+    sectionColumns,
     sectionOrderIds,
     sectionTitles,
     selectedSectionIds

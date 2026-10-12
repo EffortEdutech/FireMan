@@ -22,7 +22,7 @@ const navItems = [
   { href: "/equipment", label: "Equipment" },
   { href: "/maintenance", label: "Maintenance" },
   { href: "/reports", label: "Reports" },
-  { href: "/report-templates", label: "Report Templates" }
+  { href: "/report-templates", label: "Report Settings" }
 ];
 
 export function ManagementShell({ children, currentUser, title, description }: ManagementShellProps) {

@@ -187,7 +187,6 @@ export type Database = {
           active: boolean
           address: string | null
           created_at: string
-          default_report_template_id: string | null
           email: string | null
           id: string
           industry: string | null
@@ -201,7 +200,6 @@ export type Database = {
           active?: boolean
           address?: string | null
           created_at?: string
-          default_report_template_id?: string | null
           email?: string | null
           id?: string
           industry?: string | null
@@ -215,7 +213,6 @@ export type Database = {
           active?: boolean
           address?: string | null
           created_at?: string
-          default_report_template_id?: string | null
           email?: string | null
           id?: string
           industry?: string | null
@@ -226,13 +223,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "clients_default_report_template_id_fkey"
-            columns: ["default_report_template_id"]
-            isOneToOne: false
-            referencedRelation: "report_templates"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "clients_organisation_id_fkey"
             columns: ["organisation_id"]

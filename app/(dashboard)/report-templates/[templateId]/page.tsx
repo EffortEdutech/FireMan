@@ -121,15 +121,25 @@ export default async function ReportTemplateDetailPage({ params, searchParams }:
       <Card>
         <h2 style={{ fontSize: "1rem", margin: "0 0 1rem" }}>Template Preview</h2>
         <div style={{ display: "grid", gap: "0.75rem" }}>
-          {visibleSections.map((section, index) => (
-            <div key={section.sectionId} style={{ border: "1px solid var(--border)", borderRadius: 6, padding: "0.75rem" }}>
-              <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
-                {index + 1}. {blockLabel[section.blockType] ?? section.blockType}
+          {visibleSections.map((section, index) => {
+            const columns = Number(section.options?.columns);
+
+            return (
+              <div key={section.sectionId} style={{ border: "1px solid var(--border)", borderRadius: 6, padding: "0.75rem" }}>
+                <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
+                  {index + 1}. {blockLabel[section.blockType] ?? section.blockType}
+                </div>
+                <strong>{section.content.title ?? section.sectionId}</strong>
+                {section.content.description ? <div style={{ color: "var(--muted)", marginTop: 4 }}>{section.content.description}</div> : null}
+                {section.options ? (
+                  <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: 6 }}>
+                    {Number.isFinite(columns) ? `${columns} column${columns === 1 ? "" : "s"}` : null}
+                    {section.options.layout ? `${Number.isFinite(columns) ? " / " : ""}${section.options.layout}` : null}
+                  </div>
+                ) : null}
               </div>
-              <strong>{section.content.title ?? section.sectionId}</strong>
-              {section.content.description ? <div style={{ color: "var(--muted)", marginTop: 4 }}>{section.content.description}</div> : null}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
     </div>

@@ -60,7 +60,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const [{ data: jobs }, { data: reports, error: reportsError }, { data: templates, error: templatesError }] = await Promise.all([
     supabase
       .from("maintenance_jobs")
-      .select("id,job_number,scheduled_date,clients(name,default_report_template_id),sites(name)")
+      .select("id,job_number,scheduled_date,clients(name),sites(name)")
       .eq("status", "UNDER_REVIEW")
       .order("scheduled_date", { ascending: false }),
     supabase
@@ -128,26 +128,8 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const reportedJobIds = new Set(reports?.filter((report) => report.status !== "VOID").map((report) => report.job_id) ?? []);
   const reportableJobs = jobs?.filter((job) => !reportedJobIds.has(job.id)) ?? [];
   const hasJobs = reportableJobs.length > 0;
-  const preferredTemplateIds = new Set(reportableJobs.map((job) => job.clients?.default_report_template_id).filter(Boolean));
-  const sortedTemplates = [...(templates ?? [])].sort((a, b) => {
-    const aPreferred = preferredTemplateIds.has(a.id);
-    const bPreferred = preferredTemplateIds.has(b.id);
-
-    if (aPreferred !== bPreferred) {
-      return aPreferred ? -1 : 1;
-    }
-
-    if (a.is_default !== b.is_default) {
-      return a.is_default ? -1 : 1;
-    }
-
-    return a.name.localeCompare(b.name);
-  });
-  const defaultTemplateId =
-    reportableJobs.find((job) => job.clients?.default_report_template_id)?.clients?.default_report_template_id ??
-    sortedTemplates.find((template) => template.is_default)?.id ??
-    sortedTemplates[0]?.id ??
-    "";
+  const sortedTemplates = templates ?? [];
+  const defaultTemplateId = sortedTemplates.find((template) => template.is_default)?.id ?? sortedTemplates[0]?.id ?? "";
   const selectedStatus = reportStatusFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
   const reportCounts = new Map<string, number>();
   const filteredReports =
@@ -234,7 +216,6 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
               {sortedTemplates.map((template) => (
                 <option key={template.id} value={template.id}>
                   {template.name}
-                  {preferredTemplateIds.has(template.id) ? " (client preferred)" : ""}
                   {template.is_default ? " (default)" : ""}
                 </option>
               ))}
