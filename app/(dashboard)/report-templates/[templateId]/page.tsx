@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { duplicateReportTemplate, setReportTemplateActive } from "@/app/(dashboard)/report-templates/actions";
+import { ReportTemplatePreviewPanel } from "@/components/reports/report-template-preview-panel";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireProfile } from "@/lib/auth/current-user";
@@ -16,16 +17,6 @@ type ReportTemplateDetailPageProps = {
     error?: string;
     updated?: string;
   }>;
-};
-
-const blockLabel: Record<string, string> = {
-  asset_table: "Asset table",
-  checklist_evidence: "Checklist evidence",
-  field_evidence: "Field evidence",
-  header: "Header",
-  signature_box: "Signature box",
-  static_text: "Static text",
-  summary_grid: "Summary grid"
 };
 
 export default async function ReportTemplateDetailPage({ params, searchParams }: ReportTemplateDetailPageProps) {
@@ -55,7 +46,6 @@ export default async function ReportTemplateDetailPage({ params, searchParams }:
   }
 
   const layout = resolveReportLayout(template.layout);
-  const visibleSections = layout.sections.filter((section) => section.blockType !== "header");
   const isEditable = !template.is_default && (reportCount ?? 0) === 0;
 
   return (
@@ -119,30 +109,7 @@ export default async function ReportTemplateDetailPage({ params, searchParams }:
       </Card>
 
       <Card>
-        <h2 style={{ fontSize: "1rem", margin: "0 0 1rem" }}>Template Preview</h2>
-        <div style={{ display: "grid", gap: "0.75rem" }}>
-          {visibleSections.map((section, index) => {
-            const columns = Number(section.options?.columns);
-
-            return (
-              <div key={section.sectionId} style={{ border: "1px solid var(--border)", borderRadius: 6, padding: "0.75rem" }}>
-                <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
-                  {index + 1}. {blockLabel[section.blockType] ?? section.blockType}
-                </div>
-                <strong>{section.content.title ?? section.sectionId}</strong>
-                {section.content.description ? <div style={{ color: "var(--muted)", marginTop: 4 }}>{section.content.description}</div> : null}
-                {section.options ? (
-                  <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: 6 }}>
-                    {Number.isFinite(columns) ? `${columns} column${columns === 1 ? "" : "s"}` : null}
-                    {section.options.layout ? `${Number.isFinite(columns) ? " / " : ""}${section.options.layout}` : null}
-                    {section.options.photoRows ? `${Number.isFinite(columns) || section.options.layout ? " / " : ""}${section.options.photoRows} photo row${section.options.photoRows === 1 ? "" : "s"}` : null}
-                    {section.options.showCaptions === false ? " / captions hidden" : null}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
+        <ReportTemplatePreviewPanel layout={layout} />
       </Card>
     </div>
   );
