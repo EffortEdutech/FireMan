@@ -50,6 +50,16 @@ function countChecklistAttention(
   );
 }
 
+function countTemplateSections(layout: { sections: { blockType: string; binding: { fields?: string[] } }[] }) {
+  const sections = layout.sections.filter((section) => section.blockType !== "header");
+  const fieldCount = sections.reduce((count, section) => count + (section.binding.fields?.length ?? 0), 0);
+
+  return {
+    fieldCount,
+    sectionCount: sections.length
+  };
+}
+
 export default async function ReportDetailPage({ params, searchParams }: ReportDetailPageProps) {
   const profile = await requireProfile();
 
@@ -71,6 +81,7 @@ export default async function ReportDetailPage({ params, searchParams }: ReportD
   const hasLoadWarnings = Object.values(reportData.loadErrors).some(Boolean);
   const canReview = reportData.report.status === "GENERATED";
   const canIssue = reportData.report.status === "REVIEWED";
+  const templateStats = countTemplateSections(reportData.layout);
 
   return (
     <div className="print-sheet" style={{ display: "grid", gap: "1rem" }}>
@@ -121,6 +132,38 @@ export default async function ReportDetailPage({ params, searchParams }: ReportD
               <strong>{value}</strong>
             </div>
           ))}
+        </div>
+
+        <div style={{ borderTop: "1px solid var(--border)", display: "grid", gap: "0.75rem", marginTop: "1rem", paddingTop: "1rem" }}>
+          <div style={{ alignItems: "flex-start", display: "flex", gap: "1rem", justifyContent: "space-between" }}>
+            <div>
+              <h3 style={{ fontSize: "0.95rem", margin: 0 }}>Report template used</h3>
+              <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: 4 }}>
+                This report keeps the template version selected when the shell was generated.
+              </div>
+            </div>
+            {reportData.report.templateId ? (
+              <Link
+                href={`/report-templates/${reportData.report.templateId}`}
+                style={{ color: "var(--accent)", fontSize: "0.875rem", fontWeight: 700, whiteSpace: "nowrap" }}
+              >
+                Open Setting
+              </Link>
+            ) : null}
+          </div>
+          <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
+            {[
+              ["Template", reportData.report.templateName],
+              ["Version Behavior", "Frozen on report"],
+              ["Sections", `${templateStats.sectionCount}`],
+              ["Selected Fields", `${templateStats.fieldCount}`]
+            ].map(([label, value]) => (
+              <div key={label} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "0.75rem" }}>
+                <div style={{ color: "var(--muted)", fontSize: "0.75rem", fontWeight: 700 }}>{label}</div>
+                <strong>{value}</strong>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div style={{ display: "grid", gap: "0.5rem", marginTop: "1rem" }}>
