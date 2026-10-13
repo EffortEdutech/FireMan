@@ -8,6 +8,8 @@ import {
   presetSectionIds,
   slugifyTemplateName
 } from "@/lib/reports/template-builder";
+import { resolveReportLayout } from "@/lib/reports/report-template";
+import { standardMaintenanceReportLayout } from "@/lib/reports/standard-maintenance-report-layout";
 
 describe("report template builder", () => {
   it("creates stable layout ids from template names", () => {
@@ -99,5 +101,27 @@ describe("report template builder", () => {
     expect(clampRows(99)).toBe(8);
     expect(clampRows(-2)).toBe(1);
     expect(clampRows(Number.NaN)).toBeNull();
+  });
+
+  it("resolves a persisted JSON layout without replacing its version or section choices", () => {
+    const persistedLayout = {
+      ...standardMaintenanceReportLayout,
+      layoutId: "client-summary-report",
+      name: "Client Summary Report",
+      version: "2.3.0",
+      sections: standardMaintenanceReportLayout.sections.filter(
+        (section) => section.sectionId === "report_header" || section.sectionId === "report_summary" || section.sectionId === "sign_off"
+      )
+    };
+
+    const resolved = resolveReportLayout(persistedLayout);
+
+    expect(resolved).toEqual(persistedLayout);
+    expect(resolved.version).toBe("2.3.0");
+    expect(resolved.sections.map((section) => section.sectionId)).toEqual(["report_header", "report_summary", "sign_off"]);
+  });
+
+  it("falls back to the standard layout when persisted JSON is incomplete", () => {
+    expect(resolveReportLayout({ layoutId: "broken", name: "Broken" })).toBe(standardMaintenanceReportLayout);
   });
 });
