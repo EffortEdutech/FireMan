@@ -81,6 +81,14 @@ test.describe("authenticated smoke", () => {
     await expect(page).toHaveURL(/\/client\/dashboard$/);
     await expect(page.getByRole("heading", { name: "Client Dashboard" })).toBeVisible();
     await expect(page.getByText("Issued reports and evidence will appear here.")).toBeVisible();
+
+    const reportLink = page.locator('a[href^="/client/reports/"]').first();
+    if (await reportLink.count()) {
+      await reportLink.click();
+      await expect(page.getByRole("heading", { name: /UKB-/ })).toBeVisible();
+      await expect(page.getByText("Report template used")).toBeVisible();
+      await expect(page.getByText("Frozen on report")).toBeVisible();
+    }
   });
 
   test("client B remains isolated from Client A issued reports", async ({ page }) => {
@@ -91,5 +99,6 @@ test.describe("authenticated smoke", () => {
     await expect(page).toHaveURL(/\/client\/dashboard$/);
     await expect(page.getByRole("heading", { name: "Client Dashboard" })).toBeVisible();
     await expect(page.getByText("No issued reports loaded")).toBeVisible();
+    await expect(page.locator('a[href^="/client/reports/"]')).toHaveCount(0);
   });
 });
