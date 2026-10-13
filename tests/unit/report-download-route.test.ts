@@ -155,6 +155,22 @@ describe("report download route", () => {
     expect(body.startsWith("%PDF-1.4")).toBe(true);
   });
 
+  it.each(["ADMIN", "SUPERVISOR"] as const)("allows %s to download the management report view", async (role) => {
+    mocks.getCurrentProfile.mockResolvedValue(profile(role));
+
+    const response = await GET(new Request("https://app.test/api/reports/report-1/download?format=html"), {
+      params: Promise.resolve({ reportId: "report-1" })
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("text/html; charset=utf-8");
+    expect(response.headers.get("content-disposition")).toBe('attachment; filename="UKB-2026-000004.html"');
+    expect(mocks.fetchIssuedReportData).toHaveBeenCalledWith(expect.anything(), "report-1", {
+      issuedOnly: false
+    });
+    await expect(response.text()).resolves.toContain("UKB-2026-000004");
+  });
+
   it("requires issued reports for client downloads", async () => {
     mocks.getCurrentProfile.mockResolvedValue(profile("CLIENT"));
 
@@ -162,6 +178,20 @@ describe("report download route", () => {
       params: Promise.resolve({ reportId: "report-1" })
     });
 
+    expect(mocks.fetchIssuedReportData).toHaveBeenCalledWith(expect.anything(), "report-1", {
+      issuedOnly: true
+    });
+  });
+
+  it("keeps client downloads issued-only for HTML output", async () => {
+    mocks.getCurrentProfile.mockResolvedValue(profile("CLIENT"));
+
+    const response = await GET(new Request("https://app.test/api/reports/report-1/download?format=html"), {
+      params: Promise.resolve({ reportId: "report-1" })
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-disposition")).toBe('attachment; filename="UKB-2026-000004.html"');
     expect(mocks.fetchIssuedReportData).toHaveBeenCalledWith(expect.anything(), "report-1", {
       issuedOnly: true
     });
