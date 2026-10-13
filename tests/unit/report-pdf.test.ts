@@ -117,6 +117,8 @@ describe("report PDF renderer", () => {
     expect(lines).toContain("FireMaint Formal Maintenance Report");
     expect(lines).toContain("Maintenance Report UKB-JOB-20261008-D89B92");
     expect(lines).toContain("Template: Standard Maintenance Report");
+    expect(lines).toContain("Template version behavior: Frozen on report");
+    expect(lines).toContain("Template sections: 5 | Selected fields: 21");
     expect(lines).toContain("Client: Client A | Site: Client A Demo Site");
     expect(lines).toContain("Job: UKB-JOB-20261008-D89B92");
     expect(lines).toContain("Asset 1: CLIENT-A-EXT-001");
@@ -135,6 +137,10 @@ describe("report PDF renderer", () => {
 
     expect(html).toContain("evidence-item evidence-alert");
     expect(html).toContain("Template: Standard Maintenance Report");
+    expect(html).toContain("Version Behavior");
+    expect(html).toContain("Frozen on report");
+    expect(html).toContain(">5</strong>");
+    expect(html).toContain(">21</strong>");
     expect(html).toContain("Pressure failure");
     expect(html).toContain("1 photo");
     expect(html).toContain("badge badge-alert\">CRITICAL");
@@ -190,10 +196,16 @@ describe("report PDF renderer", () => {
     expect(lines).toContain("Job: UKB-JOB-20261008-D89B92");
     expect(lines).not.toContain("Site: Client A Demo Site");
     expect(lines).toContain("Severity: CRITICAL");
+    expect(lines).toContain("Template version behavior: Frozen on report");
+    expect(lines).toContain("Template sections: 5 | Selected fields: 12");
     expect(lines).not.toContain("Description: Pressure indicator is below acceptable range.");
     expect(lines).not.toContain("Recommendation: Replace or recharge extinguisher.");
     expect(lines).not.toContain("- Pressure indicator is in acceptable range where applicable: FAIL");
     expect(html).toContain("Pressure failure");
+    expect(html).toContain("Version Behavior");
+    expect(html).toContain("Frozen on report");
+    expect(html).toContain(">5</strong>");
+    expect(html).toContain(">12</strong>");
     expect(html).not.toContain("Pressure indicator is below acceptable range.");
     expect(html).not.toContain("Replace or recharge extinguisher.");
     expect(html).not.toContain("Pressure indicator is in acceptable range where applicable");
