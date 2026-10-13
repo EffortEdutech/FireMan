@@ -87,6 +87,109 @@ describe("fetchIssuedReportData", () => {
     expect(result.data!.report.reportNumber).toBe("UKB-2026-000005");
   });
 
+  it("flags inspection loading failures without hiding the issued report", async () => {
+    const from = vi.fn((table: string) => {
+      if (table === "reports") {
+        return query({
+          data: {
+            id: "report-2",
+            job_id: "job-2",
+            report_number: "UKB-2026-000006",
+            title: "Checklist Error Report",
+            status: "ISSUED",
+            generated_at: "2026-10-08",
+            issued_at: "2026-10-08",
+            template_id: null,
+            report_templates: null,
+            maintenance_jobs: {
+              job_number: "UKB-JOB-2",
+              scheduled_date: "2026-10-08",
+              clients: { name: "Client A" },
+              sites: { name: "Site A" }
+            }
+          },
+          error: null
+        });
+      }
+
+      if (table === "inspections") {
+        return query({ data: null, error: new Error("Checklist unavailable") });
+      }
+
+      if (table === "job_equipment") {
+        return query({
+          data: [{ id: "job-equipment-2", equipment: { asset_code: "ASSET-2", location_description: null, equipment_types: null, systems: null } }],
+          error: null
+        });
+      }
+
+      return query({ data: [], error: null });
+    });
+    const supabase = { from, storage: { from: vi.fn() } } as never;
+
+    const result = await fetchIssuedReportData(supabase, "report-2");
+
+    expect(result.error).toBeNull();
+    expect(result.data).not.toBeNull();
+    expect(result.data!.loadErrors.inspections).toBe(true);
+    expect(result.data!.checklistGroups).toEqual([]);
+    expect(result.data!.report.reportNumber).toBe("UKB-2026-000006");
+  });
+
+  it("flags missing checklist template items while retaining the inspection group", async () => {
+    const from = vi.fn((table: string) => {
+      if (table === "reports") {
+        return query({
+          data: {
+            id: "report-3",
+            job_id: "job-3",
+            report_number: "UKB-2026-000007",
+            title: "Incomplete Checklist Report",
+            status: "ISSUED",
+            generated_at: "2026-10-08",
+            issued_at: "2026-10-08",
+            template_id: null,
+            report_templates: null,
+            maintenance_jobs: {
+              job_number: "UKB-JOB-3",
+              scheduled_date: "2026-10-08",
+              clients: { name: "Client A" },
+              sites: { name: "Site A" }
+            }
+          },
+          error: null
+        });
+      }
+
+      if (table === "job_equipment") {
+        return query({
+          data: [{ id: "job-equipment-3", equipment: { asset_code: "ASSET-3", location_description: null, equipment_types: null, systems: null } }],
+          error: null
+        });
+      }
+
+      if (table === "inspections") {
+        return query({
+          data: [{ id: "inspection-3", job_equipment_id: "job-equipment-3", template_id: "inspection-template-3", status: "LOCKED", inspection_templates: { name: "Missing Items Checklist" } }],
+          error: null
+        });
+      }
+
+      if (table === "inspection_template_items") {
+        return query({ data: null, error: new Error("Checklist items unavailable") });
+      }
+
+      return query({ data: [], error: null });
+    });
+    const supabase = { from, storage: { from: vi.fn() } } as never;
+
+    const result = await fetchIssuedReportData(supabase, "report-3");
+
+    expect(result.error).toBeNull();
+    expect(result.data!.loadErrors.templateItems).toBe(true);
+    expect(result.data!.checklistGroups).toMatchObject([{ assetCode: "ASSET-3", checklistName: "Missing Items Checklist", items: [] }]);
+  });
+
   it("assembles the persisted template, findings, photos, assets, and checklist results", async () => {
     const reportTemplateLayout = {
       ...standardMaintenanceReportLayout,
