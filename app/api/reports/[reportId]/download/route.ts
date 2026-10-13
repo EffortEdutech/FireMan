@@ -6,6 +6,7 @@ import { renderReportHtml } from "@/lib/reports/report-html";
 import { renderReportPdfWithImages } from "@/lib/reports/report-pdf";
 import { parseReportOutputFormat, reportOutputFilename } from "@/lib/reports/report-output";
 import { buildReportManifest } from "@/lib/reports/report-manifest";
+import { recordReportDelivery } from "@/lib/reports/report-delivery-audit";
 import { createClient } from "@/lib/supabase/server";
 
 type DownloadReportRouteProps = {
@@ -38,6 +39,7 @@ export async function GET(request: Request, { params }: DownloadReportRouteProps
   const format = parseReportOutputFormat(new URL(request.url).searchParams.get("format"));
 
   if (format === "json") {
+    if (canAccessManagement(profile.role)) await recordReportDelivery(supabase, profile, reportId, format);
     return NextResponse.json(buildReportManifest(data), {
       headers: {
         "Content-Disposition": `attachment; filename="${reportOutputFilename(data.report.reportNumber, "json")}"`
@@ -46,6 +48,7 @@ export async function GET(request: Request, { params }: DownloadReportRouteProps
   }
 
   if (format === "pdf") {
+    if (canAccessManagement(profile.role)) await recordReportDelivery(supabase, profile, reportId, format);
     const pdf = await renderReportPdfWithImages(data, data.layout);
 
     return new NextResponse(pdf, {
@@ -57,6 +60,7 @@ export async function GET(request: Request, { params }: DownloadReportRouteProps
   }
 
   const html = renderReportHtml(data, data.layout);
+  if (canAccessManagement(profile.role)) await recordReportDelivery(supabase, profile, reportId, format);
   return new NextResponse(html, {
     headers: {
       "Content-Disposition": `attachment; filename="${reportOutputFilename(data.report.reportNumber, "html")}"`,
