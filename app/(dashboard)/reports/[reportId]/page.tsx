@@ -13,6 +13,7 @@ import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
 import { fetchIssuedReportData } from "@/lib/reports/issued-report-data";
 import { reportTemplateStats } from "@/lib/reports/report-template-stats";
+import { fetchReportDeliveryHistory } from "@/lib/reports/report-delivery-history";
 import { createClient } from "@/lib/supabase/server";
 
 type ReportDetailPageProps = {
@@ -66,6 +67,8 @@ export default async function ReportDetailPage({ params, searchParams }: ReportD
   if (error || !reportData) {
     notFound();
   }
+
+  const { data: deliveryHistory, error: deliveryHistoryError } = await fetchReportDeliveryHistory(supabase, reportId);
 
   const criticalFindingCount = countCriticalFindings(reportData.findings);
   const checklistAttentionCount = countChecklistAttention(reportData.checklistGroups);
@@ -196,6 +199,35 @@ export default async function ReportDetailPage({ params, searchParams }: ReportD
             <div style={{ color: "var(--muted)" }}>No action is available for this report state.</div>
           ) : null}
         </div>
+      </Card>
+
+      <Card className="no-print">
+        <h2 style={{ fontSize: "1rem", margin: 0 }}>Delivery history</h2>
+        <p style={{ color: "var(--muted)", margin: "0.35rem 0 0" }}>
+          Download events for this report, retained for audit and handover tracking.
+        </p>
+        {deliveryHistoryError ? (
+          <p style={{ color: "#8a1f17", marginBottom: 0 }}>Delivery history is currently unavailable.</p>
+        ) : deliveryHistory.length === 0 ? (
+          <p style={{ color: "var(--muted)", marginBottom: 0 }}>No downloads recorded yet.</p>
+        ) : (
+          <div className="table-scroll" style={{ marginTop: "0.75rem" }}>
+            <table className="data-table">
+              <thead>
+                <tr><th>Output</th><th>Downloaded by</th><th>Time</th></tr>
+              </thead>
+              <tbody>
+                {deliveryHistory.map((event, index) => (
+                  <tr key={`${event.createdAt}-${event.action}-${index}`}>
+                    <td>{event.action.replace("REPORT_DOWNLOADED_", "")}</td>
+                    <td>{event.actorName}</td>
+                    <td>{event.createdAt}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
 
       <ReportLayoutRenderer data={reportData} layout={reportData.layout} />
