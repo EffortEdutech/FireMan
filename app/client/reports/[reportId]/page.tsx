@@ -6,6 +6,7 @@ import { ReportOutputNote } from "@/components/reports/report-output-note";
 import { PrintButton } from "@/components/ui/print-button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { requireProfile } from "@/lib/auth/current-user";
+import { formatDate } from "@/lib/format/date";
 import { canAccessClientPortal } from "@/lib/permissions/roles";
 import { fetchIssuedReportData } from "@/lib/reports/issued-report-data";
 import { reportTemplateStats } from "@/lib/reports/report-template-stats";
@@ -75,6 +76,36 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
             ["Version Behavior", "Frozen on report"],
             ["Sections", `${templateStats.sectionCount}`],
             ["Selected Fields", `${templateStats.fieldCount}`]
+          ].map(([label, value]) => (
+            <div key={label} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "0.75rem" }}>
+              <div style={{ color: "var(--muted)", fontSize: "0.75rem", fontWeight: 700 }}>{label}</div>
+              <strong>{value}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section
+        style={{
+          border: "1px solid var(--border)",
+          borderRadius: 8,
+          display: "grid",
+          gap: "0.75rem",
+          padding: "1rem"
+        }}
+      >
+        <div>
+          <h2 style={{ fontSize: "1rem", margin: 0 }}>Client delivery</h2>
+          <p style={{ color: "var(--muted)", margin: "0.35rem 0 0" }}>
+            This issued report is available as a formal PDF, browser-readable HTML, or machine-readable JSON manifest.
+          </p>
+        </div>
+        <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
+          {[
+            ["Issued", formatDate(reportData.report.issuedAt)],
+            ["PDF", "Available"],
+            ["HTML", "Available"],
+            ["JSON manifest", "Available"]
           ].map(([label, value]) => (
             <div key={label} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "0.75rem" }}>
               <div style={{ color: "var(--muted)", fontSize: "0.75rem", fontWeight: 700 }}>{label}</div>

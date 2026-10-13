@@ -19,6 +19,9 @@ export function ReportDownloadLinks({ reportId }: ReportDownloadLinksProps) {
       <Link className={subtleLinkClass} href={`/api/reports/${reportId}/download`}>
         HTML
       </Link>
+      <Link className={subtleLinkClass} href={`/api/reports/${reportId}/download?format=json`}>
+        JSON manifest
+      </Link>
     </>
   );
 }
