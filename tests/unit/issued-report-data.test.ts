@@ -17,6 +17,76 @@ function query(result: { data: unknown; error: Error | null }) {
 }
 
 describe("fetchIssuedReportData", () => {
+  it("returns a not-found error when report access or lookup fails", async () => {
+    const from = vi.fn(() => query({ data: null, error: new Error("Report not found") }));
+    const supabase = { from, storage: { from: vi.fn() } } as never;
+
+    const result = await fetchIssuedReportData(supabase, "missing-report", { issuedOnly: true });
+
+    expect(result.data).toBeNull();
+    expect(result.error).toEqual(new Error("Report not found"));
+    expect(from).toHaveBeenCalledWith("reports");
+  });
+
+  it("keeps report data when a finding photo cannot be signed", async () => {
+    const from = vi.fn((table: string) => {
+      if (table === "reports") {
+        return query({
+          data: {
+            id: "report-1",
+            job_id: "job-1",
+            report_number: "UKB-2026-000005",
+            title: "Photo Error Report",
+            status: "ISSUED",
+            generated_at: "2026-10-08",
+            issued_at: "2026-10-08",
+            template_id: null,
+            report_templates: null,
+            maintenance_jobs: {
+              job_number: "UKB-JOB-1",
+              scheduled_date: "2026-10-08",
+              clients: { name: "Client A" },
+              sites: { name: "Site A" }
+            }
+          },
+          error: null
+        });
+      }
+
+      if (table === "findings") {
+        return query({
+          data: [{ id: "finding-1", title: "Failure", severity: "CRITICAL", status: "OPEN", description: null, recommendation: null, created_at: "2026-10-08" }],
+          error: null
+        });
+      }
+
+      if (table === "finding_photos") {
+        return query({
+          data: [{ id: "photo-1", finding_id: "finding-1", storage_path: "missing/photo.jpg", caption: null, taken_at: null, created_at: "2026-10-08" }],
+          error: null
+        });
+      }
+
+      return query({ data: [], error: null });
+    });
+    const supabase = {
+      from,
+      storage: {
+        from: vi.fn(() => ({
+          createSignedUrl: vi.fn().mockResolvedValue({ data: null, error: new Error("Photo unavailable") })
+        }))
+      }
+    } as never;
+
+    const result = await fetchIssuedReportData(supabase, "report-1");
+
+    expect(result.error).toBeNull();
+    expect(result.data).not.toBeNull();
+    expect(result.data!.loadErrors.findingPhotos).toBe(true);
+    expect(result.data!.findings[0]!.photos[0]!.signedUrl).toBeNull();
+    expect(result.data!.report.reportNumber).toBe("UKB-2026-000005");
+  });
+
   it("assembles the persisted template, findings, photos, assets, and checklist results", async () => {
     const reportTemplateLayout = {
       ...standardMaintenanceReportLayout,
