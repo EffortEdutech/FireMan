@@ -4,6 +4,7 @@ import { canAccessClientPortal, canAccessManagement } from "@/lib/permissions/ro
 import { fetchIssuedReportData } from "@/lib/reports/issued-report-data";
 import { renderReportHtml } from "@/lib/reports/report-html";
 import { renderReportPdfWithImages } from "@/lib/reports/report-pdf";
+import { parseReportOutputFormat, reportOutputFilename } from "@/lib/reports/report-output";
 import { createClient } from "@/lib/supabase/server";
 
 type DownloadReportRouteProps = {
@@ -11,10 +12,6 @@ type DownloadReportRouteProps = {
     reportId: string;
   }>;
 };
-
-function filenameFor(reportNumber: string, extension: "html" | "pdf") {
-  return `${reportNumber.replace(/[^a-z0-9_-]+/gi, "-")}.${extension}`;
-}
 
 export async function GET(request: Request, { params }: DownloadReportRouteProps) {
   const profile = await getCurrentProfile();
@@ -37,14 +34,14 @@ export async function GET(request: Request, { params }: DownloadReportRouteProps
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
-  const format = new URL(request.url).searchParams.get("format");
+  const format = parseReportOutputFormat(new URL(request.url).searchParams.get("format"));
 
   if (format === "pdf") {
     const pdf = await renderReportPdfWithImages(data, data.layout);
 
     return new NextResponse(pdf, {
       headers: {
-        "Content-Disposition": `attachment; filename="${filenameFor(data.report.reportNumber, "pdf")}"`,
+        "Content-Disposition": `attachment; filename="${reportOutputFilename(data.report.reportNumber, "pdf")}"`,
         "Content-Type": "application/pdf"
       }
     });
@@ -53,7 +50,7 @@ export async function GET(request: Request, { params }: DownloadReportRouteProps
   const html = renderReportHtml(data, data.layout);
   return new NextResponse(html, {
     headers: {
-      "Content-Disposition": `attachment; filename="${filenameFor(data.report.reportNumber, "html")}"`,
+      "Content-Disposition": `attachment; filename="${reportOutputFilename(data.report.reportNumber, "html")}"`,
       "Content-Type": "text/html; charset=utf-8"
     }
   });
