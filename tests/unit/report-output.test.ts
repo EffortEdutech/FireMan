@@ -6,6 +6,7 @@ describe("report output contract", () => {
     expect(parseReportOutputFormat("pdf")).toBe("pdf");
     expect(parseReportOutputFormat("html")).toBe("html");
     expect(parseReportOutputFormat(null)).toBe("html");
+    expect(parseReportOutputFormat("json")).toBe("json");
     expect(parseReportOutputFormat("docx")).toBe("html");
   });
 

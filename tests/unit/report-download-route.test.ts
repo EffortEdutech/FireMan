@@ -196,4 +196,24 @@ describe("report download route", () => {
       issuedOnly: true
     });
   });
+
+  it("returns a JSON report manifest for management users", async () => {
+    mocks.getCurrentProfile.mockResolvedValue(profile("OWNER"));
+
+    const response = await GET(new Request("https://app.test/api/reports/report-1/download?format=json"), {
+      params: Promise.resolve({ reportId: "report-1" })
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("application/json");
+    expect(response.headers.get("content-disposition")).toBe('attachment; filename="UKB-2026-000004.json"');
+    await expect(response.json()).resolves.toMatchObject({
+      schemaVersion: "1.0",
+      template: { behavior: "FROZEN_ON_REPORT" },
+      outputs: ["pdf", "html", "json"]
+    });
+    expect(mocks.fetchIssuedReportData).toHaveBeenCalledWith(expect.anything(), "report-1", {
+      issuedOnly: false
+    });
+  });
 });

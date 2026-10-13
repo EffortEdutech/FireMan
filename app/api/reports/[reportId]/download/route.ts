@@ -5,6 +5,7 @@ import { fetchIssuedReportData } from "@/lib/reports/issued-report-data";
 import { renderReportHtml } from "@/lib/reports/report-html";
 import { renderReportPdfWithImages } from "@/lib/reports/report-pdf";
 import { parseReportOutputFormat, reportOutputFilename } from "@/lib/reports/report-output";
+import { buildReportManifest } from "@/lib/reports/report-manifest";
 import { createClient } from "@/lib/supabase/server";
 
 type DownloadReportRouteProps = {
@@ -35,6 +36,14 @@ export async function GET(request: Request, { params }: DownloadReportRouteProps
   }
 
   const format = parseReportOutputFormat(new URL(request.url).searchParams.get("format"));
+
+  if (format === "json") {
+    return NextResponse.json(buildReportManifest(data), {
+      headers: {
+        "Content-Disposition": `attachment; filename="${reportOutputFilename(data.report.reportNumber, "json")}"`
+      }
+    });
+  }
 
   if (format === "pdf") {
     const pdf = await renderReportPdfWithImages(data, data.layout);

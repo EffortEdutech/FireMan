@@ -1,7 +1,11 @@
-export type ReportOutputFormat = "html" | "pdf";
+export type ReportOutputFormat = "html" | "pdf" | "json";
 
 export function parseReportOutputFormat(value: string | null): ReportOutputFormat {
-  return value === "pdf" ? "pdf" : "html";
+  if (value === "pdf" || value === "json") {
+    return value;
+  }
+
+  return "html";
 }
 
 export function reportOutputFilename(reportNumber: string, format: ReportOutputFormat) {
