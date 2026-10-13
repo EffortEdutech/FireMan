@@ -26,4 +26,12 @@ describe("role helpers", () => {
     expect(canAccessClientPortal("SUPERVISOR")).toBe(false);
     expect(isInternalRole("CLIENT")).toBe(false);
   });
+
+  it("matches report detail visibility boundaries", () => {
+    const roles = ["OWNER", "ADMIN", "SUPERVISOR", "TECHNICIAN", "CLIENT"] as const;
+
+    expect(roles.filter(canAccessManagement)).toEqual(["OWNER", "ADMIN", "SUPERVISOR"]);
+    expect(roles.filter(canAccessClientPortal)).toEqual(["CLIENT"]);
+    expect(roles.filter(canAccessTechnician)).toEqual(["OWNER", "ADMIN", "SUPERVISOR", "TECHNICIAN"]);
+  });
 });
