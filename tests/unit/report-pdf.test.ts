@@ -211,6 +211,30 @@ describe("report PDF renderer", () => {
     expect(html).not.toContain("Pressure indicator is in acceptable range where applicable");
   });
 
+  it("preserves saved section order and omits sections removed from the layout", () => {
+    const orderedLayout = {
+      ...standardMaintenanceReportLayout,
+      sections: [
+        standardMaintenanceReportLayout.sections.find((section) => section.sectionId === "report_header")!,
+        standardMaintenanceReportLayout.sections.find((section) => section.sectionId === "field_evidence")!,
+        standardMaintenanceReportLayout.sections.find((section) => section.sectionId === "report_summary")!,
+        standardMaintenanceReportLayout.sections.find((section) => section.sectionId === "sign_off")!
+      ]
+    };
+    const html = renderReportHtml(reportData, orderedLayout);
+    const lines = buildReportPdfTextLines(reportData, orderedLayout);
+
+    expect(lines).toContain("Template sections: 3 | Selected fields: 12");
+    expect(lines.indexOf("1. Field Evidence")).toBeLessThan(lines.indexOf("2. Report Summary"));
+    expect(lines.indexOf("2. Report Summary")).toBeLessThan(lines.indexOf("3. Sign-off"));
+    expect(lines).not.toContain("2. Serviced Assets");
+    expect(lines).not.toContain("4. Checklist Results");
+    expect(html.indexOf("<h2>1. Field Evidence</h2>")).toBeLessThan(html.indexOf("<h2>2. Report Summary</h2>"));
+    expect(html.indexOf("<h2>2. Report Summary</h2>")).toBeLessThan(html.indexOf("<h2>3. Sign-off</h2>"));
+    expect(html).not.toContain("Serviced Assets");
+    expect(html).not.toContain("Checklist Results");
+  });
+
   it("embeds JPEG photo evidence in generated PDFs", async () => {
     const jpeg = Buffer.from([
       0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x01, 0x00, 0x48, 0x00, 0x48, 0x00,
