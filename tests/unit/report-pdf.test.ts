@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { IssuedReportData } from "@/lib/reports/issued-report-data";
 import { renderReportHtml } from "@/lib/reports/report-html";
 import { buildReportPdfTextLines, renderReportPdf, renderReportPdfWithImages } from "@/lib/reports/report-pdf";
+import { resolveReportLayout } from "@/lib/reports/report-template";
 import { standardMaintenanceReportLayout } from "@/lib/reports/standard-maintenance-report-layout";
 import sharp from "sharp";
 
@@ -233,6 +234,44 @@ describe("report PDF renderer", () => {
     expect(html.indexOf("<h2>2. Report Summary</h2>")).toBeLessThan(html.indexOf("<h2>3. Sign-off</h2>"));
     expect(html).not.toContain("Serviced Assets");
     expect(html).not.toContain("Checklist Results");
+  });
+
+  it("renders a database-shaped report template record through both exporters", () => {
+    const databaseTemplate = {
+      name: "Client Summary Report",
+      layout: JSON.parse(
+        JSON.stringify({
+          ...standardMaintenanceReportLayout,
+          layoutId: "client-summary-report",
+          name: "Client Summary Report",
+          version: "2.3.0",
+          sections: standardMaintenanceReportLayout.sections.filter(
+            (section) => section.sectionId === "report_header" || section.sectionId === "report_summary" || section.sectionId === "field_evidence" || section.sectionId === "sign_off"
+          )
+        })
+      )
+    };
+    const resolvedLayout = resolveReportLayout(databaseTemplate.layout);
+    const issuedReport = {
+      ...reportData,
+      report: {
+        ...reportData.report,
+        templateName: databaseTemplate.name
+      }
+    };
+
+    const html = renderReportHtml(issuedReport, resolvedLayout);
+    const lines = buildReportPdfTextLines(issuedReport, resolvedLayout);
+
+    expect(resolvedLayout.version).toBe("2.3.0");
+    expect(lines).toContain("Template: Client Summary Report");
+    expect(lines).toContain("Template sections: 3 | Selected fields: 12");
+    expect(lines).toContain("2. Field Evidence");
+    expect(lines).not.toContain("2. Serviced Assets");
+    expect(html).toContain("Client Summary Report");
+    expect(html).toContain(">3</strong>");
+    expect(html).toContain(">12</strong>");
+    expect(html).not.toContain("Serviced Assets");
   });
 
   it("embeds JPEG photo evidence in generated PDFs", async () => {
