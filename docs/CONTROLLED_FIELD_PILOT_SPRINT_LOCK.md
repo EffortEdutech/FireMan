@@ -116,3 +116,7 @@ The executable procedure is captured in the runbook. The actual supervised run r
 **Move 4/6: interruption and recovery drill prepared.**
 
 The runbook now covers checklist queueing, finding and photo queueing, refresh persistence, reconnect, failed sync retry, duplicate checks, and closeout. The drill has not been executed. Run it with an in-progress assigned job; create a separate drill job if the supervised job is already submitted. Record the device and observed record counts in the runbook's drill log. Move 4 passes only after the log records all scenarios and the pending queues are empty.
+
+**Move 5/6: pilot defect triage and workflow polish in progress.**
+
+The reported mobile-install issue is logged as `CFP-001` in [`CONTROLLED_FIELD_PILOT_DEFECT_LOG.md`](./CONTROLLED_FIELD_PILOT_DEFECT_LOG.md). The app now includes browser-specific installation guidance under Technician More. The manifest/icon and service-worker fix was pushed in commit `f859683`; physical-device re-test is still pending. The Move 4 interruption and recovery drill is also not run, so the pilot is not eligible for final sign-off yet.
