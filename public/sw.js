@@ -1,5 +1,11 @@
-const CACHE_NAME = "firemaint-shell-v1";
-const SHELL = ["/offline.html", "/manifest.webmanifest", "/icons/icon.svg"];
+const CACHE_NAME = "firemaint-shell-v2";
+const SHELL = [
+  "/offline.html",
+  "/manifest.webmanifest",
+  "/icons/icon.svg",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png"
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));

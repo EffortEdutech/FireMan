@@ -5,7 +5,11 @@ import { FIREMAINT_APP_VERSION } from "@/lib/app-version";
 export const metadata: Metadata = {
   title: "FireMaint",
   description: `Fire maintenance evidence and reporting platform v${FIREMAINT_APP_VERSION}`,
-  manifest: "/manifest.webmanifest"
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icons/favicon-48.png",
+    apple: "/icons/apple-touch-icon.png"
+  }
 };
 
 export const viewport: Viewport = {
