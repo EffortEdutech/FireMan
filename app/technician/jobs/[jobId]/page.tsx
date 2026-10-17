@@ -10,6 +10,8 @@ import { requireProfile } from "@/lib/auth/current-user";
 import { formatDate } from "@/lib/format/date";
 import { canAccessTechnician } from "@/lib/permissions/roles";
 import { createClient } from "@/lib/supabase/server";
+import { OfflineFindingQueue } from "@/components/technician/offline-finding-queue";
+import { OfflineChecklistQueue } from "@/components/technician/offline-checklist-queue";
 
 type TechnicianJobPageProps = {
   params: Promise<{
@@ -427,6 +429,14 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
             </div>
           ) : null}
         </form>
+      </Card>
+
+      <Card>
+        <h2 style={{ fontSize: "1rem", margin: "0 0 1rem" }}>Offline recovery</h2>
+        <OfflineFindingQueue jobId={job.id} />
+        <div style={{ borderTop: "1px solid var(--border)", marginTop: "1rem", paddingTop: "1rem" }}>
+          <OfflineChecklistQueue jobId={job.id} items={templateItems?.filter((item) => inspections?.some((inspection) => inspection.template_id === item.template_id)).map((item) => ({ inspectionId: inspections?.find((inspection) => inspection.template_id === item.template_id)?.id ?? "", templateItemId: item.id, prompt: item.prompt })) ?? []} />
+        </div>
       </Card>
 
       <Card>

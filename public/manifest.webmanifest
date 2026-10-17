@@ -1,15 +1,41 @@
 {
   "name": "FireMaint",
   "short_name": "FireMaint",
+  "id": "/technician/today",
   "start_url": "/technician/today",
+  "scope": "/",
+  "lang": "en",
+  "description": "Fire maintenance field work and evidence capture",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#f7f8f6",
   "theme_color": "#b42318",
+  "categories": ["business", "productivity"],
   "icons": [
     {
       "src": "/icons/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "128x128",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today’s jobs",
+      "short_name": "Today",
+      "url": "/technician/today",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "128x128", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Scan asset",
+      "short_name": "Scan",
+      "url": "/technician/scan",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "128x128", "type": "image/svg+xml" }]
     }
   ]
 }

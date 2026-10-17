@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:rls": "psql \"%SUPABASE_DB_URL%\" -P pager=off -v ON_ERROR_STOP=1 -f tests/integration/sql/rls_golden_boundaries.sql",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check:pilot": "node scripts/check-pilot-env.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "latest",

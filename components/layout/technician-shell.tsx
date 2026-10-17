@@ -1,6 +1,7 @@
-import Link from "next/link";
 import { signOut } from "@/app/(auth)/actions";
 import { CurrentUserBadge } from "@/components/layout/current-user-badge";
+import { TechnicianNav } from "@/components/layout/technician-nav";
+import { PwaRuntime } from "@/components/layout/pwa-runtime";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@/lib/supabase/types";
 
@@ -33,7 +34,7 @@ export function TechnicianShell({ children, currentUser }: TechnicianShellProps)
           <div>
             <strong>FireMaint Field</strong>
             <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: "0.25rem" }}>
-              Sync ready
+              <PwaRuntime />
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
@@ -47,20 +48,7 @@ export function TechnicianShell({ children, currentUser }: TechnicianShellProps)
         </div>
       </header>
       <main style={{ padding: "1rem" }}>{children}</main>
-      <nav
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          borderTop: "1px solid var(--border)",
-          background: "var(--surface)"
-        }}
-      >
-        {["Today", "Jobs", "Scan", "More"].map((item) => (
-          <Link key={item} href="/technician/today" style={{ padding: "1rem", textAlign: "center" }}>
-            {item}
-          </Link>
-        ))}
-      </nav>
+      <TechnicianNav />
     </div>
   );
 }

@@ -135,7 +135,7 @@ values
 insert into public.maintenance_jobs(id, organisation_id, maintenance_plan_id, client_id, site_id, building_id, job_number, scheduled_date, assigned_technician_id, status)
 values
   ((select id from rls_ids where key='job_a_assigned'), (select id from rls_ids where key='org_a'), (select id from rls_ids where key='plan_a'), (select id from rls_ids where key='client_a'), (select id from rls_ids where key='site_a'), (select id from rls_ids where key='building_a'), 'RLS-A-ASSIGNED', current_date, (select id from rls_ids where key='tech_a'), 'SCHEDULED'),
-  ((select id from rls_ids where key='job_a_unassigned'), (select id from rls_ids where key='org_a'), (select id from rls_ids where key='plan_a'), (select id from rls_ids where key='client_a'), (select id from rls_ids where key='site_a'), (select id from rls_ids where key='building_a'), 'RLS-A-UNASSIGNED', current_date, null, 'SCHEDULED'),
+  ((select id from rls_ids where key='job_a_unassigned'), (select id from rls_ids where key='org_a'), (select id from rls_ids where key='plan_a'), (select id from rls_ids where key='client_a'), (select id from rls_ids where key='site_a'), (select id from rls_ids where key='building_a'), 'RLS-A-UNASSIGNED', current_date + 1, null, 'SCHEDULED'),
   ((select id from rls_ids where key='job_b_assigned'), (select id from rls_ids where key='org_b'), (select id from rls_ids where key='plan_b'), (select id from rls_ids where key='client_b'), (select id from rls_ids where key='site_b'), (select id from rls_ids where key='building_b'), 'RLS-B-ASSIGNED', current_date, (select id from rls_ids where key='tech_b'), 'SCHEDULED');
 
 insert into public.reports(id, organisation_id, job_id, report_number, status)

@@ -152,6 +152,10 @@ export default async function TechnicianTodayPage({ searchParams }: TechnicianTo
             ? "Start the job before capturing findings."
             : params.error === "equipment-not-assigned"
               ? "Choose an asset assigned to this job."
+              : params.error === "photo-upload-failed"
+                ? "Finding saved, but the photo upload failed. Retry the photo upload when connected."
+                : params.error === "inspection-not-ready"
+                  ? "Start this job and asset checklist before recording the result."
               : "Field action failed."}
         />
       ) : null}
