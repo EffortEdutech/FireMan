@@ -93,6 +93,7 @@ const reportData: IssuedReportData = {
   loadErrors: {
     findings: false,
     findingPhotos: false,
+    correctiveWorkOrders: false,
     inspectionResults: false,
     inspections: false,
     templateItems: false

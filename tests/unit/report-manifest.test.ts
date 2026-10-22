@@ -32,7 +32,7 @@ const data = {
   findings: [{ id: "finding-1", title: "Failure", severity: "CRITICAL", status: "OPEN", description: null, recommendation: null, createdAt: "2026-10-08", photos: [{ id: "photo-1", storagePath: "photo.jpg", signedUrl: null, caption: null, takenAt: null, createdAt: "2026-10-08" }] }],
   checklistGroups: [{ id: "group-1", assetCode: "EXT-1", checklistName: "Inspection", status: "LOCKED", items: [] }],
   layout: standardMaintenanceReportLayout,
-  loadErrors: { findings: false, findingPhotos: true, inspections: false, templateItems: false, inspectionResults: false }
+  loadErrors: { findings: false, findingPhotos: true, correctiveWorkOrders: false, inspections: false, templateItems: false, inspectionResults: false }
 } satisfies IssuedReportData;
 
 describe("report manifest", () => {
