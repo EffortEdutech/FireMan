@@ -4,6 +4,7 @@ type ChecklistResultItem = {
   id: string;
   prompt: string;
   resultStatus: string | null;
+  readingText?: string | null;
 };
 
 type ChecklistResultGroup = {
@@ -138,7 +139,7 @@ export function ChecklistResults({ emptyMessage, emptyTitle, groups }: Checklist
                       padding: "8px 0 0"
                     }}
                   >
-                    <span>{item.prompt}</span>
+                    <span>{item.prompt}{item.readingText ? <strong>{` — ${item.readingText}`}</strong> : null}</span>
                     <ResultBadge>{status}</ResultBadge>
                   </div>
                 );

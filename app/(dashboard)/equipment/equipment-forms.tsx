@@ -53,6 +53,12 @@ const systemTypes = [
   ["SPRINKLER", "Sprinkler"],
   ["EMERGENCY_LIGHTING", "Emergency lighting"],
   ["EXIT_SIGNAGE", "Exit signage"],
+  ["HYDRANT_RISER", "Hydrant / riser"],
+  ["FIRE_PUMP", "Fire pump"],
+  ["GASEOUS_SUPPRESSION", "Gaseous suppression"],
+  ["FOAM_SUPPRESSION", "Foam suppression"],
+  ["PASSIVE_PROTECTION", "Passive protection (doors, dampers)"],
+  ["SMOKE_CONTROL", "Smoke control"],
   ["OTHER", "Other"]
 ];
 

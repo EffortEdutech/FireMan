@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessTechnician } from "@/lib/permissions/roles";
+import {
+  correctiveRepairPhotoLimit,
+  isValidCorrectiveRepairPhoto,
+  isValidRepairSubmission
+} from "@/lib/corrective/repair-evidence";
+import { evaluateReading, findReadingDefinition, units, type UnitCode } from "@/lib/reports/readings";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 
@@ -376,4 +382,182 @@ export async function saveInspectionResult(formData: FormData) {
   revalidatePath("/technician/today");
   revalidatePath(`/technician/jobs/${jobId}`);
   redirect(`${redirectTo}?result=1`);
+}
+
+export async function saveInspectionReading(formData: FormData) {
+  const profile = await requireProfile();
+
+  if (!canAccessTechnician(profile.role)) {
+    redirect("/dashboard");
+  }
+
+  const inspectionId = value(formData, "inspection_id");
+  const templateItemId = value(formData, "template_item_id");
+  const jobId = value(formData, "job_id");
+  const redirectTo = nextPath(formData);
+  const rawValue = value(formData, "reading_value");
+  const unit = value(formData, "reading_unit");
+  const reading = rawValue === null ? Number.NaN : Number(rawValue);
+
+  if (!inspectionId || !templateItemId || !jobId || !Number.isFinite(reading) || !unit || !(unit in units)) {
+    redirect(`${redirectTo}?error=invalid-reading`);
+  }
+
+  const supabase = await createClient();
+  const { data: inspection, error: inspectionError } = await supabase
+    .from("inspections")
+    .select("id,organisation_id,template_id,status,maintenance_jobs(assigned_technician_id,status)")
+    .eq("id", inspectionId)
+    .maybeSingle();
+
+  const job = Array.isArray(inspection?.maintenance_jobs) ? inspection?.maintenance_jobs[0] : inspection?.maintenance_jobs;
+
+  if (inspectionError || !inspection || job?.assigned_technician_id !== profile.id || inspection.status !== "IN_PROGRESS" || job?.status !== "IN_PROGRESS") {
+    redirect(`${redirectTo}?error=inspection-not-ready`);
+  }
+
+  const { data: templateItem, error: itemError } = await supabase
+    .from("inspection_template_items")
+    .select("id,field_type,metadata")
+    .eq("id", templateItemId)
+    .eq("template_id", inspection.template_id)
+    .maybeSingle();
+
+  const metadata = (templateItem?.metadata ?? {}) as { semanticKey?: unknown };
+  const definition = typeof metadata.semanticKey === "string" ? findReadingDefinition(metadata.semanticKey) : undefined;
+
+  if (itemError || !templateItem || templateItem.field_type !== "NUMBER" || !definition || !definition.allowedUnits.includes(unit as UnitCode)) {
+    redirect(`${redirectTo}?error=invalid-checklist-item`);
+  }
+
+  // Limits come only from the standard (definition.limit). No limit => recorded, never judged.
+  const evaluation = evaluateReading(definition, reading, unit as UnitCode);
+
+  const { error } = await supabase.from("inspection_results").upsert(
+    {
+      organisation_id: inspection.organisation_id,
+      inspection_id: inspection.id,
+      template_item_id: templateItem.id,
+      value_number: reading,
+      reading_unit: unit,
+      value_standard: evaluation.standardValue,
+      semantic_key: definition.semanticKey,
+      limit_status: evaluation.status,
+      // Out-of-limit only flags ATTENTION; the technician decides whether to raise a deficiency.
+      result_status: evaluation.status === "OUT_OF_LIMIT" ? "ATTENTION" : "PASS",
+      notes: evaluation.reason ?? null
+    },
+    { onConflict: "inspection_id,template_item_id" }
+  );
+
+  if (error) {
+    redirect(`${redirectTo}?error=${encodeURIComponent(error.code ?? "reading-save-failed")}`);
+  }
+
+  revalidatePath("/technician/today");
+  revalidatePath(`/technician/jobs/${jobId}`);
+  redirect(`${redirectTo}?${evaluation.suggestDeficiency ? "readingOutOfLimit=1" : "result=1"}`);
+}
+
+function correctiveWorkOrderPath(workOrderId: string, query: string): never {
+  redirect(`/technician/corrective/${workOrderId}?${query}`);
+}
+
+export async function startCorrectiveWorkOrder(formData: FormData) {
+  const profile = await requireProfile();
+
+  if (!canAccessTechnician(profile.role)) {
+    redirect("/dashboard");
+  }
+
+  const workOrderId = value(formData, "work_order_id");
+  if (!workOrderId) redirect("/technician/today?error=missing-work-order");
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("start_corrective_work_order", { p_work_order_id: workOrderId });
+
+  if (error) correctiveWorkOrderPath(workOrderId, "error=start-failed");
+
+  revalidatePath("/technician/today");
+  revalidatePath(`/technician/corrective/${workOrderId}`);
+  revalidatePath("/maintenance");
+  correctiveWorkOrderPath(workOrderId, "started=1");
+}
+
+export async function submitCorrectiveRepair(formData: FormData) {
+  const profile = await requireProfile();
+
+  if (!canAccessTechnician(profile.role)) {
+    redirect("/dashboard");
+  }
+
+  const workOrderId = value(formData, "work_order_id");
+  const repairNotes = value(formData, "repair_notes");
+  const partsUsed = value(formData, "parts_used");
+  const photos = formData.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0);
+
+  if (!workOrderId) redirect("/technician/today?error=missing-work-order");
+  if (!isValidRepairSubmission(repairNotes, partsUsed)) correctiveWorkOrderPath(workOrderId, "error=repair-invalid");
+  if (photos.length > correctiveRepairPhotoLimit || photos.some((photo) => !isValidCorrectiveRepairPhoto(photo))) {
+    correctiveWorkOrderPath(workOrderId, "error=photos-invalid");
+  }
+
+  const supabase = await createClient();
+  const { data: workOrder, error: workOrderError } = await supabase
+    .from("corrective_work_orders")
+    .select("id,organisation_id,finding_id,status,assigned_technician_id")
+    .eq("id", workOrderId)
+    .eq("assigned_technician_id", profile.id)
+    .eq("status", "IN_PROGRESS")
+    .maybeSingle();
+
+  if (workOrderError || !workOrder) correctiveWorkOrderPath(workOrderId, "error=work-order-unavailable");
+
+  const extensionByType: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp"
+  };
+
+  for (const photo of photos) {
+    const storagePath = `${workOrder.organisation_id}/corrective-work-orders/${workOrder.id}/${crypto.randomUUID()}.${extensionByType[photo.type]}`;
+    const { error: uploadError } = await supabase.storage
+      .from("corrective-repair-photos")
+      .upload(storagePath, photo, { contentType: photo.type, upsert: false });
+
+    if (uploadError) correctiveWorkOrderPath(workOrderId, "error=photo-upload-failed");
+
+    const { error: photoRowError } = await supabase.from("corrective_work_order_photos").insert({
+      organisation_id: workOrder.organisation_id,
+      corrective_work_order_id: workOrder.id,
+      finding_id: workOrder.finding_id,
+      storage_path: storagePath,
+      caption: value(formData, "photo_caption"),
+      uploaded_by: profile.id
+    });
+
+    if (photoRowError) correctiveWorkOrderPath(workOrderId, "error=photo-record-failed");
+  }
+
+  const { data: updated, error: updateError } = await supabase
+    .from("corrective_work_orders")
+    .update({
+      status: "REPAIR_SUBMITTED",
+      repair_notes: repairNotes,
+      parts_used: partsUsed,
+      repair_completed_at: new Date().toISOString()
+    })
+    .eq("id", workOrder.id)
+    .eq("status", "IN_PROGRESS")
+    .select("id")
+    .maybeSingle();
+
+  if (updateError || !updated) correctiveWorkOrderPath(workOrderId, "error=repair-submit-failed");
+
+  revalidatePath("/technician/today");
+  revalidatePath(`/technician/corrective/${workOrderId}`);
+  revalidatePath("/maintenance");
+  revalidatePath("/reports");
+  revalidatePath("/client/dashboard");
+  correctiveWorkOrderPath(workOrderId, "submitted=1");
 }

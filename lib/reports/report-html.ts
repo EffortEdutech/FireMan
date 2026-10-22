@@ -2,6 +2,7 @@ import { formatDate } from "@/lib/format/date";
 import type { IssuedReportData } from "@/lib/reports/issued-report-data";
 import type { ReportLayoutDefinition, ReportLayoutSection } from "@/lib/reports/report-layout";
 import { reportTemplateStats } from "@/lib/reports/report-template-stats";
+import { scopeDataForSection, staticTextItems } from "@/lib/reports/report-scope";
 
 function escapeHtml(value: string | null | undefined) {
   return (value ?? "")
@@ -290,7 +291,7 @@ function renderChecklistEvidence(data: IssuedReportData, section: ReportLayoutSe
               showItems
                 ? `
                 <div class="checklist-item ${item.resultStatus === "FAIL" || item.resultStatus === "ATTENTION" || !item.resultStatus ? "checklist-item-alert" : ""}">
-                  <span>${escapeHtml(item.prompt)}</span>
+                  <span>${escapeHtml(item.prompt)}${item.readingText ? ` &mdash; <strong>${escapeHtml(item.readingText)}</strong>` : ""}</span>
                   <span class="${badgeClass(item.resultStatus ?? "Not answered")}">${escapeHtml(item.resultStatus ?? "Not answered")}</span>
                 </div>
               `
@@ -323,7 +324,15 @@ function renderSignatureBox(section: ReportLayoutSection) {
   `;
 }
 
-function renderSectionBody(data: IssuedReportData, section: ReportLayoutSection) {
+function renderStaticText(section: ReportLayoutSection) {
+  const items = staticTextItems(section);
+  return `${section.content.description ? `<p>${escapeHtml(section.content.description)}</p>` : ""}${
+    items.length > 0 ? `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""
+  }`;
+}
+
+function renderSectionBody(fullData: IssuedReportData, section: ReportLayoutSection) {
+  const data = scopeDataForSection(fullData, section);
   switch (section.blockType) {
     case "summary_grid":
       return renderSummaryGrid(data, section);
@@ -336,7 +345,7 @@ function renderSectionBody(data: IssuedReportData, section: ReportLayoutSection)
     case "signature_box":
       return renderSignatureBox(section);
     case "static_text":
-      return section.content.description ? `<p>${escapeHtml(section.content.description)}</p>` : "";
+      return renderStaticText(section);
     case "header":
       return "";
   }

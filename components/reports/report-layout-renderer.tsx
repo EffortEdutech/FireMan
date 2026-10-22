@@ -6,6 +6,7 @@ import { SummaryField } from "@/components/ui/summary-field";
 import { formatDate } from "@/lib/format/date";
 import type { IssuedReportData } from "@/lib/reports/issued-report-data";
 import type { ReportLayoutDefinition, ReportLayoutSection } from "@/lib/reports/report-layout";
+import { scopeDataForSection, staticTextItems } from "@/lib/reports/report-scope";
 
 type ReportLayoutRendererProps = {
   data: IssuedReportData;
@@ -168,6 +169,9 @@ function FieldEvidence({ data, section }: { data: IssuedReportData; section: Rep
       {data.loadErrors.findingPhotos ? (
         <div style={{ color: "var(--muted)" }}>Some finding photos could not be loaded.</div>
       ) : null}
+      {data.loadErrors.correctiveWorkOrders ? (
+        <div style={{ color: "var(--muted)" }}>Some verified repair evidence could not be loaded.</div>
+      ) : null}
       {data.findings.map((finding) => {
         const visiblePhotos = finding.photos.slice(0, photoLimit);
         const hiddenPhotoCount = finding.photos.length - visiblePhotos.length;
@@ -241,6 +245,29 @@ function FieldEvidence({ data, section }: { data: IssuedReportData; section: Rep
             ) : null}
             </>
           ) : null}
+          {(finding.correctiveRepairs ?? []).map((repair) => (
+            <section key={repair.id} style={{ borderTop: "1px solid var(--border)", display: "grid", gap: "0.5rem", paddingTop: "0.75rem" }}>
+              <strong>Verified corrective repair · {repair.workOrderNumber}</strong>
+              <div>{repair.repairNotes}</div>
+              {repair.partsUsed ? <div style={{ color: "var(--muted)" }}>Parts recorded: {repair.partsUsed}</div> : null}
+              <div style={{ color: "var(--muted)" }}>Repair completed {formatDate(repair.completedAt)}</div>
+              <div><strong>Verification:</strong> {repair.verificationNotes}</div>
+              <div style={{ color: "var(--muted)" }}>Verified {formatDate(repair.verifiedAt)}</div>
+              {repair.photos.length > 0 ? (
+                <div style={{ display: "grid", gap: "0.5rem", gridTemplateColumns: `repeat(${photoColumns}, minmax(0, 1fr))` }}>
+                  {repair.photos.slice(0, photoLimit).map((photo, index) => (
+                    <figure key={photo.id} style={{ border: "1px solid var(--border)", borderRadius: 6, margin: 0, overflow: "hidden" }}>
+                      {photo.signedUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img alt={photo.caption ?? `${repair.workOrderNumber} repair photo ${index + 1}`} src={photo.signedUrl} style={{ aspectRatio: "4 / 3", display: "block", objectFit: "cover", width: "100%" }} />
+                      ) : <div style={{ padding: "1rem", color: "var(--muted)" }}>Photo unavailable</div>}
+                      {photo.caption ? <figcaption style={{ color: "var(--muted)", fontSize: "0.85rem", padding: "0.5rem" }}>{photo.caption}</figcaption> : null}
+                    </figure>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          ))}
         </div>
       );
       })}
@@ -286,7 +313,8 @@ function SignatureBox({ section }: { section: ReportLayoutSection }) {
   );
 }
 
-function renderSection(data: IssuedReportData, section: ReportLayoutSection) {
+function renderSection(fullData: IssuedReportData, section: ReportLayoutSection) {
+  const data = scopeDataForSection(fullData, section);
   switch (section.blockType) {
     case "summary_grid":
       return <SummaryGrid data={data} section={section} />;
@@ -299,7 +327,18 @@ function renderSection(data: IssuedReportData, section: ReportLayoutSection) {
     case "signature_box":
       return <SignatureBox section={section} />;
     case "static_text":
-      return section.content.description ? <p style={{ margin: 0 }}>{section.content.description}</p> : null;
+      return (
+        <>
+          {section.content.description ? <p style={{ margin: 0 }}>{section.content.description}</p> : null}
+          {staticTextItems(section).length > 0 ? (
+            <ul style={{ margin: section.content.description ? "0.5rem 0 0" : 0, paddingLeft: "1.25rem" }}>
+              {staticTextItems(section).map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          ) : null}
+        </>
+      );
     case "header":
       return null;
   }

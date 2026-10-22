@@ -529,53 +529,290 @@ export type Database = {
           },
         ]
       }
+      finding_quote_requests: {
+        Row: {
+          created_at: string
+          created_by: string
+          external_quote_reference: string | null
+          finding_id: string
+          id: string
+          organisation_id: string
+          request_notes: string | null
+          request_reference: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          external_quote_reference?: string | null
+          finding_id: string
+          id?: string
+          organisation_id: string
+          request_notes?: string | null
+          request_reference?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          external_quote_reference?: string | null
+          finding_id?: string
+          id?: string
+          organisation_id?: string
+          request_notes?: string | null
+          request_reference?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finding_quote_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finding_quote_requests_finding_id_fkey"
+            columns: ["finding_id"]
+            isOneToOne: true
+            referencedRelation: "findings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finding_quote_requests_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      corrective_work_orders: {
+        Row: {
+          assigned_technician_id: string
+          authorization_type: Database["public"]["Enums"]["corrective_work_order_authorization"]
+          created_at: string
+          created_by: string
+          exception_reason: string | null
+          finding_id: string
+          id: string
+          organisation_id: string
+          parts_used: string | null
+          quote_request_id: string | null
+          repair_completed_at: string | null
+          repair_notes: string | null
+          scheduled_date: string
+          status: Database["public"]["Enums"]["corrective_work_order_status"]
+          updated_at: string
+          verification_notes: string | null
+          verified_at: string | null
+          verified_by: string | null
+          work_order_number: string
+        }
+        Insert: {
+          assigned_technician_id: string
+          authorization_type: Database["public"]["Enums"]["corrective_work_order_authorization"]
+          created_at?: string
+          created_by: string
+          exception_reason?: string | null
+          finding_id: string
+          id?: string
+          organisation_id: string
+          parts_used?: string | null
+          quote_request_id?: string | null
+          repair_completed_at?: string | null
+          repair_notes?: string | null
+          scheduled_date: string
+          status?: Database["public"]["Enums"]["corrective_work_order_status"]
+          updated_at?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          work_order_number?: string
+        }
+        Update: {
+          assigned_technician_id?: string
+          authorization_type?: Database["public"]["Enums"]["corrective_work_order_authorization"]
+          created_at?: string
+          created_by?: string
+          exception_reason?: string | null
+          finding_id?: string
+          id?: string
+          organisation_id?: string
+          parts_used?: string | null
+          quote_request_id?: string | null
+          repair_completed_at?: string | null
+          repair_notes?: string | null
+          scheduled_date?: string
+          status?: Database["public"]["Enums"]["corrective_work_order_status"]
+          updated_at?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          work_order_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corrective_work_orders_assigned_technician_id_fkey"
+            columns: ["assigned_technician_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_work_orders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_work_orders_finding_id_fkey"
+            columns: ["finding_id"]
+            isOneToOne: false
+            referencedRelation: "findings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_work_orders_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_work_orders_quote_request_id_fkey"
+            columns: ["quote_request_id"]
+            isOneToOne: true
+            referencedRelation: "finding_quote_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      corrective_work_order_photos: {
+        Row: {
+          caption: string | null
+          corrective_work_order_id: string
+          created_at: string
+          finding_id: string
+          id: string
+          organisation_id: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          caption?: string | null
+          corrective_work_order_id: string
+          created_at?: string
+          finding_id: string
+          id?: string
+          organisation_id: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Update: {
+          caption?: string | null
+          corrective_work_order_id?: string
+          created_at?: string
+          finding_id?: string
+          id?: string
+          organisation_id?: string
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corrective_work_order_photos_corrective_work_order_id_fkey"
+            columns: ["corrective_work_order_id"]
+            isOneToOne: false
+            referencedRelation: "corrective_work_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_work_order_photos_finding_id_fkey"
+            columns: ["finding_id"]
+            isOneToOne: false
+            referencedRelation: "findings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_work_order_photos_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_work_order_photos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       inspection_results: {
         Row: {
           created_at: string
           id: string
           inspection_id: string
+          limit_status: string | null
           notes: string | null
           organisation_id: string
+          reading_unit: string | null
           result_status:
             | Database["public"]["Enums"]["inspection_result_status"]
             | null
+          semantic_key: string | null
           template_item_id: string
           updated_at: string
           value_date: string | null
           value_json: Json | null
           value_number: number | null
+          value_standard: number | null
           value_text: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           inspection_id: string
+          limit_status?: string | null
           notes?: string | null
           organisation_id: string
+          reading_unit?: string | null
           result_status?:
             | Database["public"]["Enums"]["inspection_result_status"]
             | null
+          semantic_key?: string | null
           template_item_id: string
           updated_at?: string
           value_date?: string | null
           value_json?: Json | null
           value_number?: number | null
+          value_standard?: number | null
           value_text?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           inspection_id?: string
+          limit_status?: string | null
           notes?: string | null
           organisation_id?: string
+          reading_unit?: string | null
           result_status?:
             | Database["public"]["Enums"]["inspection_result_status"]
             | null
+          semantic_key?: string | null
           template_item_id?: string
           updated_at?: string
           value_date?: string | null
           value_json?: Json | null
           value_number?: number | null
+          value_standard?: number | null
           value_text?: string | null
         }
         Relationships: [
@@ -1481,6 +1718,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      start_corrective_work_order: {
+        Args: { p_work_order_id: string }
+        Returns: undefined
+      }
+      verify_corrective_work_order: {
+        Args: { p_work_order_id: string; p_verification_notes: string }
+        Returns: undefined
+      }
       create_maintenance_job: {
         Args: {
           p_assigned_technician_id?: string
@@ -1665,6 +1910,8 @@ export type Database = {
     }
     Enums: {
       app_role: "OWNER" | "ADMIN" | "SUPERVISOR" | "TECHNICIAN" | "CLIENT"
+      corrective_work_order_authorization: "APPROVED_QUOTE" | "MANAGEMENT_EXCEPTION"
+      corrective_work_order_status: "SCHEDULED" | "IN_PROGRESS" | "REPAIR_SUBMITTED" | "VERIFIED" | "CANCELLED"
       equipment_status: "ACTIVE" | "OUT_OF_SERVICE" | "RETIRED"
       finding_severity: "OBSERVATION" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
       finding_status:
@@ -1699,6 +1946,12 @@ export type Database = {
         | "SPRINKLER"
         | "EMERGENCY_LIGHTING"
         | "EXIT_SIGNAGE"
+        | "HYDRANT_RISER"
+        | "FIRE_PUMP"
+        | "GASEOUS_SUPPRESSION"
+        | "FOAM_SUPPRESSION"
+        | "PASSIVE_PROTECTION"
+        | "SMOKE_CONTROL"
         | "OTHER"
       template_field_type:
         | "PASS_FAIL"
@@ -1838,6 +2091,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["OWNER", "ADMIN", "SUPERVISOR", "TECHNICIAN", "CLIENT"],
+      corrective_work_order_authorization: ["APPROVED_QUOTE", "MANAGEMENT_EXCEPTION"],
+      corrective_work_order_status: ["SCHEDULED", "IN_PROGRESS", "REPAIR_SUBMITTED", "VERIFIED", "CANCELLED"],
       equipment_status: ["ACTIVE", "OUT_OF_SERVICE", "RETIRED"],
       finding_severity: ["OBSERVATION", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
       finding_status: ["OPEN", "IN_PROGRESS", "RESOLVED", "VERIFIED", "CLOSED"],
@@ -1869,6 +2124,12 @@ export const Constants = {
         "SPRINKLER",
         "EMERGENCY_LIGHTING",
         "EXIT_SIGNAGE",
+        "HYDRANT_RISER",
+        "FIRE_PUMP",
+        "GASEOUS_SUPPRESSION",
+        "FOAM_SUPPRESSION",
+        "PASSIVE_PROTECTION",
+        "SMOKE_CONTROL",
         "OTHER",
       ],
       template_field_type: [

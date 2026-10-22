@@ -1,3 +1,4 @@
+import { formatReading } from "@/lib/reports/readings";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ReportLayoutDefinition } from "@/lib/reports/report-layout";
 import { resolveReportLayout } from "@/lib/reports/report-template";
@@ -32,6 +33,7 @@ type ReportRow = {
 
 type FindingRow = {
   id: string;
+  equipment_id?: string | null;
   title: string;
   severity: string;
   status: string;
@@ -51,6 +53,7 @@ type FindingPhotoRow = {
 
 type JobEquipmentRow = {
   id: string;
+  equipment_id?: string | null;
   equipment: {
     asset_code: string;
     location_description: string | null;
@@ -59,6 +62,7 @@ type JobEquipmentRow = {
     } | null;
     systems: {
       name: string;
+      system_type?: string | null;
     } | null;
   } | null;
 };
@@ -85,10 +89,20 @@ type InspectionResultRow = {
   inspection_id: string;
   template_item_id: string;
   result_status: string | null;
+  value_number?: number | null;
+  reading_unit?: string | null;
 };
+
+function readingTextFor(result?: InspectionResultRow) {
+  return result && result.value_number != null && result.reading_unit
+    ? formatReading(result.value_number, result.reading_unit)
+    : null;
+}
 
 export type IssuedReportFinding = {
   id: string;
+  /** System type of the asset the finding was raised on; used to scope template sections. */
+  systemType?: string | null;
   title: string;
   severity: string;
   status: string;
@@ -96,6 +110,16 @@ export type IssuedReportFinding = {
   recommendation: string | null;
   createdAt: string;
   photos: IssuedReportFindingPhoto[];
+  correctiveRepairs?: {
+    id: string;
+    workOrderNumber: string;
+    repairNotes: string;
+    partsUsed: string | null;
+    completedAt: string;
+    verificationNotes: string;
+    verifiedAt: string;
+    photos: IssuedReportFindingPhoto[];
+  }[];
 };
 
 export type IssuedReportFindingPhoto = {
@@ -112,12 +136,14 @@ export type IssuedReportAsset = {
   assetCode: string;
   equipmentType: string;
   systemName: string;
+  systemType?: string | null;
   location: string;
   inspectionStatus: string;
 };
 
 export type IssuedReportChecklistGroup = {
   id: string;
+  systemType?: string | null;
   assetCode: string;
   checklistName: string;
   status: string;
@@ -125,6 +151,7 @@ export type IssuedReportChecklistGroup = {
     id: string;
     prompt: string;
     resultStatus: string | null;
+    readingText?: string | null;
   }[];
 };
 
@@ -167,6 +194,7 @@ export type IssuedReportData = {
   loadErrors: {
     findings: boolean;
     findingPhotos: boolean;
+    correctiveWorkOrders: boolean;
     inspections: boolean;
     templateItems: boolean;
     inspectionResults: boolean;
@@ -205,13 +233,13 @@ export async function fetchIssuedReportData(
 
   const { data: findingsResult, error: findingsError } = await supabase
     .from("findings")
-    .select("id,title,severity,status,description,recommendation,created_at")
+    .select("id,equipment_id,title,severity,status,description,recommendation,created_at")
     .eq("job_id", report.job_id)
     .order("created_at", { ascending: false });
 
   const { data: jobEquipmentResult } = await supabase
     .from("job_equipment")
-    .select("id,equipment(asset_code,location_description,equipment_types(name),systems(name))")
+    .select("id,equipment_id,equipment(asset_code,location_description,equipment_types(name),systems(name,system_type))")
     .eq("job_id", report.job_id)
     .order("created_at", { ascending: true });
 
@@ -225,6 +253,54 @@ export async function fetchIssuedReportData(
           .in("finding_id", findingIds)
           .order("created_at", { ascending: true })
       : { data: [], error: null };
+
+  const { data: correctiveOrdersResult, error: correctiveOrdersError } = findingIds.length > 0
+    ? await supabase
+        .from("corrective_work_orders")
+        .select("id,work_order_number,finding_id,status,repair_notes,parts_used,repair_completed_at,verification_notes,verified_at")
+        .in("finding_id", findingIds)
+        .eq("status", "VERIFIED")
+        .order("verified_at", { ascending: true })
+    : { data: [], error: null };
+  const correctiveOrders = correctiveOrdersResult ?? [];
+  const correctiveOrderIds = correctiveOrders.map((order) => order.id);
+  const { data: correctivePhotosResult, error: correctivePhotosError } = correctiveOrderIds.length > 0
+    ? await supabase
+        .from("corrective_work_order_photos")
+        .select("id,corrective_work_order_id,finding_id,storage_path,caption,created_at")
+        .in("corrective_work_order_id", correctiveOrderIds)
+        .order("created_at", { ascending: true })
+    : { data: [], error: null };
+  const correctivePhotos = correctivePhotosResult ?? [];
+  const correctivePhotoUrlByPath = new Map<string, string>();
+  let correctivePhotoUrlError = false;
+  await Promise.all(correctivePhotos.map(async (photo) => {
+    const { data: signedPhoto, error: signedPhotoError } = await supabase.storage
+      .from("corrective-repair-photos")
+      .createSignedUrl(photo.storage_path, 60 * 60);
+    if (signedPhotoError) {
+      correctivePhotoUrlError = true;
+    } else if (signedPhoto?.signedUrl) {
+      correctivePhotoUrlByPath.set(photo.storage_path, signedPhoto.signedUrl);
+    }
+  }));
+  const correctivePhotosByOrderId = new Map<string, IssuedReportFindingPhoto[]>();
+  correctivePhotos.forEach((photo) => {
+    const current = correctivePhotosByOrderId.get(photo.corrective_work_order_id) ?? [];
+    correctivePhotosByOrderId.set(photo.corrective_work_order_id, [...current, {
+      id: photo.id,
+      storagePath: photo.storage_path,
+      signedUrl: correctivePhotoUrlByPath.get(photo.storage_path) ?? null,
+      caption: photo.caption,
+      takenAt: null,
+      createdAt: photo.created_at
+    }]);
+  });
+  const correctiveOrdersByFindingId = new Map<string, typeof correctiveOrders>();
+  correctiveOrders.forEach((order) => {
+    const current = correctiveOrdersByFindingId.get(order.finding_id) ?? [];
+    correctiveOrdersByFindingId.set(order.finding_id, [...current, order]);
+  });
 
   const findingPhotos = (findingPhotosResult ?? []) as FindingPhotoRow[];
   const signedPhotoUrlByPath = new Map<string, string>();
@@ -289,7 +365,7 @@ export async function fetchIssuedReportData(
       inspectionIds.length > 0
         ? supabase
             .from("inspection_results")
-            .select("id,inspection_id,template_item_id,result_status")
+            .select("id,inspection_id,template_item_id,result_status,value_number,reading_unit")
             .in("inspection_id", inspectionIds)
         : Promise.resolve({ data: [], error: null })
     ]);
@@ -314,19 +390,28 @@ export async function fetchIssuedReportData(
     resultByInspectionAndItem.set(`${result.inspection_id}:${result.template_item_id}`, result);
   });
 
+  const systemTypeByEquipmentId = new Map<string, string | null>();
+  jobEquipment.forEach((asset) => {
+    if (asset.equipment_id) {
+      systemTypeByEquipmentId.set(asset.equipment_id, asset.equipment?.systems?.system_type ?? null);
+    }
+  });
+
   const checklistGroups = inspections.map((inspection) => {
     const asset = assetById.get(inspection.job_equipment_id);
     const checklistItems = itemsByTemplateId.get(inspection.template_id) ?? [];
 
     return {
       id: inspection.id,
+      systemType: asset?.equipment?.systems?.system_type ?? null,
       assetCode: asset?.equipment?.asset_code ?? "Asset",
       checklistName: inspection.inspection_templates?.name ?? "Checklist",
       status: inspection.status,
       items: checklistItems.map((item) => ({
         id: item.id,
         prompt: item.prompt,
-        resultStatus: resultByInspectionAndItem.get(`${inspection.id}:${item.id}`)?.result_status ?? null
+        resultStatus: resultByInspectionAndItem.get(`${inspection.id}:${item.id}`)?.result_status ?? null,
+        readingText: readingTextFor(resultByInspectionAndItem.get(`${inspection.id}:${item.id}`))
       }))
     };
   });
@@ -372,24 +457,40 @@ export async function fetchIssuedReportData(
       assetCode: asset.equipment?.asset_code ?? "Asset",
       equipmentType: asset.equipment?.equipment_types?.name ?? "Not set",
       systemName: asset.equipment?.systems?.name ?? "Not set",
+      systemType: asset.equipment?.systems?.system_type ?? null,
       location: asset.equipment?.location_description ?? "Not set",
       inspectionStatus: inspectionStatusByAssetId.get(asset.id) ?? "Not started"
     })),
     findings: findings.map((finding) => ({
       id: finding.id,
+      systemType: finding.equipment_id ? systemTypeByEquipmentId.get(finding.equipment_id) ?? null : null,
       title: finding.title,
       severity: finding.severity,
       status: finding.status,
       description: finding.description,
       recommendation: finding.recommendation,
       createdAt: finding.created_at,
-      photos: photosByFindingId.get(finding.id) ?? []
+      photos: photosByFindingId.get(finding.id) ?? [],
+      correctiveRepairs: (correctiveOrdersByFindingId.get(finding.id) ?? []).flatMap((order) => {
+        if (!order.repair_notes || !order.repair_completed_at || !order.verification_notes || !order.verified_at) return [];
+        return [{
+          id: order.id,
+          workOrderNumber: order.work_order_number,
+          repairNotes: order.repair_notes,
+          partsUsed: order.parts_used,
+          completedAt: order.repair_completed_at,
+          verificationNotes: order.verification_notes,
+          verifiedAt: order.verified_at,
+          photos: correctivePhotosByOrderId.get(order.id) ?? []
+        }];
+      })
     })),
     checklistGroups,
     layout: resolveReportLayout(report.report_templates?.layout),
     loadErrors: {
       findings: Boolean(findingsError),
       findingPhotos: Boolean(findingPhotosError || signedPhotoUrlError),
+      correctiveWorkOrders: Boolean(correctiveOrdersError || correctivePhotosError || correctivePhotoUrlError),
       inspections: Boolean(inspectionsError),
       templateItems: Boolean(templateItemsError),
       inspectionResults: Boolean(resultsError)

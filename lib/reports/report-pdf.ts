@@ -2,6 +2,7 @@ import { formatDate } from "@/lib/format/date";
 import type { IssuedReportData } from "@/lib/reports/issued-report-data";
 import type { ReportLayoutDefinition, ReportLayoutSection } from "@/lib/reports/report-layout";
 import { reportTemplateStats } from "@/lib/reports/report-template-stats";
+import { scopeDataForSection, staticTextItems } from "@/lib/reports/report-scope";
 import sharp from "sharp";
 
 const page = {
@@ -266,7 +267,7 @@ function checklistLines(data: IssuedReportData, section: ReportLayoutSection): P
       },
       ...(showItems
         ? group.items.map((item) => ({
-            text: `    - ${item.prompt}: ${item.resultStatus ?? "Not answered"}`
+            text: `    - ${item.prompt}${item.readingText ? ` [${item.readingText}]` : ""}: ${item.resultStatus ?? "Not answered"}`
           }))
         : [])
     ];
@@ -281,7 +282,8 @@ function signatureLines(section: ReportLayoutSection): PdfLine[] {
   ];
 }
 
-function sectionLines(data: IssuedReportData, section: ReportLayoutSection): PdfLine[] {
+function sectionLines(fullData: IssuedReportData, section: ReportLayoutSection): PdfLine[] {
+  const data = scopeDataForSection(fullData, section);
   switch (section.blockType) {
     case "summary_grid":
       return summaryLines(data, section);
@@ -294,7 +296,10 @@ function sectionLines(data: IssuedReportData, section: ReportLayoutSection): Pdf
     case "signature_box":
       return signatureLines(section);
     case "static_text":
-      return section.content.description ? [{ text: section.content.description }] : [];
+      return [
+        ...(section.content.description ? [{ text: section.content.description }] : []),
+        ...staticTextItems(section).map((item) => ({ text: `- ${item}` }))
+      ];
     case "header":
       return [];
   }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { addFinding, completeAssetInspection, saveInspectionResult, startAssetInspection, startJob, submitJob } from "@/app/technician/today/actions";
+import { addFinding, completeAssetInspection, saveInspectionReading, saveInspectionResult, startAssetInspection, startJob, submitJob } from "@/app/technician/today/actions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AlertState, EmptyState, SuccessState } from "@/components/ui/states";
@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { SummaryField } from "@/components/ui/summary-field";
 import { requireProfile } from "@/lib/auth/current-user";
 import { formatDate } from "@/lib/format/date";
+import { findReadingDefinition, units } from "@/lib/reports/readings";
 import { canAccessTechnician } from "@/lib/permissions/roles";
 import { createClient } from "@/lib/supabase/server";
 import { OfflineFindingQueue } from "@/components/technician/offline-finding-queue";
@@ -99,7 +100,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
     templateIds.length > 0
       ? await supabase
           .from("inspection_template_items")
-          .select("id,template_id,section,item_code,prompt,field_type,required,sort_order,guidance")
+          .select("id,template_id,section,item_code,prompt,field_type,required,sort_order,guidance,metadata")
           .in("template_id", templateIds)
           .order("sort_order", { ascending: true })
       : { data: [], error: null };
@@ -108,7 +109,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
     activeInspectionIds.length > 0
       ? await supabase
           .from("inspection_results")
-          .select("id,inspection_id,template_item_id,result_status,notes,updated_at")
+          .select("id,inspection_id,template_item_id,result_status,notes,updated_at,value_number,reading_unit,limit_status")
           .in("inspection_id", activeInspectionIds)
       : { data: [], error: null };
 
@@ -325,7 +326,41 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
                                       <span style={{ color: "var(--muted)", whiteSpace: "nowrap" }}>{savedResult?.result_status ?? item.field_type}</span>
                             </div>
                             {item.guidance ? <div style={{ color: "var(--muted)", marginTop: 4 }}>{item.guidance}</div> : null}
-                                  {inspection.status === "IN_PROGRESS" ? (
+                                  {(() => {
+                                    const semanticKey = (item.metadata as { semanticKey?: string } | null)?.semanticKey;
+                                    const reading = item.field_type === "NUMBER" && semanticKey ? findReadingDefinition(semanticKey) : undefined;
+                                    if (!reading) return null;
+                                    return (
+                                      <>
+                                        {savedResult?.value_number != null ? (
+                                          <div style={{ marginTop: 6 }}>
+                                            Recorded: <strong>{savedResult.value_number} {savedResult.reading_unit ? units[savedResult.reading_unit as keyof typeof units]?.label ?? savedResult.reading_unit : ""}</strong>
+                                            {savedResult.limit_status === "OUT_OF_LIMIT" ? (
+                                              <div style={{ color: "var(--danger, #b42318)" }}>
+                                                {savedResult.notes ?? "Outside the standard limit"}. Raise a deficiency below if you confirm it.
+                                              </div>
+                                            ) : null}
+                                          </div>
+                                        ) : null}
+                                        {inspection.status === "IN_PROGRESS" ? (
+                                          <form action={saveInspectionReading} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                                            <input name="inspection_id" type="hidden" value={inspection.id} />
+                                            <input name="template_item_id" type="hidden" value={item.id} />
+                                            <input name="job_id" type="hidden" value={job.id} />
+                                            <input name="next" type="hidden" value={next} />
+                                            <input name="reading_value" type="number" step="any" required inputMode="decimal" aria-label={reading.label} defaultValue={savedResult?.value_number ?? ""} style={{ width: 120 }} />
+                                            <select name="reading_unit" aria-label="Unit" defaultValue={savedResult?.reading_unit ?? reading.allowedUnits[0]}>
+                                              {reading.allowedUnits.map((code) => (
+                                                <option key={code} value={code}>{units[code].label}</option>
+                                              ))}
+                                            </select>
+                                            <Button type="submit" variant="secondary">Save reading</Button>
+                                          </form>
+                                        ) : null}
+                                      </>
+                                    );
+                                  })()}
+                                  {inspection.status === "IN_PROGRESS" && !(item.field_type === "NUMBER" && findReadingDefinition((item.metadata as { semanticKey?: string } | null)?.semanticKey ?? "")) ? (
                                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
                                       {(["PASS", "ATTENTION", "FAIL", "NA"] as const).map((resultStatus) => (
                                         <form action={saveInspectionResult} key={resultStatus}>

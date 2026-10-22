@@ -56,7 +56,7 @@ export default async function TechnicianTodayPage({ searchParams }: TechnicianTo
 
   const params = await searchParams;
   const supabase = await createClient();
-  const [{ data: jobs, error: jobsError }, { data: findings, error: findingsError }] = await Promise.all([
+  const [{ data: jobs, error: jobsError }, { data: findings, error: findingsError }, { data: correctiveOrders, error: correctiveOrdersError }] = await Promise.all([
     supabase
       .from("maintenance_jobs")
       .select("id,job_number,scheduled_date,status,clients(name),sites(name)")
@@ -65,7 +65,12 @@ export default async function TechnicianTodayPage({ searchParams }: TechnicianTo
     supabase
       .from("findings")
       .select("id,title,severity,status,created_at,maintenance_jobs(id,job_number),equipment(asset_code)")
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("corrective_work_orders")
+      .select("id,work_order_number,finding_id,scheduled_date,status,findings(title,severity)")
+      .in("status", ["SCHEDULED", "IN_PROGRESS", "REPAIR_SUBMITTED"])
+      .order("scheduled_date", { ascending: true })
   ]);
   const jobIds = jobs?.map((job) => job.id) ?? [];
   const { data: jobEquipment, error: jobEquipmentError } =
@@ -294,6 +299,27 @@ export default async function TechnicianTodayPage({ searchParams }: TechnicianTo
       ) : (
         <EmptyState title="No assigned jobs" message="Scheduled and in-progress jobs will appear here." />
       )}
+      {correctiveOrdersError ? (
+        <EmptyState title="Corrective assignments unavailable" message="The corrective work queue could not be loaded." />
+      ) : correctiveOrders && correctiveOrders.length > 0 ? (
+        <Card>
+          <h2 style={{ fontSize: "1rem", margin: "0 0 0.75rem" }}>Corrective work</h2>
+          <div style={{ display: "grid", gap: 8 }}>
+            {correctiveOrders.map((order) => (
+              <div key={order.id} style={{ alignItems: "center", borderBottom: "1px solid var(--border)", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between", paddingBottom: 8 }}>
+                <div>
+                  <Link href={`/technician/corrective/${order.id}`}><strong>{order.work_order_number}</strong></Link>
+                  <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: 3 }}>{order.findings?.title ?? "Corrective finding"} / due {order.scheduled_date}</div>
+                </div>
+                <div style={{ alignItems: "center", display: "flex", gap: 8 }}>
+                  <StatusBadge>{order.status.replaceAll("_", " ")}</StatusBadge>
+                  <Link href={`/technician/corrective/${order.id}`} style={{ color: "var(--accent)", fontWeight: 700 }}>Open</Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
       <Card>
         <form action={addFinding} style={{ display: "grid", gap: "1rem" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
