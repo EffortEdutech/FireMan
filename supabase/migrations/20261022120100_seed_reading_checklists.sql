@@ -33,12 +33,17 @@ begin
     select id into et from public.equipment_types where organisation_id is null and code = spec.etype limit 1;
     continue when et is null;
 
-    insert into public.inspection_templates (organisation_id,equipment_type_id,name,code,version,status,description)
-    values (null,et,spec.tname,spec.tcode,1,'ACTIVE','Recorded readings for trend reporting.')
-    on conflict (organisation_id,code,version) do nothing;
-
+    -- organisation_id is NULL for shared templates, and NULLs never conflict in a
+    -- unique constraint, so look the template up first instead of relying on ON CONFLICT.
     select id into t from public.inspection_templates
-      where organisation_id is null and code = spec.tcode and version = 1 limit 1;
+      where organisation_id is null and code = spec.tcode and version = 1
+      order by created_at limit 1;
+
+    if t is null then
+      insert into public.inspection_templates (organisation_id,equipment_type_id,name,code,version,status,description)
+      values (null,et,spec.tname,spec.tcode,1,'ACTIVE','Recorded readings for trend reporting.')
+      returning id into t;
+    end if;
 
     insert into public.inspection_template_items
       (template_id,section,item_code,prompt,field_type,required,sort_order,guidance,fail_creates_finding,metadata)
