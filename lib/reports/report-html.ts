@@ -1,3 +1,4 @@
+import { sparklinePoints } from "@/lib/reports/trends";
 import { formatDate } from "@/lib/format/date";
 import type { IssuedReportData } from "@/lib/reports/issued-report-data";
 import type { ReportLayoutDefinition, ReportLayoutSection } from "@/lib/reports/report-layout";
@@ -164,6 +165,13 @@ function badgeClass(value: string) {
   return "badge";
 }
 
+function trendSvg(trend?: { date: string; value: number }[]) {
+  const points = trend ? sparklinePoints(trend, 160, 32) : null;
+  return points
+    ? `<br /><svg width="160" height="32" viewBox="0 0 160 32" role="img" aria-label="Reading trend"><polyline fill="none" stroke="#344054" stroke-width="1.5" points="${points}" /></svg>`
+    : "";
+}
+
 function checklistCounts(items: { resultStatus: string | null }[]) {
   return items.reduce(
     (counts, item) => {
@@ -291,7 +299,7 @@ function renderChecklistEvidence(data: IssuedReportData, section: ReportLayoutSe
               showItems
                 ? `
                 <div class="checklist-item ${item.resultStatus === "FAIL" || item.resultStatus === "ATTENTION" || !item.resultStatus ? "checklist-item-alert" : ""}">
-                  <span>${escapeHtml(item.prompt)}${item.readingText ? ` &mdash; <strong>${escapeHtml(item.readingText)}</strong>` : ""}</span>
+                  <span>${escapeHtml(item.prompt)}${item.readingText ? ` &mdash; <strong>${escapeHtml(item.readingText)}</strong>` : ""}${item.readingChange ? `<br /><small>${escapeHtml(item.readingChange)}</small>` : ""}${trendSvg(item.trend)}</span>
                   <span class="${badgeClass(item.resultStatus ?? "Not answered")}">${escapeHtml(item.resultStatus ?? "Not answered")}</span>
                 </div>
               `

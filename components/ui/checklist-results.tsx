@@ -1,10 +1,14 @@
 import { EmptyState } from "@/components/ui/states";
+import { sparklinePoints, type TrendPoint } from "@/lib/reports/trends";
 
 type ChecklistResultItem = {
   id: string;
   prompt: string;
   resultStatus: string | null;
   readingText?: string | null;
+  readingChange?: string | null;
+  trend?: TrendPoint[];
+  trendUnit?: string | null;
 };
 
 type ChecklistResultGroup = {
@@ -83,6 +87,23 @@ function ResultBadge({ children }: { children: string }) {
   );
 }
 
+function TrendSparkline({ series, unit }: { series: TrendPoint[]; unit: string }) {
+  const points = sparklinePoints(series, 160, 32);
+  const first = series[0];
+  const last = series[series.length - 1];
+  if (!points || !first || !last) return null;
+  return (
+    <span style={{ alignItems: "center", display: "flex", gap: 8, marginTop: 4 }}>
+      <svg aria-label={`Trend ${first.date} to ${last.date}`} height={32} role="img" viewBox="0 0 160 32" width={160}>
+        <polyline fill="none" points={points} stroke="currentColor" strokeWidth={1.5} />
+      </svg>
+      <span style={{ color: "var(--muted)", fontSize: "0.75rem" }}>
+        {series.length} visits, {first.date} to {last.date} ({unit})
+      </span>
+    </span>
+  );
+}
+
 export function ChecklistResults({ emptyMessage, emptyTitle, groups }: ChecklistResultsProps) {
   if (groups.length === 0) {
     return <EmptyState title={emptyTitle} message={emptyMessage} />;
@@ -139,7 +160,12 @@ export function ChecklistResults({ emptyMessage, emptyTitle, groups }: Checklist
                       padding: "8px 0 0"
                     }}
                   >
-                    <span>{item.prompt}{item.readingText ? <strong>{` — ${item.readingText}`}</strong> : null}</span>
+                    <span>
+                      {item.prompt}
+                      {item.readingText ? <strong>{` — ${item.readingText}`}</strong> : null}
+                      {item.readingChange ? <span style={{ color: "var(--muted)", display: "block", fontSize: "0.8125rem" }}>{item.readingChange}</span> : null}
+                      {item.trend && item.trend.length > 1 ? <TrendSparkline series={item.trend} unit={item.trendUnit ?? ""} /> : null}
+                    </span>
                     <ResultBadge>{status}</ResultBadge>
                   </div>
                 );

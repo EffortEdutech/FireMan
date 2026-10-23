@@ -267,7 +267,7 @@ function checklistLines(data: IssuedReportData, section: ReportLayoutSection): P
       },
       ...(showItems
         ? group.items.map((item) => ({
-            text: `    - ${item.prompt}${item.readingText ? ` [${item.readingText}]` : ""}: ${item.resultStatus ?? "Not answered"}`
+            text: `    - ${item.prompt}${item.readingText ? ` [${item.readingText}]` : ""}: ${item.resultStatus ?? "Not answered"}${item.readingChange ? ` | ${item.readingChange}` : ""}${item.trend && item.trend.length > 1 ? ` | Trend (${item.trendUnit ?? ""}): ${item.trend.map((point) => Math.round(point.value * 100) / 100).join(" > ")}` : ""}`
           }))
         : [])
     ];

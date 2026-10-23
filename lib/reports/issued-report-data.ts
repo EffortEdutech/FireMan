@@ -1,4 +1,5 @@
-import { formatReading } from "@/lib/reports/readings";
+import { findReadingDefinition, formatReading, standardUnitFor, units } from "@/lib/reports/readings";
+import { buildTrendSeries, changeSinceLastVisit, formatChange, type ReadingPoint, type TrendPoint } from "@/lib/reports/trends";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ReportLayoutDefinition } from "@/lib/reports/report-layout";
 import { resolveReportLayout } from "@/lib/reports/report-template";
@@ -91,12 +92,82 @@ type InspectionResultRow = {
   result_status: string | null;
   value_number?: number | null;
   reading_unit?: string | null;
+  semantic_key?: string | null;
+  value_standard?: number | null;
 };
+
+type HistoryJobEquipmentRow = {
+  id: string;
+  equipment_id: string;
+  job_id: string;
+  maintenance_jobs: { scheduled_date: string } | { scheduled_date: string }[] | null;
+};
+
+/** All recorded readings for these assets across visits, keyed by equipment + semantic key. */
+async function loadReadingHistory(supabase: SupabaseClient<Database>, equipmentIds: string[]) {
+  const history = new Map<string, ReadingPoint[]>();
+  if (equipmentIds.length === 0) return history;
+
+  const { data: jeData, error: jeError } = await supabase
+    .from("job_equipment")
+    .select("id,equipment_id,job_id,maintenance_jobs(scheduled_date)")
+    .in("equipment_id", equipmentIds);
+  const jeRows = (jeData ?? []) as unknown as HistoryJobEquipmentRow[];
+  if (jeError || jeRows.length === 0) return history;
+
+  const { data: inspData, error: inspError } = await supabase
+    .from("inspections")
+    .select("id,job_equipment_id")
+    .in("job_equipment_id", jeRows.map((row) => row.id));
+  const inspRows = (inspData ?? []) as { id: string; job_equipment_id: string }[];
+  if (inspError || inspRows.length === 0) return history;
+
+  const { data: resData, error: resError } = await supabase
+    .from("inspection_results")
+    .select("inspection_id,semantic_key,value_standard")
+    .in("inspection_id", inspRows.map((row) => row.id))
+    .not("semantic_key", "is", null)
+    .not("value_standard", "is", null);
+  if (resError) return history;
+
+  const jeById = new Map(jeRows.map((row) => [row.id, row]));
+  const jeByInspection = new Map(inspRows.map((row) => [row.id, jeById.get(row.job_equipment_id)]));
+
+  (resData ?? []).forEach((row) => {
+    const result = row as { inspection_id: string; semantic_key: string | null; value_standard: number | null };
+    const je = jeByInspection.get(result.inspection_id);
+    const job = Array.isArray(je?.maintenance_jobs) ? je?.maintenance_jobs[0] : je?.maintenance_jobs;
+    if (!je || !job || !result.semantic_key || result.value_standard == null) return;
+    const key = `${je.equipment_id}:${result.semantic_key}`;
+    history.set(key, [
+      ...(history.get(key) ?? []),
+      { jobId: je.job_id, visitDate: job.scheduled_date, valueStandard: Number(result.value_standard) }
+    ]);
+  });
+
+  return history;
+}
 
 function readingTextFor(result?: InspectionResultRow) {
   return result && result.value_number != null && result.reading_unit
     ? formatReading(result.value_number, result.reading_unit)
     : null;
+}
+
+function readingTrendFor(
+  equipmentId: string | null,
+  semanticKey: string | null,
+  jobId: string,
+  history: Map<string, ReadingPoint[]>
+) {
+  const definition = semanticKey ? findReadingDefinition(semanticKey) : undefined;
+  const points = equipmentId && semanticKey ? history.get(`${equipmentId}:${semanticKey}`) : undefined;
+  if (!definition || !semanticKey || !points) return {};
+  return {
+    readingChange: formatChange(semanticKey, changeSinceLastVisit(points, jobId)),
+    trend: buildTrendSeries(points),
+    trendUnit: units[standardUnitFor[definition.quantity]].label
+  };
 }
 
 export type IssuedReportFinding = {
@@ -152,6 +223,11 @@ export type IssuedReportChecklistGroup = {
     prompt: string;
     resultStatus: string | null;
     readingText?: string | null;
+    /** Change against the previous visit, in the standard unit. */
+    readingChange?: string | null;
+    /** Readings across visits (standard unit), oldest first; chart when two or more. */
+    trend?: TrendPoint[];
+    trendUnit?: string | null;
   }[];
 };
 
@@ -365,7 +441,7 @@ export async function fetchIssuedReportData(
       inspectionIds.length > 0
         ? supabase
             .from("inspection_results")
-            .select("id,inspection_id,template_item_id,result_status,value_number,reading_unit")
+            .select("id,inspection_id,template_item_id,result_status,value_number,reading_unit,semantic_key,value_standard")
             .in("inspection_id", inspectionIds)
         : Promise.resolve({ data: [], error: null })
     ]);
@@ -397,6 +473,11 @@ export async function fetchIssuedReportData(
     }
   });
 
+  const readingHistory = await loadReadingHistory(
+    supabase,
+    Array.from(new Set(jobEquipment.map((asset) => asset.equipment_id).filter((id): id is string => Boolean(id))))
+  );
+
   const checklistGroups = inspections.map((inspection) => {
     const asset = assetById.get(inspection.job_equipment_id);
     const checklistItems = itemsByTemplateId.get(inspection.template_id) ?? [];
@@ -411,7 +492,13 @@ export async function fetchIssuedReportData(
         id: item.id,
         prompt: item.prompt,
         resultStatus: resultByInspectionAndItem.get(`${inspection.id}:${item.id}`)?.result_status ?? null,
-        readingText: readingTextFor(resultByInspectionAndItem.get(`${inspection.id}:${item.id}`))
+        readingText: readingTextFor(resultByInspectionAndItem.get(`${inspection.id}:${item.id}`)),
+        ...readingTrendFor(
+          asset?.equipment_id ?? null,
+          resultByInspectionAndItem.get(`${inspection.id}:${item.id}`)?.semantic_key ?? null,
+          report.job_id,
+          readingHistory
+        )
       }))
     };
   });
