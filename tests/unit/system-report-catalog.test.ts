@@ -83,8 +83,8 @@ describe("system report catalogue", () => {
   });
 
   it("covers every fire system module with at least one template", () => {
-    for (const module of fireSystemModules) {
-      expect(catalog.some((template) => template.kind === "SYSTEM" && template.slug.startsWith(module.key))).toBe(true);
+    for (const systemModule of fireSystemModules) {
+      expect(catalog.some((template) => template.kind === "SYSTEM" && template.slug.startsWith(systemModule.key))).toBe(true);
     }
   });
 
@@ -103,8 +103,8 @@ describe("system report catalogue", () => {
   });
 
   it("lists reference standards and never states a standard is verified for this contract", () => {
-    for (const module of fireSystemModules) {
-      expect(module.standards.length).toBeGreaterThan(0);
+    for (const systemModule of fireSystemModules) {
+      expect(systemModule.standards.length).toBeGreaterThan(0);
     }
     const alarm = catalog.find((template) => template.slug === "fire-alarm-quarterly");
     expect(JSON.stringify(alarm?.layout)).toContain("standard cited in the client contract");

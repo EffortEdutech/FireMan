@@ -511,8 +511,8 @@ export function buildSystemReportCatalog(): SystemReportTemplate[] {
   for (const frequency of frequencies) {
     const combined = buildCombinedTemplate(frequency);
     if (combined) templates.push(combined);
-    for (const module of fireSystemModules) {
-      const template = buildSystemTemplate(module, frequency);
+    for (const systemModule of fireSystemModules) {
+      const template = buildSystemTemplate(systemModule, frequency);
       if (template) templates.push(template);
     }
   }
