@@ -97,7 +97,9 @@ The sprint is complete only when:
 
 **Move 1/6: pilot account and environment readiness complete.**
 
-`npm run check:pilot` passed with all four role credential pairs and the HTTPS Supabase URL. Authenticated Playwright acceptance passed all `19/19` tests, covering Owner, Technician, Client A, Client B, technician route/logout behavior, and Client A technician-route isolation. Credentials remain external to the repository.
+`npm run check:pilot` passed with all four role credential pairs and the HTTPS Supabase URL. An earlier authenticated Playwright run passed `19/19`, but the latest run on 2026-10-18 failed Owner sign-in at `/login`; the four later serialized role cases did not run. Credentials remain external to the repository. The Owner credentialed acceptance gate is therefore open until the account can sign in and the complete role suite passes again.
+
+**Update 2026-10-27: Owner credentialed acceptance gate closed.** The full authenticated suite (`npm run test:e2e`, production server, all four role accounts) passed `23/23`, including the Owner, Technician, Client A and Client B cases. The Owner account was verified healthy in Supabase (active, confirmed, organisation set). The earlier Owner failure did not reproduce, and the remaining Client B failure was a sign-in wait timeout: Supabase logged the Client B login, but the dashboard did not render within 10 seconds. The `signIn` helper's post-login URL wait in `tests/e2e/authenticated.spec.ts` was raised from 10s to 30s. No assertion or authorization check was weakened. Client A's dashboard took 20.4s to render in the passing run, so first-load speed of the client dashboard is a known follow-up.
 
 E2E acceptance uses the production server (`npm run start`) rather than the development HMR server to avoid cross-origin HMR interference during pilot verification.
 
@@ -120,3 +122,28 @@ The runbook now covers checklist queueing, finding and photo queueing, refresh p
 **Move 5/6: pilot defect triage and workflow polish in progress.**
 
 The reported mobile-install issue is logged as `CFP-001` in [`CONTROLLED_FIELD_PILOT_DEFECT_LOG.md`](./CONTROLLED_FIELD_PILOT_DEFECT_LOG.md). The app now includes browser-specific installation guidance under Technician More. The manifest/icon and service-worker fix was pushed in commit `f859683`; physical-device re-test is still pending. The Move 4 interruption and recovery drill is also not run, so the pilot is not eligible for final sign-off yet.
+
+## Move 6 Sign-Off Record
+
+**Decision recorded 2026-10-18: engineering sprint closed by owner direction; controlled field pilot is NO-GO pending evidence.**
+
+This closes the sprint's planning and engineering work so product development can proceed. It does not certify the live field pilot or production readiness. The acceptance items below remain open and must pass before a technician pilot is authorized:
+
+- `CFP-001` physical Android/iOS installation and standalone-launch retest after the Vercel deployment is Ready;
+- the Move 4 interruption/recovery scenarios recorded in the runbook, including no duplicate or missing evidence;
+- one supervised end-to-end job with its identifiers and evidence recorded;
+- ~~Owner credentialed acceptance~~ **Closed 2026-10-27:** authenticated E2E `23/23` passed (see Current Status);
+- a current full release gate run. Evidence so far: unit `123/123` passed (2026-10-23), local `npm run build` passed and the Vercel deployment was green, E2E `23/23` (2026-10-27). **Still open:** a fresh RLS golden-boundary SQL run (`tests/integration/sql/rls_golden_boundaries.sql`) against the current schema, and `npm run lint`.
+
+Previously recorded credentialed E2E coverage (`19/19`) and RLS golden-boundary coverage (`10/10`) are historical evidence, not current acceptance. The previous E2E result (2026-10-18) was `18 passed, 1 failed, 4 did not run` and is superseded by the `23/23` run on 2026-10-27. Automated E2E does not substitute for the outstanding physical-device, recovery, and supervised-job checks. **Decision unchanged: the controlled field pilot remains NO-GO.**
+
+### Rollback and Support
+
+- No database migration was introduced by the pilot workflow polish in Moves 5-6.
+- If the latest web deployment regresses, use Vercel to assign the previous known-good Ready deployment back to production; preserve all local queued technician evidence during troubleshooting.
+- Support should capture the non-sensitive values in Technician **More** plus job number, device/browser, deployment commit, timestamp, and sync state. Do not capture passwords, tokens, or service-role credentials.
+- The account owner/project operator remains the escalation contact; no separate pilot support contact was recorded in this sprint.
+
+### Next Sprint
+
+The next locked sprint is [`FINDING_CORRECTIVE_WORK_SPRINT_LOCK.md`](./FINDING_CORRECTIVE_WORK_SPRINT_LOCK.md), beginning at Move 0/6. The controlled field pilot remains NO-GO until the open acceptance evidence above is recorded.

@@ -33,12 +33,27 @@ function hasCredentials(account: TestAccount) {
   return Boolean(account.email && account.password);
 }
 
-async function signIn(page: Page, account: Credentials) {
+async function signIn(page: Page, account: Credentials, expectedPath: string) {
   await page.goto("/login", { waitUntil: "domcontentloaded", timeout: 10000 });
   await expect(page.getByLabel("Email")).toBeVisible({ timeout: 10000 });
   await page.getByLabel("Email").fill(account.email);
   await page.getByLabel("Password").fill(account.password);
   await page.getByRole("button", { name: "Continue" }).click({ timeout: 10000 });
+
+  try {
+    // Sign-in succeeds server-side quickly, but the first render of a role dashboard can be slow.
+    await page.waitForURL((url) => url.pathname === expectedPath, { timeout: 30000 });
+  } catch {
+    const currentPath = new URL(page.url()).pathname;
+    const alerts = await page.getByRole("alert").allTextContents().catch(() => []);
+    const passwordField = page.getByLabel("Password");
+    if (await passwordField.isVisible().catch(() => false)) {
+      await passwordField.fill("", { timeout: 1000 }).catch(() => undefined);
+    }
+    throw new Error(
+      `Sign-in did not reach ${expectedPath}; current path: ${currentPath}; app feedback: ${alerts.join(" ").trim() || "none"}. Credentials were omitted.`
+    );
+  }
 }
 
 function requiredAccount(account: TestAccount): Credentials {
@@ -53,7 +68,7 @@ test.describe("authenticated smoke", () => {
   test("owner can reach management dashboard and operations routes", async ({ page }) => {
     test.skip(!hasCredentials(accounts.owner), "Set E2E_OWNER_EMAIL and E2E_OWNER_PASSWORD to run owner smoke tests.");
 
-    await signIn(page, requiredAccount(accounts.owner));
+    await signIn(page, requiredAccount(accounts.owner), "/dashboard");
 
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
@@ -69,7 +84,7 @@ test.describe("authenticated smoke", () => {
     test.skip(!hasCredentials(accounts.technician), "Set E2E_TECHNICIAN_EMAIL and E2E_TECHNICIAN_PASSWORD to run technician smoke tests.");
     test.setTimeout(30000);
 
-    await signIn(page, requiredAccount(accounts.technician));
+    await signIn(page, requiredAccount(accounts.technician), "/technician/today");
 
     await expect(page).toHaveURL(/\/technician\/today$/);
     await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
@@ -80,7 +95,7 @@ test.describe("authenticated smoke", () => {
     test.skip(!hasCredentials(accounts.technician), "Set E2E_TECHNICIAN_EMAIL and E2E_TECHNICIAN_PASSWORD to run technician route smoke tests.");
     test.setTimeout(30000);
 
-    await signIn(page, requiredAccount(accounts.technician));
+    await signIn(page, requiredAccount(accounts.technician), "/technician/today");
     await expect(page).toHaveURL(/\/technician\/today$/);
 
     for (const route of ["/technician/jobs", "/technician/scan", "/technician/more"]) {
@@ -94,7 +109,7 @@ test.describe("authenticated smoke", () => {
   test("client A can see issued report portal", async ({ page }) => {
     test.skip(!hasCredentials(accounts.clientA), "Set E2E_CLIENT_A_EMAIL and E2E_CLIENT_A_PASSWORD to run Client A smoke tests.");
 
-    await signIn(page, requiredAccount(accounts.clientA));
+    await signIn(page, requiredAccount(accounts.clientA), "/client/dashboard");
 
     await expect(page).toHaveURL(/\/client\/dashboard$/);
     await expect(page.getByRole("heading", { name: "Client Dashboard" })).toBeVisible();
@@ -116,7 +131,7 @@ test.describe("authenticated smoke", () => {
   test("client B remains isolated from Client A issued reports", async ({ page }) => {
     test.skip(!hasCredentials(accounts.clientB), "Set E2E_CLIENT_B_EMAIL and E2E_CLIENT_B_PASSWORD to run Client B smoke tests.");
 
-    await signIn(page, requiredAccount(accounts.clientB));
+    await signIn(page, requiredAccount(accounts.clientB), "/client/dashboard");
 
     await expect(page).toHaveURL(/\/client\/dashboard$/);
     await expect(page.getByRole("heading", { name: "Client Dashboard" })).toBeVisible();
