@@ -31,10 +31,17 @@ export default async function ManageServiceRequestPage({ params, searchParams }:
   if (!canAccessManagement(profile.role)) redirect("/dashboard");
   const [{ requestId }, query] = await Promise.all([params, searchParams]);
   const supabase = await createClient();
-  const { data: request } = await supabase.from("service_requests")
+  const { data: request, error: requestError } = await supabase.from("service_requests")
     .select("id,client_id,site_id,request_reference,requester_email,requester_name,requester_company,requester_phone,site_description,title,category,urgency,details,affected_asset,preferred_access_window,onsite_contact,reference_note,status,customer_message,next_action_owner,next_action,hold_reason,appointment_at,public_update_visible,updated_at")
     .eq("id", requestId).maybeSingle();
-  if (!request) notFound();
+  if (requestError || !request) {
+    console.error("[service-requests] staff detail lookup failed", {
+      requestId,
+      organisationId: profile.organisation_id,
+      error: requestError?.message ?? "request-not-found"
+    });
+    notFound();
+  }
   const [{ data: events }, { data: replies }, { data: client }, { data: site }, { data: clients }, { data: sites }] = await Promise.all([
     supabase.from("service_request_events").select("id,event_type,from_status,to_status,message,next_action_owner,next_action,hold_reason,appointment_at,created_at").eq("service_request_id", request.id).order("created_at"),
     supabase.from("service_request_replies").select("id,sender_user_id,sender_type,message,created_at").eq("service_request_id", request.id).order("created_at"),
