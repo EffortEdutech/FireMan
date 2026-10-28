@@ -26,6 +26,7 @@ export async function updateServiceRequest(formData: FormData) {
   const nextActionOwner = textValue(formData, "next_action_owner", 100);
   const nextAction = textValue(formData, "next_action", 500);
   const holdReason = textValue(formData, "hold_reason", 500);
+  const publicUpdateVisible = formData.get("public_update_visible") === "true";
   const appointmentRaw = textValue(formData, "appointment_at", 40);
   const appointmentAt = appointmentRaw && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(appointmentRaw)
     ? new Date(`${appointmentRaw}:00+08:00`)
@@ -49,7 +50,8 @@ export async function updateServiceRequest(formData: FormData) {
       next_action_owner: nextActionOwner,
       next_action: nextAction,
       hold_reason: holdReason,
-      appointment_at: appointmentAt?.toISOString() ?? null
+      appointment_at: appointmentAt?.toISOString() ?? null,
+      public_update_visible: publicUpdateVisible
     })
     .eq("id", id);
 
@@ -82,7 +84,7 @@ export async function replyToServiceRequestFromStaff(formData: FormData) {
   const message = textValue(formData, "message", 2000);
   if (!id || !/^[0-9a-f-]{36}$/i.test(id) || !message) redirect("/service-requests?error=invalid-reply");
   const supabase = await createClient();
-  const { error } = await supabase.rpc("reply_to_service_request", { p_service_request_id: id, p_message: message });
+  const { error } = await supabase.rpc("reply_to_service_request_public", { p_service_request_id: id, p_message: message });
   if (error) redirect(`/service-requests/${id}?error=reply-failed`);
   revalidatePath(`/service-requests/${id}`);
   revalidatePath(`/request/requests/${id}`);

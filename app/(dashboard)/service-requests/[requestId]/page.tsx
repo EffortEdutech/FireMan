@@ -32,7 +32,7 @@ export default async function ManageServiceRequestPage({ params, searchParams }:
   const [{ requestId }, query] = await Promise.all([params, searchParams]);
   const supabase = await createClient();
   const { data: request } = await supabase.from("service_requests")
-    .select("id,client_id,site_id,request_reference,requester_email,requester_name,requester_company,requester_phone,site_description,title,category,urgency,details,affected_asset,preferred_access_window,onsite_contact,reference_note,status,customer_message,next_action_owner,next_action,hold_reason,appointment_at,updated_at")
+    .select("id,client_id,site_id,request_reference,requester_email,requester_name,requester_company,requester_phone,site_description,title,category,urgency,details,affected_asset,preferred_access_window,onsite_contact,reference_note,status,customer_message,next_action_owner,next_action,hold_reason,appointment_at,public_update_visible,updated_at")
     .eq("id", requestId).maybeSingle();
   if (!request) notFound();
   const [{ data: events }, { data: replies }, { data: client }, { data: site }, { data: clients }, { data: sites }] = await Promise.all([
@@ -91,6 +91,7 @@ export default async function ManageServiceRequestPage({ params, searchParams }:
           <label>Next action for customer<input name="next_action" required maxLength={500} defaultValue={request.next_action} style={{ display: "block", width: "100%", minHeight: 40, marginTop: 6 }} /></label>
           <label>Waiting on, if applicable<input name="hold_reason" maxLength={500} defaultValue={request.hold_reason ?? ""} style={{ display: "block", width: "100%", minHeight: 40, marginTop: 6 }} /></label>
           <label>Appointment, only when confirmed<input name="appointment_at" type="datetime-local" defaultValue={localDateTimeInput(request.appointment_at)} style={{ display: "block", minHeight: 40, marginTop: 6 }} /></label>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}><input type="checkbox" name="public_update_visible" value="true" defaultChecked={request.public_update_visible} /> Publish this update and status in the public tracking timeline.</label>
           <Button type="submit">Save customer update</Button>
         </form>
       </Card>

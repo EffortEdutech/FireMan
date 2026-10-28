@@ -11,9 +11,9 @@ export default async function PublicRequestPage({ searchParams }: { searchParams
   return (
     <main style={{ margin: "0 auto", maxWidth: 760, padding: "2rem 1rem 4rem", display: "grid", gap: "1rem" }}>
       <Link href="/">← Back to FAST</Link>
-      <PageHeader title="Request a service" description="Send FAST the details of your property service need. Verify your email to submit and follow the request." />
+      <PageHeader title="Request a service" description="Send FAST the details of your property service need. No registration is required." />
       {intakeEnabled ? <RequestIntakeForm {...(params.error ? { errorCode: params.error } : {})} /> : <Card role="status">Online requests are not available right now. Please contact FAST through your usual service channel.</Card>}
-      <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>After submission, you can use the same email to receive a fresh access code and view or reply to your request. Keep the request reference for contacting FAST.</p>
+      <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>After submission, keep your secure tracking reference. Use it to view the request status and reply to FAST, similar to parcel delivery tracking.</p>
     </main>
   );
 }

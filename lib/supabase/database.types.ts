@@ -607,6 +607,8 @@ export type Database = {
           onsite_contact: string | null
           organisation_id: string
           preferred_access_window: string | null
+          public_tracking_token: string
+          public_update_visible: boolean
           reference_note: string | null
           requester_company: string | null
           requester_email: string
@@ -637,6 +639,8 @@ export type Database = {
           onsite_contact?: string | null
           organisation_id: string
           preferred_access_window?: string | null
+          public_tracking_token?: string
+          public_update_visible?: boolean
           reference_note?: string | null
           requester_company?: string | null
           requester_email: string
@@ -667,6 +671,8 @@ export type Database = {
           onsite_contact?: string | null
           organisation_id?: string
           preferred_access_window?: string | null
+          public_tracking_token?: string
+          public_update_visible?: boolean
           reference_note?: string | null
           requester_company?: string | null
           requester_email?: string
@@ -694,6 +700,7 @@ export type Database = {
           next_action: string
           next_action_owner: string
           organisation_id: string
+          public_visible: boolean
           hold_reason: string | null
           appointment_at: string | null
           service_request_id: string
@@ -709,6 +716,7 @@ export type Database = {
           next_action: string
           next_action_owner: string
           organisation_id: string
+          public_visible?: boolean
           hold_reason?: string | null
           appointment_at?: string | null
           service_request_id: string
@@ -724,6 +732,7 @@ export type Database = {
           next_action?: string
           next_action_owner?: string
           organisation_id?: string
+          public_visible?: boolean
           hold_reason?: string | null
           appointment_at?: string | null
           service_request_id?: string
@@ -737,6 +746,7 @@ export type Database = {
           id: string
           message: string
           organisation_id: string
+          public_visible: boolean
           sender_user_id: string | null
           sender_type: "CUSTOMER" | "FAST"
           service_request_id: string
@@ -746,6 +756,7 @@ export type Database = {
           id?: string
           message: string
           organisation_id: string
+          public_visible?: boolean
           sender_user_id?: string | null
           sender_type: "CUSTOMER" | "FAST"
           service_request_id: string
@@ -755,6 +766,7 @@ export type Database = {
           id?: string
           message?: string
           organisation_id?: string
+          public_visible?: boolean
           sender_user_id?: string | null
           sender_type?: "CUSTOMER" | "FAST"
           service_request_id?: string
@@ -1910,6 +1922,10 @@ export type Database = {
         Returns: string
       }
       reply_to_service_request: {
+        Args: { p_message: string; p_service_request_id: string }
+        Returns: string
+      }
+      reply_to_service_request_public: {
         Args: { p_message: string; p_service_request_id: string }
         Returns: string
       }
