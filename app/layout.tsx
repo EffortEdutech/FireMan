@@ -1,19 +1,19 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { FIREMAINT_APP_VERSION } from "@/lib/app-version";
+import { tenantBrand } from "@/lib/tenant/brand";
 
 export const metadata: Metadata = {
-  title: "FireMaint",
-  description: `Fire maintenance evidence and reporting platform v${FIREMAINT_APP_VERSION}`,
+  title: { default: `${tenantBrand.name} | Fire Protection Services`, template: `%s | ${tenantBrand.name}` },
+  description: `Fire protection service information for building owners, property managers and main contractors. Access reports and service records shared by ${tenantBrand.name}.`,
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: "/icons/favicon-48.png",
-    apple: "/icons/apple-touch-icon.png"
+    icon: "/icons/fast-mark.svg",
+    apple: "/icons/fast-apple-touch.png"
   }
 };
 
 export const viewport: Viewport = {
-  themeColor: "#b42318"
+  themeColor: "#153d5c"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

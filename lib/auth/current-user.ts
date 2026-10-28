@@ -1,8 +1,9 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/supabase/types";
 
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -14,7 +15,7 @@ export async function getCurrentUser() {
   }
 
   return user;
-}
+});
 
 export async function requireUser() {
   const user = await getCurrentUser();
@@ -26,7 +27,7 @@ export async function requireUser() {
   return user;
 }
 
-export async function getCurrentProfile(): Promise<Profile | null> {
+export const getCurrentProfile = cache(async (): Promise<Profile | null> => {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -46,7 +47,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   }
 
   return data;
-}
+});
 
 export async function requireProfile() {
   const profile = await getCurrentProfile();

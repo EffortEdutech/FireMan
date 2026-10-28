@@ -5,7 +5,7 @@ export async function proxy(request: NextRequest) {
   return updateSession(request);
 }
 
-export const proxyConfig = {
+export const config = {
   matcher: [
     "/dashboard/:path*",
     "/clients/:path*",
@@ -14,6 +14,7 @@ export const proxyConfig = {
     "/maintenance/:path*",
     "/reports/:path*",
     "/technician/:path*",
-    "/client/:path*"
+    "/client/:path*",
+    "/request/:path*"
   ]
 };

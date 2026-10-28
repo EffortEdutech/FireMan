@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { signIn } from "./actions";
+import { tenantBrand } from "@/lib/tenant/brand";
+import Link from "next/link";
 
 type LoginPageProps = {
   searchParams?: Promise<{
@@ -24,8 +26,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         padding: "1rem"
       }}
     >
-      <Card style={{ width: "min(100%, 420px)" }}>
-        <PageHeader title="Sign in" description="Access FireMaint using your Supabase account." />
+      <Card style={{ width: "min(100%, 420px)", borderTop: "4px solid #153d5c" }}>
+        <Link href="/" style={{ color: "var(--accent)", fontSize: "0.875rem", fontWeight: 700 }}>{tenantBrand.name} · Home</Link>
+        <PageHeader title="Sign in" description={`Access your ${tenantBrand.name} service portal.`} />
         <form action={signIn} style={{ display: "grid", gap: "1rem", marginTop: "1.5rem" }}>
           <input name="next" type="hidden" value={next} />
           <input

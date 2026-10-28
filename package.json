@@ -15,6 +15,7 @@
     "check:pilot": "node scripts/check-pilot-env.mjs"
   },
   "dependencies": {
+    "@next/env": "16.3.8",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "clsx": "latest",
