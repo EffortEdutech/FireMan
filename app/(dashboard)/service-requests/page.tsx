@@ -33,9 +33,9 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
       <PageHeader title="Service requests" description="Review customer requests and publish clear progress updates to the customer timeline." />
       {params.error ? <Card role="alert">The update could not be saved. Check the request’s allowed status path and try again.</Card> : null}
       {params["intake-error"] ? <Card role="alert">Public intake could not be changed. Another organisation may already have it enabled.</Card> : null}
-      {params["intake-updated"] ? <Card role="status">Public email-verified request intake setting updated.</Card> : null}
+      {params["intake-updated"] ? <Card role="status">Public request intake setting updated.</Card> : null}
       <Card style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
-        <div><strong>Public request form</strong><p style={{ margin: "0.35rem 0 0" }}>{organisation?.public_request_enabled ? "Enabled at /request. Visitors verify their email before submitting." : "Disabled. Enable this when the public FAST request page is ready."}</p></div>
+        <div><strong>Public request form</strong><p style={{ margin: "0.35rem 0 0" }}>{organisation?.public_request_enabled ? "Enabled at /request. No registration or verification code is required; customers receive a secure tracking reference after submission." : "Disabled. Enable this when the public FAST request page is ready."}</p></div>
         <form action={setPublicRequestIntake}><input type="hidden" name="enabled" value={organisation?.public_request_enabled ? "false" : "true"} /><Button type="submit" variant="secondary">{organisation?.public_request_enabled ? "Disable intake" : "Enable intake"}</Button></form>
       </Card>
       {error ? <Card role="alert">Requests could not be loaded. Please retry.</Card> : null}
