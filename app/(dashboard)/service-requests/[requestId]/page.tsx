@@ -25,7 +25,7 @@ function localDateTimeInput(value: string | null) {
 
 export default async function ManageServiceRequestPage({ params, searchParams }: {
   params: Promise<{ requestId: string }>;
-  searchParams: Promise<{ updated?: string; replied?: string; error?: string }>;
+  searchParams: Promise<{ updated?: string; replied?: string; error?: string; debug?: string }>;
 }) {
   const profile = await requireProfile();
   if (!canAccessManagement(profile.role)) redirect("/dashboard");
@@ -40,6 +40,9 @@ export default async function ManageServiceRequestPage({ params, searchParams }:
       organisationId: profile.organisation_id,
       error: requestError?.message ?? "request-not-found"
     });
+    if (query.debug === "1") {
+      return <Card role="alert"><strong>Staff request lookup diagnostic</strong><pre style={{ whiteSpace: "pre-wrap" }}>{requestError?.message ?? "request-not-found"}</pre></Card>;
+    }
     notFound();
   }
   const [{ data: events }, { data: replies }, { data: client }, { data: site }, { data: clients }, { data: sites }] = await Promise.all([
