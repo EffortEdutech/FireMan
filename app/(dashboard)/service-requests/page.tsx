@@ -45,7 +45,7 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
           <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}><strong>{request.title}</strong><span>{serviceRequestStatusLabels[request.status]}</span></div>
           <div style={{ color: "var(--muted)" }}>{request.request_reference} · {request.requester_name} ({request.requester_email}) · {request.requester_company ?? clientNames.get(request.client_id ?? "") ?? "Unmatched company"} · {siteNames.get(request.site_id ?? "") ?? request.site_description ?? "Unmatched site"}</div>
           <div>{serviceRequestCategoryLabels[request.category]} · {request.urgency.toLowerCase()} · Updated {new Intl.DateTimeFormat("en-MY", { dateStyle: "medium", timeZone: "Asia/Kuala_Lumpur" }).format(new Date(request.updated_at))}</div>
-          <Link href={`/service-requests/request?requestId=${request.id}`}>Review and update</Link>
+          <Link href={`/service-requests/${request.id}`}>Review and update</Link>
         </Card>
       ))}
     </div>
