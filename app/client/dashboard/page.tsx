@@ -296,3 +296,4 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
     </div>
   );
 }
+

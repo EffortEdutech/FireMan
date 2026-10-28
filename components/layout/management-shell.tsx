@@ -67,3 +67,4 @@ export function ManagementShell({ children, currentUser, title, description }: M
     </div>
   );
 }
+

@@ -17,3 +17,4 @@ export default async function PublicRequestPage({ searchParams }: { searchParams
     </main>
   );
 }
+

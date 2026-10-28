@@ -48,3 +48,4 @@ export default async function CustomerRequestsPage() {
     </div>
   );
 }
+

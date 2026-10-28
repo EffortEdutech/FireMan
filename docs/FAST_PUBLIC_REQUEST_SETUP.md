@@ -13,3 +13,4 @@ When a public request first arrives, company and site are captured as requester-
 Local Supabase Auth uses `supabase/templates/magic_link.html` to send the six-digit code expected by the request UI. Configure a production SMTP provider for the hosted Supabase project and set its **Magic Link** email template to include `{{ .Token }}`. The production template is configured in Supabase Auth settings; changing the repository's local `config.toml` does not update hosted settings.
 
 The app intentionally grants no anonymous table access to requests, events, or replies. Anonymous visitors can only call the boolean intake-enabled function and request an OTP. Request creation, reading, and replies require the verified Supabase session and are scoped by RLS.
+

@@ -48,3 +48,4 @@ export default async function NewCustomerRequestPage({ searchParams }: { searchP
     </div>
   );
 }
+

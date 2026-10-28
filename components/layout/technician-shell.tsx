@@ -53,3 +53,4 @@ export function TechnicianShell({ children, currentUser }: TechnicianShellProps)
     </div>
   );
 }
+

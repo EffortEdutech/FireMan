@@ -58,3 +58,4 @@ export async function createCustomerServiceRequest(formData: FormData) {
   revalidatePath("/client/requests");
   redirect(`/client/requests/${request.id}?submitted=1`);
 }
+

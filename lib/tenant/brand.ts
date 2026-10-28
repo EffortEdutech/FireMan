@@ -10,3 +10,4 @@ export const tenantBrand = {
     canvas: "#f4f7f8"
   }
 } as const;
+

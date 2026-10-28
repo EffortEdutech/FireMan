@@ -31,3 +31,4 @@ console.log("Pilot environment is ready.");
 console.log("- Four role credential pairs detected (values redacted)");
 console.log(`- Supabase URL: ${url}`);
 console.log("- No credentials were printed or persisted by this check.");
+

@@ -131,3 +131,4 @@ export async function signOutRequestAccess() {
   await supabase.auth.signOut();
   redirect("/request/access");
 }
+

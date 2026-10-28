@@ -42,3 +42,4 @@ export function ClientShell({ children, currentUser }: ClientShellProps) {
     </div>
   );
 }
+

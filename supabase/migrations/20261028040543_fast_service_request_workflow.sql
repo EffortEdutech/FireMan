@@ -598,3 +598,4 @@ when (
   or new.appointment_at is distinct from old.appointment_at
 )
 execute function public.record_service_request_event();
+
