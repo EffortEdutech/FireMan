@@ -125,6 +125,15 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
           selectedKey={selectedStatus}
         />
         {filteredSites.length > 0 ? (
+        <>
+        <div className="record-grid" aria-label="Client sites">
+          {filteredSites.map((site) => <Card className="record-card" key={site.id}>
+            <div className="record-card-heading"><div><span className="record-card-kicker">SERVICE SITE</span><h2>{site.name}</h2></div><span className={site.active ? "record-status record-status-active" : "record-status"}>{site.active ? "Active" : "Inactive"}</span></div>
+            <div className="record-card-facts"><div><span>Client</span><strong>{site.clients?.name ?? "Not set"}</strong></div><div><span>Site code</span><strong>{site.site_code ?? "Not set"}</strong></div></div>
+            <div className="record-card-contact"><span>Location</span><strong>{[site.address, site.city, site.state, site.country].filter(Boolean).join(", ") || "Not set"}</strong></div>
+          </Card>)}
+        </div>
+        <div className="legacy-record-table">
         <Card className="table-scroll" style={{ padding: 0 }}>
           <table className="data-table">
             <colgroup>
@@ -162,6 +171,8 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
             </tbody>
           </table>
         </Card>
+        </div>
+        </>
         ) : (
           <EmptyState title="No sites in this view" message="Choose another site status filter." />
         )}
@@ -172,3 +183,4 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
     </div>
   );
 }
+
