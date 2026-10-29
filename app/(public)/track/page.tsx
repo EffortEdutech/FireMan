@@ -20,8 +20,8 @@ export default async function TrackRequestPage({ searchParams }: { searchParams:
       {params.error ? <Card role="alert">Enter the secure tracking code from your request link and try again.</Card> : null}
       <Card>
         <form action={openTrackingPage} style={{ display: "grid", gap: "0.9rem" }}>
-          <label>Tracking reference or secure code
-            <input name="tracking_reference" required autoComplete="off" placeholder="Example: SR-23403B7B32 or the secure code" style={{ display: "block", width: "100%", minHeight: 44, marginTop: 6, padding: 12 }} />
+          <label>Secure tracking code
+            <input name="tracking_reference" required autoComplete="off" placeholder="Paste the code from your secure tracking link" style={{ display: "block", width: "100%", minHeight: 44, marginTop: 6, padding: 12 }} />
           </label>
           <Button type="submit">View request status</Button>
         </form>
