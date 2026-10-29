@@ -2,11 +2,11 @@
 
 ## Approved backup choice
 
-FAST selected **external scheduled exports** for the FireMan/Supabase production records.
+FAST selected **decide later** for external scheduled exports. The current pilot continues without an external customer-data export.
 
 ## Recommended operating policy
 
-- Destination: Google Drive folder [FAST Portal Backups](https://drive.google.com/drive/folders/1PnijRJwmWF1BpAwX9FydWUBFZ7nW8gEb), created in the connected Drive account.
+- Destination: not configured.
 - Schedule: weekly export every Monday at 2:00 AM Malaysia time, with an additional export before any planned schema or production workflow change.
 - Retention: keep the latest 12 weekly exports and the latest 12 monthly snapshots.
 - Protection: restrict the folder to FAST management and the approved technical support operator; do not share public tracking links, passwords, service-role keys, or full tracking tokens in the folder.
@@ -15,7 +15,7 @@ FAST selected **external scheduled exports** for the FireMan/Supabase production
 
 ## Current state
 
-The external destination folder now exists. No Supabase export scheduler or completed restore test has been connected yet. Those steps must be configured and tested before production handover is marked complete.
+No external export destination, scheduler, or restore test is configured. Revisit this decision before expanding the portal beyond the controlled pilot.
 
 ## Handover record
 
