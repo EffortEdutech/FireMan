@@ -163,6 +163,15 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
           selectedKey={selectedStatus}
         />
         {filteredEquipment.length > 0 ? (
+        <>
+        <div className="record-grid" aria-label="Equipment register">
+          {filteredEquipment.map((asset) => <Card className="record-card" key={asset.id}>
+            <div className="record-card-heading"><div><span className="record-card-kicker">ASSET REGISTER</span><h2>{asset.asset_code}</h2></div><span className={asset.status === "ACTIVE" ? "record-status record-status-active" : "record-status"}>{statusLabel[asset.status] ?? asset.status}</span></div>
+            <div className="record-card-facts"><div><span>Equipment type</span><strong>{asset.equipment_types?.name ?? "Not set"}</strong></div><div><span>System</span><strong>{asset.systems?.name ?? "Not set"}</strong></div></div>
+            <div className="record-card-contact"><span>Building / site</span><strong>{asset.buildings?.name ?? "Not set"} · {asset.buildings?.sites?.name ?? "Not set"}</strong><small>{[asset.brand, asset.model, asset.capacity].filter(Boolean).join(" / ") || asset.location_description || "Details not set"}</small></div>
+          </Card>)}
+        </div>
+        <div className="legacy-record-table">
         <Card className="table-scroll" style={{ padding: 0 }}>
           <table className="data-table">
             <colgroup>
@@ -207,6 +216,8 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
             </tbody>
           </table>
         </Card>
+        </div>
+        </>
         ) : (
           <EmptyState title="No assets in this view" message="Choose another asset status filter." />
         )}
@@ -217,3 +228,4 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
     </div>
   );
 }
+
