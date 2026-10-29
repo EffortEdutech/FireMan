@@ -74,7 +74,7 @@ export default async function PublicTrackingPage({ params, searchParams }: {
         </form>
       </Card>
       <details><summary>Request details</summary><Card style={{ marginTop: "0.75rem" }}><p style={{ whiteSpace: "pre-wrap" }}>{request.details}</p><p>Urgency: {request.urgency.toLowerCase()}</p>{request.affected_asset ? <p>Asset: {request.affected_asset}</p> : null}</Card></details>
-      <small style={{ color: "var(--muted)" }}>Keep this secure tracking link private. Anyone with its code can view and reply to this request. The SR- reference is for FAST support.</small>
+      <small style={{ color: "var(--muted)" }}>Keep your request reference and secure tracking link private. Anyone with either one can view and reply to this request.</small>
     </main>
   );
 }
