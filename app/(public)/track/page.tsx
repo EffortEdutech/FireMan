@@ -16,8 +16,8 @@ export default async function TrackRequestPage({ searchParams }: { searchParams:
   return (
     <main style={{ margin: "0 auto", maxWidth: 640, padding: "2rem 1rem 4rem", display: "grid", gap: "1rem" }}>
       <Link href="/">← Back to FAST</Link>
-      <PageHeader title="Track your FAST request" description="Enter the secure tracking reference you received after submitting your request." />
-      {params.error ? <Card role="alert">Enter a valid tracking reference and try again.</Card> : null}
+      <PageHeader title="Track your FAST request" description="Paste the secure tracking code from the link you received after submitting your request." />
+      {params.error ? <Card role="alert">Enter the secure tracking code from your request link and try again.</Card> : null}
       <Card>
         <form action={openTrackingPage} style={{ display: "grid", gap: "0.9rem" }}>
           <label>Tracking reference or secure code
@@ -26,7 +26,7 @@ export default async function TrackRequestPage({ searchParams }: { searchParams:
           <Button type="submit">View request status</Button>
         </form>
       </Card>
-      <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Anyone with the secure tracking code can view the customer-facing request status and reply. Keep it private.</p>
+      <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>The SR- reference is for FAST support. Anyone with the secure tracking code can view the customer-facing request status and reply, so keep the code private.</p>
     </main>
   );
 }
