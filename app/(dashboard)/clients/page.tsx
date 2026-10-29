@@ -112,6 +112,15 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
             selectedKey={selectedStatus}
           />
           {filteredClients.length > 0 ? (
+          <>
+          <div className="record-grid" aria-label="Client accounts">
+            {filteredClients.map((client) => <Card className="record-card" key={client.id}>
+              <div className="record-card-heading"><div><span className="record-card-kicker">CLIENT ACCOUNT</span><h2>{client.name}</h2></div><span className={client.active ? "record-status record-status-active" : "record-status"}>{client.active ? "Active" : "Inactive"}</span></div>
+              <div className="record-card-facts"><div><span>Industry</span><strong>{client.industry ?? "Not set"}</strong></div><div><span>Registration</span><strong>{client.registration_no ?? "Not set"}</strong></div></div>
+              <div className="record-card-contact"><span>Primary contact</span><strong>{client.email ?? "Email not set"}</strong><small>{client.phone ?? "Phone not set"}</small></div>
+            </Card>)}
+          </div>
+          <div className="legacy-record-table">
           <Card className="table-scroll" style={{ padding: 0 }}>
             <table className="data-table">
               <colgroup>
@@ -153,6 +162,8 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
               </tbody>
             </table>
           </Card>
+          </div>
+          </>
           ) : (
             <EmptyState title="No clients in this view" message="Choose another client status filter." />
           )}
@@ -163,3 +174,4 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
     </div>
   );
 }
+
