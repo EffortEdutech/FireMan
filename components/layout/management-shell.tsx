@@ -20,6 +20,7 @@ type ManagementShellProps = Readonly<{
 export function ManagementShell({ children, currentUser, title, description }: ManagementShellProps) {
   return (
     <div
+      className="management-shell"
       style={{
         display: "grid",
         minHeight: "100vh",
@@ -27,6 +28,7 @@ export function ManagementShell({ children, currentUser, title, description }: M
       }}
     >
       <aside
+        className="management-shell-sidebar"
         style={{
           borderRight: "1px solid var(--border)",
           background: "var(--surface)",
@@ -44,7 +46,7 @@ export function ManagementShell({ children, currentUser, title, description }: M
           </Button>
         </form>
       </aside>
-      <main style={{ display: "grid", alignContent: "start", gap: "1.5rem", minWidth: 0, padding: "2rem" }}>
+      <main className="management-shell-main" style={{ display: "grid", alignContent: "start", gap: "1.5rem", minWidth: 0, padding: "2rem" }}>
         {title ? <PageHeader {...(description ? { description } : {})} title={title} /> : null}
         {children}
       </main>
