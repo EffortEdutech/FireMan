@@ -43,7 +43,7 @@ export default async function PublicTrackingPage({ params, searchParams }: {
   return (
     <main style={{ margin: "0 auto", maxWidth: 760, padding: "2rem 1rem 4rem", display: "grid", gap: "1rem" }}>
       <Link href="/">← Back to FAST</Link>
-      {query.submitted ? <Card role="status">Request received. Save tracking reference {request.request_reference}.</Card> : null}
+      {query.submitted ? <Card role="status">Request received. Save the secure tracking link for future access. Your FAST support reference is {request.request_reference}.</Card> : null}
       {query.replied ? <Card role="status">Your reply was sent to FAST.</Card> : null}
       {query.error ? <Card role="alert">Your reply could not be sent. Please try again.</Card> : null}
       <PageHeader title="Track your FAST request" description={`${request.request_reference} · Submitted ${dateLabel(request.created_at)}`} />
@@ -74,7 +74,7 @@ export default async function PublicTrackingPage({ params, searchParams }: {
         </form>
       </Card>
       <details><summary>Request details</summary><Card style={{ marginTop: "0.75rem" }}><p style={{ whiteSpace: "pre-wrap" }}>{request.details}</p><p>Urgency: {request.urgency.toLowerCase()}</p>{request.affected_asset ? <p>Asset: {request.affected_asset}</p> : null}</Card></details>
-      <small style={{ color: "var(--muted)" }}>Keep your tracking reference private. Anyone with the reference can view this request.</small>
+      <small style={{ color: "var(--muted)" }}>Keep this secure tracking link private. Anyone with its code can view and reply to this request. The SR- reference is for FAST support.</small>
     </main>
   );
 }
