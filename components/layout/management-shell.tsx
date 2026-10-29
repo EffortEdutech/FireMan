@@ -3,6 +3,7 @@ import { signOut } from "@/app/(auth)/actions";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { CurrentUserBadge } from "@/components/layout/current-user-badge";
+import { ManagementNav } from "@/components/layout/management-nav";
 import type { Profile } from "@/lib/supabase/types";
 import { tenantBrand } from "@/lib/tenant/brand";
 
@@ -15,17 +16,6 @@ type ManagementShellProps = Readonly<{
   title?: string;
   description?: string;
 }>;
-
-const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/clients", label: "Clients" },
-  { href: "/sites", label: "Sites" },
-  { href: "/equipment", label: "Equipment" },
-  { href: "/maintenance", label: "Maintenance" },
-  { href: "/service-requests", label: "Service Requests" },
-  { href: "/reports", label: "Reports" },
-  { href: "/report-templates", label: "Report Settings" }
-];
 
 export function ManagementShell({ children, currentUser, title, description }: ManagementShellProps) {
   return (
@@ -44,13 +34,7 @@ export function ManagementShell({ children, currentUser, title, description }: M
         }}
       >
         <Link href="/" style={{ display: "grid", gap: "0.2rem" }}><strong>{tenantBrand.name}</strong><span style={{ color: "var(--muted)", fontSize: "0.75rem" }}>FireMaint operations</span></Link>
-        <nav style={{ display: "grid", gap: "0.75rem", marginTop: "2rem" }}>
-          {navItems.map((item) => (
-            <Link href={item.href} key={item.href}>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <ManagementNav />
         <div style={{ borderTop: "1px solid var(--border)", marginTop: "2rem", paddingTop: "1rem" }}>
           <CurrentUserBadge email={currentUser.email} profile={currentUser.profile} />
         </div>
