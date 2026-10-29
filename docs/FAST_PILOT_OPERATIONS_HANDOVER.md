@@ -36,7 +36,7 @@ The Abdul Auth account is confirmed, active, and assigned to FAST as `SUPERVISOR
 
 ### Backup decision
 
-FAST selected **external scheduled exports**. The initial destination folder is [FAST Portal Backups](https://drive.google.com/drive/folders/1PnijRJwmWF1BpAwX9FydWUBFZ7nW8gEb). The scheduler, export contents, encryption/retention confirmation, and restore test remain to be recorded before this is treated as an operational backup.
+FAST selected **decide later** for external scheduled exports. The current pilot continues without an external customer-data export. Revisit the backup destination, export contents, encryption/retention policy, scheduler, and restore test before expanding the portal beyond the controlled pilot.
 
 See [FAST_BACKUP_RUNBOOK.md](./FAST_BACKUP_RUNBOOK.md) for the recommended schedule, retention, access, and restore-verification procedure.
 
