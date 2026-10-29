@@ -120,7 +120,7 @@ export default function HomePage() {
 
         <section className="fast-section fast-about-section" id="about">
           <div className="fast-about-mark" aria-hidden="true"><span>F</span><i /></div>
-          <div className="fast-about-copy"><p className="fast-eyebrow">ABOUT FAST</p><h2>A fire-protection service partner for the built environment.</h2><p>FAST works with organizations responsible for buildings, properties and contracted maintenance. The details matter: each site has its own systems, access needs and service scope.</p><p>For specific services, coverage or qualifications, speak with FAST about your property and agreement.</p></div>
+          <div className="fast-about-copy"><p className="fast-eyebrow">ABOUT FAST</p><h2>A fire-protection service partner for the built environment.</h2><p>FAST provides fire-protection inspection, maintenance, service-request, quotation, and follow-up support for building owners, property managers, and main contractors.</p><p>For specific services, coverage or qualifications, speak with FAST about your property and agreement.</p></div>
         </section>
 
         <section className="fast-portal-section" id="customer-portal">
@@ -152,6 +152,8 @@ export default function HomePage() {
         <section className="fast-final-cta">
           <p className="fast-eyebrow">A CLEARER VIEW OF YOUR SERVICE RECORDS</p><h2>Stay connected with your FAST team.</h2>
           <Link className="fast-button fast-button-primary" href="/portal">Open customer portal <span aria-hidden="true">→</span></Link>
+          <p>FAST is available Monday–Friday, 9:00 AM–5:00 PM Malaysia time.</p>
+          <p><a href="tel:034458605">03 4458 605</a> · <a href="mailto:fast@fireman.test">fast@fireman.test</a><br />NO 2, Jalan 5, KL</p>
         </section>
       </main>
 
