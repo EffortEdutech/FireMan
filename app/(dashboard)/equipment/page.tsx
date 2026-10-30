@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { EmptyState, ErrorState, SuccessState } from "@/components/ui/states";
 import { PageHeader } from "@/components/ui/page-header";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
 import { createClient } from "@/lib/supabase/server";
@@ -19,6 +20,7 @@ type EquipmentPageProps = {
     search?: string;
     status?: string;
     system?: string;
+    page?: string;
   }>;
 };
 
@@ -102,6 +104,10 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
 
     return equipmentCounts.get(key) ?? 0;
   };
+  const pageSize = 50;
+  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(filteredEquipment.length / pageSize)));
+  const pagedEquipment = filteredEquipment.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -214,7 +220,7 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
               </tr>
             </thead>
             <tbody>
-              {filteredEquipment.map((asset) => (
+              {pagedEquipment.map((asset) => (
                 <tr key={asset.id}>
                   <td>
                     <strong><Link href={`/equipment/${asset.id}`}>{asset.asset_code}</Link></strong>
@@ -238,6 +244,7 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
           </table>
         </Card>
         </div>
+        <PaginationControls basePath="/equipment" page={page} pageSize={pageSize} query={{ status: selectedStatus, search: params?.search }} total={filteredEquipment.length} />
         </>
         ) : (
           <EmptyState title="No assets in this view" message="Choose another asset status filter." />

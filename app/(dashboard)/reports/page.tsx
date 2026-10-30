@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ReportGenerationForm } from "@/components/reports/report-generation-form";
 import { ReportOutputStatus } from "@/components/reports/report-output-status";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { EmptyState, ErrorState, SuccessState } from "@/components/ui/states";
 import { requireProfile } from "@/lib/auth/current-user";
 import { formatDate } from "@/lib/format/date";
@@ -21,6 +22,7 @@ type ReportsPageProps = {
     error?: string;
     reviewed?: string;
     status?: string;
+    page?: string;
   }>;
 };
 
@@ -154,6 +156,10 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
 
     return reportCounts.get(key) ?? 0;
   };
+  const pageSize = 50;
+  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(filteredReports.length / pageSize)));
+  const pagedReports = filteredReports.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -249,7 +255,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
               </tr>
             </thead>
             <tbody>
-              {filteredReports.map((report) => {
+              {pagedReports.map((report) => {
                 const reportFindings = findingsByJobId.get(report.job_id) ?? [];
                 const checklistResultCount = checklistResultCountByJobId.get(report.job_id) ?? 0;
                 const evidenceParts = [];
@@ -328,6 +334,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
           </table>
         </Card>
         </div>
+        <PaginationControls basePath="/reports" page={page} pageSize={pageSize} query={{ status: selectedStatus }} total={filteredReports.length} />
         </>
         ) : (
           <EmptyState title="No reports in this view" message="Choose another status filter or generate a new report shell." />

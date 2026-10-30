@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState, ErrorState, SuccessState } from "@/components/ui/states";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
 import { createClient } from "@/lib/supabase/server";
@@ -14,6 +15,7 @@ type ClientsPageProps = {
     created?: string;
     error?: string;
     status?: string;
+    page?: string;
   }>;
 };
 
@@ -65,6 +67,10 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
 
     return activeClientCount;
   };
+  const pageSize = 50;
+  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(filteredClients.length / pageSize)));
+  const pagedClients = filteredClients.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -136,7 +142,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
                 </tr>
               </thead>
               <tbody>
-                {filteredClients.map((client) => (
+                {pagedClients.map((client) => (
                   <tr key={client.id}>
                     <td>
                       <strong>{client.name}</strong>
@@ -159,6 +165,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
             </table>
           </Card>
           </div>
+          <PaginationControls basePath="/clients" page={page} pageSize={pageSize} query={{ status: selectedStatus }} total={filteredClients.length} />
           </>
           ) : (
             <EmptyState title="No clients in this view" message="Choose another client status filter." />

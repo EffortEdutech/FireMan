@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/ui/states";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
 import { serviceRequestCategoryLabels, serviceRequestStatusLabels, serviceRequestUrgencyLabels } from "@/lib/service-requests/constants";
@@ -29,7 +30,7 @@ function isOverdue(value: string) {
   return Date.now() - new Date(value).getTime() > 86_400_000;
 }
 
-export default async function ServiceRequestsPage({ searchParams }: { searchParams: Promise<{ error?: string; "intake-error"?: string; "intake-updated"?: string; phase?: string; urgency?: string; overdue?: string; owner?: string }> }) {
+export default async function ServiceRequestsPage({ searchParams }: { searchParams: Promise<{ error?: string; "intake-error"?: string; "intake-updated"?: string; phase?: string; urgency?: string; overdue?: string; owner?: string; page?: string }> }) {
   const profile = await requireProfile();
   if (!canAccessManagement(profile.role)) redirect("/dashboard");
   const params = await searchParams;
@@ -60,6 +61,11 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
   });
   const queueFilterLabel = params.urgency === "URGENT" ? "Urgent requests" : params.overdue === "true" ? "Overdue response" : params.owner === "unassigned" ? "Needs owner" : selectedPhaseDefinition.label;
   const phaseCount = (phase: (typeof requestPhases)[number]) => phase.key === "all" ? activeRequests.length : (requests ?? []).filter((request) => phase.statuses.includes(request.status as never)).length;
+  const pageSize = 50;
+  const requestedPage = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(visibleRequests.length / pageSize)));
+  const pagedRequests = visibleRequests.slice((page - 1) * pageSize, page * pageSize);
+  const paginationQuery = { phase: params.phase, urgency: params.urgency, overdue: params.overdue, owner: params.owner };
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -81,7 +87,7 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
       <Card className="table-scroll queue-table-card" style={{ padding: 0 }}>
         <table className="data-table queue-table" aria-label="Service request queue">
           <thead><tr><th>Request</th><th>Customer / site</th><th>Type</th><th>Urgency</th><th>Status</th><th>Next action</th><th /></tr></thead>
-          <tbody>{visibleRequests.map((request) => <tr key={request.id}>
+          <tbody>{pagedRequests.map((request) => <tr key={request.id}>
             <td className="queue-primary-cell"><Link href={`/service-requests/${request.id}`}><strong>{request.request_reference}</strong><span>{request.title}</span></Link><small>{ageLabel(request.updated_at)}</small></td>
             <td><strong>{request.requester_company ?? clientNames.get(request.client_id ?? "") ?? "Unmatched company"}</strong><span>{siteNames.get(request.site_id ?? "") ?? request.site_description ?? "Unmatched site"}</span><small>{request.requester_name} · {request.requester_email}</small></td>
             <td>{serviceRequestCategoryLabels[request.category]}</td>
@@ -92,6 +98,7 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
           </tr>)}</tbody>
         </table>
       </Card>
+      <PaginationControls basePath="/service-requests" page={page} pageSize={pageSize} query={paginationQuery} total={visibleRequests.length} />
     </div>
   );
 }

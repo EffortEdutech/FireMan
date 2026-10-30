@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState, ErrorState, SuccessState } from "@/components/ui/states";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
 import { createClient } from "@/lib/supabase/server";
@@ -14,6 +15,7 @@ type SitesPageProps = {
     created?: string;
     error?: string;
     status?: string;
+    page?: string;
   }>;
 };
 
@@ -70,6 +72,10 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
 
     return activeSiteCount;
   };
+  const pageSize = 50;
+  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(filteredSites.length / pageSize)));
+  const pagedSites = filteredSites.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -149,7 +155,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
               </tr>
             </thead>
             <tbody>
-              {filteredSites.map((site) => (
+                {pagedSites.map((site) => (
                 <tr key={site.id}>
                   <td>
                     <strong>{site.name}</strong>
@@ -168,6 +174,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
           </table>
         </Card>
         </div>
+        <PaginationControls basePath="/sites" page={page} pageSize={pageSize} query={{ status: selectedStatus }} total={filteredSites.length} />
         </>
         ) : (
           <EmptyState title="No sites in this view" message="Choose another site status filter." />

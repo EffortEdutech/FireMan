@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { EmptyState, ErrorState, SuccessState } from "@/components/ui/states";
 import { requireProfile } from "@/lib/auth/current-user";
 import { formatDate } from "@/lib/format/date";
@@ -20,6 +21,7 @@ type MaintenancePageProps = {
     error?: string;
     review?: string;
     status?: string;
+    page?: string;
   }>;
 };
 
@@ -171,6 +173,10 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
 
     return jobCounts.get(key) ?? 0;
   };
+  const pageSize = 50;
+  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(filteredJobs.length / pageSize)));
+  const pagedJobs = filteredJobs.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -273,7 +279,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
               </tr>
             </thead>
             <tbody>
-              {filteredJobs.map((job) => {
+              {pagedJobs.map((job) => {
                 const report = reportsByJobId.get(job.id);
                 const jobFindings = findingsByJobId.get(job.id) ?? [];
                 const jobAssets = equipmentByJobId.get(job.id) ?? [];
@@ -383,6 +389,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
           </table>
         </Card>
         </div>
+        <PaginationControls basePath="/maintenance" page={page} pageSize={pageSize} query={{ status: selectedStatus }} total={filteredJobs.length} />
         </>
         ) : (
           <EmptyState title="No jobs in this view" message="Choose another status filter or create a new maintenance job." />

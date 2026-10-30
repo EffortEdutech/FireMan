@@ -1297,6 +1297,31 @@ select {
   max-width: 18rem;
 }
 
+.pagination-controls {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.82rem;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pagination-controls > div {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pagination-controls .button {
+  min-height: 34px;
+  padding: 0.35rem 0.65rem;
+}
+
+.button-disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 @media (max-width: 760px) {
   .workflow-stepper,
   .workflow-summary-grid {
@@ -1330,6 +1355,11 @@ select {
 
   .register-summary span {
     text-align: left;
+  }
+
+  .pagination-controls {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .request-command-status {
