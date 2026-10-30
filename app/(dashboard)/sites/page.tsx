@@ -73,7 +73,19 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
-      <PageHeader title="Sites" description="Create client locations before planning maintenance jobs." />
+      <PageHeader title="Sites" description="Set up the buildings and service locations where FAST work takes place." />
+      <div className="workflow-stepper" aria-label="Site setup workflow">
+        <div className="workflow-step workflow-step-complete"><span>1</span><div><strong>Client account</strong><small>Organisation selected</small></div></div>
+        <div className="workflow-step workflow-step-current"><span>2</span><div><strong>Service site</strong><small>Property and address</small></div></div>
+        <div className="workflow-step"><span>3</span><div><strong>Equipment</strong><small>Fire assets</small></div></div>
+        <div className="workflow-step"><span>4</span><div><strong>Maintenance</strong><small>Plan service work</small></div></div>
+      </div>
+      <div className="workflow-summary-grid" aria-label="Site register summary">
+        <div className="workflow-summary-card"><span>Active sites</span><strong>{activeSiteCount}</strong><small>Available for asset setup</small></div>
+        <div className="workflow-summary-card"><span>Inactive sites</span><strong>{inactiveSiteCount}</strong><small>Historical locations</small></div>
+        <div className="workflow-summary-card"><span>Client dependency</span><strong>{clients?.length ?? 0}</strong><small>Active clients available</small></div>
+        <div className="workflow-summary-card"><span>Next step</span><strong>Equipment</strong><small>Register fire assets</small></div>
+      </div>
       {params?.created ? (
         <SuccessState message="Site created." />
       ) : null}
@@ -84,7 +96,9 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
         />
       ) : null}
       {clientsError ? <ErrorState title="Clients unavailable" message="Client choices could not be loaded." /> : null}
-      <Card>
+      <Card className="workflow-action-card">
+        <div className="workflow-section-heading"><div><span className="record-card-kicker">SETUP STEP 2</span><h2 style={{ fontSize: "1rem", margin: "0.25rem 0 0" }}>Create a service site</h2></div><span className="record-status">{hasClients ? "Ready" : "Blocked"}</span></div>
+        <p style={{ color: "var(--muted)", margin: "0 0 1rem" }}>{hasClients ? "Choose the client, then add the property details used for equipment, visits, and reports." : "Create a client account first to unlock site creation."}</p>
         <form action={createSiteRecord} style={{ display: "grid", gap: "1rem" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
             <select aria-label="Client" disabled={!hasClients} name="client_id" required style={fieldStyle}>
@@ -131,6 +145,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
             <div className="record-card-heading"><div><span className="record-card-kicker">SERVICE SITE</span><h2>{site.name}</h2></div><span className={site.active ? "record-status record-status-active" : "record-status"}>{site.active ? "Active" : "Inactive"}</span></div>
             <div className="record-card-facts"><div><span>Client</span><strong>{site.clients?.name ?? "Not set"}</strong></div><div><span>Site code</span><strong>{site.site_code ?? "Not set"}</strong></div></div>
             <div className="record-card-contact"><span>Location</span><strong>{[site.address, site.city, site.state, site.country].filter(Boolean).join(", ") || "Not set"}</strong></div>
+            <div className="record-card-next"><span>Next action</span><strong>{site.active ? "Register buildings, systems, and equipment for this site." : "Reactivate this site before planning new work."}</strong></div>
           </Card>)}
         </div>
         <div className="legacy-record-table">

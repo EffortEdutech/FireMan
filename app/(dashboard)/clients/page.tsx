@@ -68,7 +68,19 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
-      <PageHeader title="Clients" description="Register and review client accounts for the current organisation." />
+      <PageHeader title="Clients" description="Set up the organisations that own or manage the properties FAST services." />
+      <div className="workflow-stepper" aria-label="Records setup workflow">
+        <div className="workflow-step workflow-step-current"><span>1</span><div><strong>Client account</strong><small>Organisation and contact</small></div></div>
+        <div className="workflow-step"><span>2</span><div><strong>Sites</strong><small>Service locations</small></div></div>
+        <div className="workflow-step"><span>3</span><div><strong>Equipment</strong><small>Fire assets</small></div></div>
+        <div className="workflow-step"><span>4</span><div><strong>Maintenance</strong><small>Plan service work</small></div></div>
+      </div>
+      <div className="workflow-summary-grid" aria-label="Client register summary">
+        <div className="workflow-summary-card"><span>Active clients</span><strong>{activeClientCount}</strong><small>Available for new sites</small></div>
+        <div className="workflow-summary-card"><span>Inactive clients</span><strong>{inactiveClientCount}</strong><small>Historical accounts</small></div>
+        <div className="workflow-summary-card"><span>Setup sequence</span><strong>1 of 4</strong><small>Next: create service sites</small></div>
+        <div className="workflow-summary-card"><span>Purpose</span><strong>Accounts</strong><small>Owner and contact context</small></div>
+      </div>
         {params?.created ? (
           <SuccessState message="Client created." />
         ) : null}
@@ -82,7 +94,9 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
             }
           />
         ) : null}
-        <Card>
+        <Card className="workflow-action-card">
+          <div className="workflow-section-heading"><div><span className="record-card-kicker">SETUP STEP 1</span><h2 style={{ fontSize: "1rem", margin: "0.25rem 0 0" }}>Create a client account</h2></div><span className="record-status">Start here</span></div>
+          <p style={{ color: "var(--muted)", margin: "0 0 1rem" }}>Create the organisation first. Then use Sites to add the properties FAST will service.</p>
           <form action={createClientRecord} style={{ display: "grid", gap: "1rem" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
               <input aria-label="Client name" name="name" placeholder="Client name" required style={inputStyle} />
@@ -118,6 +132,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
               <div className="record-card-heading"><div><span className="record-card-kicker">CLIENT ACCOUNT</span><h2>{client.name}</h2></div><span className={client.active ? "record-status record-status-active" : "record-status"}>{client.active ? "Active" : "Inactive"}</span></div>
               <div className="record-card-facts"><div><span>Industry</span><strong>{client.industry ?? "Not set"}</strong></div><div><span>Registration</span><strong>{client.registration_no ?? "Not set"}</strong></div></div>
               <div className="record-card-contact"><span>Primary contact</span><strong>{client.email ?? "Email not set"}</strong><small>{client.phone ?? "Phone not set"}</small></div>
+              <div className="record-card-next"><span>Next action</span><strong>{client.active ? "Add or review service sites for this client." : "Reactivate this account before planning new work."}</strong></div>
             </Card>)}
           </div>
           <div className="legacy-record-table">
