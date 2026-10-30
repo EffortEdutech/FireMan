@@ -230,7 +230,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
         <>
         <div className="legacy-record-table">
         <Card className="table-scroll" style={{ padding: 0 }}>
-          <table className="data-table">
+          <table className="data-table responsive-detail-table">
             <colgroup>
               <col style={{ width: 150 }} />
               <col style={{ width: 210 }} />
@@ -283,39 +283,39 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
 
                 return (
                   <tr key={report.id}>
-                    <td>
+                    <td data-label="Report">
                       <Link href={`/reports/${report.id}`}>
                         <strong>{report.report_number}</strong>
                       </Link>
                     </td>
-                    <td>
+                    <td data-label="Title">
                       {report.title ?? "Not set"}
                     </td>
-                    <td>
+                    <td data-label="Job">
                       {report.maintenance_jobs?.job_number ?? "Not set"}
                     </td>
-                    <td>
+                    <td data-label="Client">
                       {report.maintenance_jobs?.clients?.name ?? "Not set"}
                     </td>
-                    <td>
+                    <td data-label="Site">
                       {report.maintenance_jobs?.sites?.name ?? "Not set"}
                     </td>
-                    <td>
+                    <td data-label="Template">
                       {report.report_templates?.name ?? "Standard Maintenance Report"}
                     </td>
-                    <td>
+                    <td data-label="Evidence">
                       {evidenceSummary}
                     </td>
-                    <td style={{ whiteSpace: "nowrap" }}>
+                    <td data-label="Generated" style={{ whiteSpace: "nowrap" }}>
                       {formatDate(report.generated_at)}
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <StatusBadge>{reportStatusLabel[report.status] ?? report.status}</StatusBadge>
                     </td>
-                    <td>
+                    <td data-label="Output">
                       <ReportOutputStatus reportId={report.id} status={report.status} />
                     </td>
-                    <td>
+                    <td data-label="Action">
                       {report.status === "GENERATED" ? (
                         <form action={reviewReport}>
                           <input name="report_id" type="hidden" value={report.id} />
