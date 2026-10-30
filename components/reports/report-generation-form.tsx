@@ -79,7 +79,7 @@ export function ReportGenerationForm({ action, defaultTemplateId, jobs, template
       <form action={action} style={{ display: "grid", gap: "1rem" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
           <select aria-label="Maintenance job" disabled={!hasJobs} name="job_id" required style={fieldStyle}>
-            <option value="">{hasJobs ? "Select job under review" : "No reviewed jobs ready for report"}</option>
+            <option value="">{hasJobs ? "Select reviewed field job" : "No field jobs ready for report"}</option>
             {jobs.map((job) => (
               <option key={job.id} value={job.id}>
                 {job.job_number} - {job.clients?.name ?? "Client"} / {job.sites?.name ?? "Site"}
@@ -107,7 +107,7 @@ export function ReportGenerationForm({ action, defaultTemplateId, jobs, template
         </div>
         <div>
           <Button disabled={!hasJobs} type="submit">
-            Generate Report Shell
+            Create report from evidence
           </Button>
         </div>
       </form>
