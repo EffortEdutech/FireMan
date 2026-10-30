@@ -1,10 +1,10 @@
-const CACHE_NAME = "firemaint-shell-v2";
+const CACHE_NAME = "fast-field-shell-v3";
 const SHELL = [
   "/offline.html",
   "/manifest.webmanifest",
-  "/icons/icon.svg",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png"
+  "/icons/fast-mark.svg",
+  "/icons/fast-icon-192.png",
+  "/icons/fast-icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
