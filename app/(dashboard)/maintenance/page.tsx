@@ -263,7 +263,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
         <>
         <div className="maintenance-legacy-table">
         <Card className="table-scroll" style={{ padding: 0 }}>
-          <table className="data-table">
+          <table className="data-table maintenance-mobile-table">
             <colgroup>
               <col style={{ width: 120 }} />
               <col style={{ width: 86 }} />

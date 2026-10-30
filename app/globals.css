@@ -1442,6 +1442,28 @@ select {
     color: var(--accent);
   }
 
+  .maintenance-mobile-table {
+    min-width: 0;
+    table-layout: auto;
+  }
+
+  .maintenance-mobile-table th:nth-child(2),
+  .maintenance-mobile-table td:nth-child(2),
+  .maintenance-mobile-table th:nth-child(4),
+  .maintenance-mobile-table td:nth-child(4),
+  .maintenance-mobile-table th:nth-child(5),
+  .maintenance-mobile-table td:nth-child(5),
+  .maintenance-mobile-table th:nth-child(6),
+  .maintenance-mobile-table td:nth-child(6),
+  .maintenance-mobile-table th:nth-child(8),
+  .maintenance-mobile-table td:nth-child(8),
+  .maintenance-mobile-table th:nth-child(10),
+  .maintenance-mobile-table td:nth-child(10),
+  .maintenance-mobile-table th:nth-child(11),
+  .maintenance-mobile-table td:nth-child(11) {
+    display: none;
+  }
+
   .request-command-status {
     align-items: start;
     justify-items: start;
