@@ -42,13 +42,11 @@ export default async function DashboardPage() {
     supabase
       .from("maintenance_jobs")
       .select("id,job_number,status,scheduled_date,clients(name),sites(name)")
-      .in("status", ["SUBMITTED", "UNDER_REVIEW"])
       .order("scheduled_date", { ascending: true })
       .range(0, 49),
     supabase
       .from("reports")
       .select("id,report_number,title,status,maintenance_jobs(job_number,clients(name),sites(name))")
-      .in("status", ["GENERATED", "REVIEWED"])
       .order("created_at", { ascending: true })
       .range(0, 49)
   ]);

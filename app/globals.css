@@ -522,6 +522,49 @@ select {
   margin: 0;
 }
 
+.operations-console { display: grid; gap: 1rem; }
+.operations-console-header { align-items: end; display: flex; justify-content: space-between; gap: 1rem; }
+.operations-console-header h1 { font-size: 1.75rem; margin: 0; }
+.operations-console-header p:not(.page-kicker) { color: var(--muted); margin: 0.4rem 0 0; }
+.operations-console-layout { display: grid; gap: 1rem; grid-template-columns: 180px minmax(0, 1fr) 280px; min-width: 0; }
+.operations-console-nav, .operations-console-table-panel, .operations-console-detail { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.operations-console-nav { align-self: start; display: grid; gap: 0.25rem; padding: 0.75rem; }
+.operations-console-nav p { color: var(--muted); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; margin: 0.2rem 0 0.4rem; }
+.operations-console-nav button { align-items: center; background: transparent; border: 0; border-radius: 6px; color: var(--muted); cursor: pointer; display: flex; font: inherit; justify-content: space-between; padding: 0.55rem 0.6rem; text-align: left; }
+.operations-console-nav button:hover, .operations-console-nav-active { background: #e8eef3 !important; color: var(--accent) !important; font-weight: 800; }
+.operations-console-nav b { font-size: 0.75rem; }
+.operations-console-table-panel { min-width: 0; overflow: hidden; }
+.operations-console-table-toolbar { align-items: center; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; gap: 1rem; padding: 0.85rem 1rem; }
+.operations-console-table-toolbar span { color: var(--muted); font-size: 0.8rem; }
+.operations-console-table-toolbar input { min-height: 38px; width: min(18rem, 100%); }
+.operations-console-table { min-width: 760px; }
+.operations-console-table tbody tr { cursor: pointer; }
+.operations-console-row-selected td { background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+.operations-console-row-button { background: transparent; border: 0; color: inherit; cursor: pointer; display: grid; font: inherit; gap: 0.2rem; padding: 0; text-align: left; }
+.operations-console-row-button strong { color: var(--accent); }
+.operations-console-row-button small, .operations-console-table td small { color: var(--muted); font-size: 0.75rem; }
+.operations-console-status { font-weight: 700; }
+.operations-console-overdue { color: #a33a2b; font-weight: 800; }
+.operations-console-detail { align-self: start; padding: 1rem; position: sticky; top: 1rem; }
+.operations-console-detail-heading { color: var(--muted); display: flex; font-size: 0.78rem; justify-content: space-between; }
+.operations-console-detail h2 { font-size: 1.15rem; margin: 0.55rem 0 1rem; }
+.operations-console-detail dl { display: grid; gap: 0.75rem; margin: 0 0 1rem; }
+.operations-console-detail dt { color: var(--muted); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+.operations-console-detail dd { margin: 0.2rem 0 0; }
+.operations-console-detail .button { display: inline-flex; justify-content: center; width: 100%; }
+
+@media (max-width: 760px) {
+  .operations-console-header { align-items: flex-start; flex-direction: column; }
+  .operations-console-header .operations-toolbar-actions { width: 100%; }
+  .operations-console-layout { grid-template-columns: 1fr; }
+  .operations-console-nav { display: flex; gap: 0.35rem; overflow-x: auto; padding: 0.5rem; }
+  .operations-console-nav p { display: none; }
+  .operations-console-nav button { flex: 0 0 auto; white-space: nowrap; }
+  .operations-console-table-toolbar { align-items: stretch; flex-direction: column; }
+  .operations-console-table-toolbar input { width: 100%; }
+  .operations-console-detail { position: static; }
+}
+
 .request-command-center {
   display: grid;
   gap: 1rem;

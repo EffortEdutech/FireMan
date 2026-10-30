@@ -1,154 +1,39 @@
+"use client";
+
 import Link from "next/link";
-import { Card } from "@/components/ui/card";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { serviceRequestCategoryLabels, serviceRequestStatusLabels, serviceRequestUrgencyLabels } from "@/lib/service-requests/constants";
+import { useMemo, useState } from "react";
+import { serviceRequestStatusLabels, serviceRequestUrgencyLabels } from "@/lib/service-requests/constants";
 
-type Request = {
-  id: string;
-  request_reference: string;
-  title: string;
-  category: keyof typeof serviceRequestCategoryLabels;
-  status: keyof typeof serviceRequestStatusLabels;
-  urgency: keyof typeof serviceRequestUrgencyLabels;
-  requester_company: string | null;
-  site_description: string | null;
-  next_action: string | null;
-  updated_at: string;
-};
+type Request = { id: string; request_reference: string; title: string; category: string; status: keyof typeof serviceRequestStatusLabels; urgency: keyof typeof serviceRequestUrgencyLabels; requester_company: string | null; site_description: string | null; next_action: string | null; updated_at: string };
+type Job = { id: string; job_number: string; status: string; scheduled_date: string; clients: { name: string } | null; sites: { name: string } | null };
+type Report = { id: string; report_number: string; title: string | null; status: string; maintenance_jobs: { job_number: string; clients: { name: string } | null; sites: { name: string } | null } | null };
+type OperationsInboxProps = { requests: Request[]; jobs: Job[]; reports: Report[]; now: string };
+type QueueKey = "all" | "requests" | "field" | "reports" | "urgent" | "waiting" | "overdue" | "completed";
+type WorkItem = { id: string; href: string; kind: "Request" | "Field work" | "Report"; queue: Exclude<QueueKey, "all">; reference: string; title: string; clientSite: string; status: string; urgency: string; owner: string; nextAction: string; age: string; overdue: boolean; completed: boolean };
 
-type Job = {
-  id: string;
-  job_number: string;
-  status: string;
-  scheduled_date: string;
-  clients: { name: string } | null;
-  sites: { name: string } | null;
-};
-
-type Report = {
-  id: string;
-  report_number: string;
-  title: string | null;
-  status: string;
-  maintenance_jobs: { job_number: string; clients: { name: string } | null; sites: { name: string } | null } | null;
-};
-
-type OperationsInboxProps = {
-  requests: Request[];
-  jobs: Job[];
-  reports: Report[];
-  now: string;
-};
-
-function ageLabel(value: string, now: string) {
-  const hours = Math.max(0, Math.floor((new Date(now).getTime() - new Date(value).getTime()) / 3_600_000));
-  if (hours < 24) return `${hours}h old`;
-  return `${Math.floor(hours / 24)}d old`;
-}
-
-function queueLabel(request: Request) {
-  if (request.status === "NEW") return "New request";
-  if (request.status === "NEEDS_CUSTOMER_INFO") return "Waiting for customer";
-  if (request.status === "QUOTE_PREPARATION" || request.status === "AWAITING_CUSTOMER_DECISION") return "Quotation";
-  if (request.status === "SITE_VISIT_TO_ARRANGE") return "Site visit";
-  return "Service request";
-}
+function ageLabel(value: string, now: string) { const hours = Math.max(0, Math.floor((new Date(now).getTime() - new Date(value).getTime()) / 3_600_000)); return hours < 24 ? `${hours}h old` : `${Math.floor(hours / 24)}d old`; }
+function requestCompleted(status: string) { return ["CLOSED", "DECLINED", "CANCELLED", "UNABLE_TO_PROCEED", "CLOSED_WITHOUT_WORK", "COMPLETED"].includes(status); }
 
 export function OperationsInbox({ requests, jobs, reports, now }: OperationsInboxProps) {
-  const activeRequests = requests.filter((request) => !["CLOSED", "DECLINED", "CANCELLED", "UNABLE_TO_PROCEED", "CLOSED_WITHOUT_WORK"].includes(request.status));
-  const urgent = activeRequests.filter((request) => request.urgency === "URGENT").length;
-  const waiting = activeRequests.filter((request) => request.status === "NEEDS_CUSTOMER_INFO").length;
-  const unassigned = activeRequests.filter((request) => !request.next_action).length;
-  const overdue = activeRequests.filter((request) => new Date(now).getTime() - new Date(request.updated_at).getTime() > 86_400_000).length;
-  const queueCounts = {
-    newRequests: activeRequests.filter((request) => request.status === "NEW").length,
-    triage: activeRequests.filter((request) => request.status === "TRIAGE" || request.status === "NEEDS_CUSTOMER_INFO").length,
-    quotations: activeRequests.filter((request) => ["QUOTE_PREPARATION", "AWAITING_CUSTOMER_DECISION"].includes(request.status)).length,
-    fieldReview: jobs.filter((job) => job.status === "SUBMITTED").length,
-    reports: reports.filter((report) => ["GENERATED", "REVIEWED"].includes(report.status)).length
-  };
-  const workItems = [
-    ...activeRequests.map((request) => ({
-      href: `/service-requests/${request.id}`,
-      kind: queueLabel(request),
-      reference: request.request_reference,
-      title: request.title,
-      detail: `${request.requester_company ?? "Unmatched client"} · ${request.site_description ?? "Unmatched site"}`,
-      next: request.next_action ?? "Assign an owner and define the next action.",
-      urgency: serviceRequestUrgencyLabels[request.urgency],
-      age: ageLabel(request.updated_at, now),
-      priority: request.urgency === "URGENT" ? 0 : request.urgency === "PRIORITY" ? 1 : 2
-    })),
-    ...jobs.filter((job) => ["SUBMITTED", "UNDER_REVIEW"].includes(job.status)).map((job) => ({
-      href: `/maintenance/${job.id}`,
-      kind: job.status === "SUBMITTED" ? "Field review" : "Report preparation",
-      reference: job.job_number,
-      title: job.status === "SUBMITTED" ? "Job submitted by technician" : "Job ready for report",
-      detail: `${job.clients?.name ?? "Unmatched client"} · ${job.sites?.name ?? "Unmatched site"}`,
-      next: job.status === "SUBMITTED" ? "Review field evidence and start management review." : "Review evidence and generate the report.",
-      urgency: "Operational",
-      age: `Scheduled ${job.scheduled_date}`,
-      priority: 3
-    })),
-    ...reports.filter((report) => ["GENERATED", "REVIEWED"].includes(report.status)).map((report) => ({
-      href: `/reports/${report.id}`,
-      kind: report.status === "GENERATED" ? "Report review" : "Ready to issue",
-      reference: report.report_number,
-      title: report.title ?? "Maintenance report",
-      detail: `${report.maintenance_jobs?.clients?.name ?? "Unmatched client"} · ${report.maintenance_jobs?.sites?.name ?? "Unmatched site"}`,
-      next: report.status === "GENERATED" ? "Review the generated report." : "Issue the reviewed report to the client.",
-      urgency: "Operational",
-      age: report.status,
-      priority: 4
-    }))
-  ].sort((a, b) => a.priority - b.priority);
+  const [queue, setQueue] = useState<QueueKey>("all");
+  const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const workItems = useMemo<WorkItem[]>(() => [
+    ...requests.map((request) => { const completed = requestCompleted(request.status); const overdue = !completed && new Date(now).getTime() - new Date(request.updated_at).getTime() > 86_400_000; return { id: `request-${request.id}`, href: `/service-requests/${request.id}`, kind: "Request" as const, queue: (completed ? "completed" : request.status === "NEEDS_CUSTOMER_INFO" ? "waiting" : request.urgency === "URGENT" ? "urgent" : overdue ? "overdue" : "requests") as Exclude<QueueKey, "all">, reference: request.request_reference, title: request.title, clientSite: `${request.requester_company ?? "Unmatched client"} · ${request.site_description ?? "Unmatched site"}`, status: serviceRequestStatusLabels[request.status], urgency: serviceRequestUrgencyLabels[request.urgency], owner: request.next_action ? "Assigned workflow" : "Unassigned", nextAction: request.next_action ?? "Assign an owner and define the next action.", age: ageLabel(request.updated_at, now), overdue, completed }; }),
+    ...jobs.map((job) => { const completed = job.status === "COMPLETED"; return { id: `job-${job.id}`, href: `/maintenance/${job.id}`, kind: "Field work" as const, queue: (completed ? "completed" : "field") as Exclude<QueueKey, "all">, reference: job.job_number, title: completed ? "Completed maintenance job" : job.status === "SUBMITTED" ? "Job submitted by technician" : "Job ready for report", clientSite: `${job.clients?.name ?? "Unmatched client"} · ${job.sites?.name ?? "Unmatched site"}`, status: job.status, urgency: "Operational", owner: "Technician workflow", nextAction: completed ? "Review the completed job record." : job.status === "SUBMITTED" ? "Review field evidence and start management review." : "Review evidence and generate the report.", age: `Scheduled ${job.scheduled_date}`, overdue: false, completed }; }),
+    ...reports.map((report) => { const completed = report.status === "ISSUED"; return { id: `report-${report.id}`, href: `/reports/${report.id}`, kind: "Report" as const, queue: (completed ? "completed" : "reports") as Exclude<QueueKey, "all">, reference: report.report_number, title: report.title ?? "Maintenance report", clientSite: `${report.maintenance_jobs?.clients?.name ?? "Unmatched client"} · ${report.maintenance_jobs?.sites?.name ?? "Unmatched site"}`, status: report.status, urgency: "Operational", owner: "Report workflow", nextAction: completed ? "Open the issued report record." : report.status === "GENERATED" ? "Review the generated report." : "Issue the reviewed report to the client.", age: report.status, overdue: false, completed }; })
+  ], [jobs, now, reports, requests]);
+  const visibleItems = workItems.filter((item) => { const matchesQueue = queue === "all" ? !item.completed : queue === "completed" ? item.completed : item.queue === queue || (queue === "requests" && item.kind === "Request" && !item.completed && !item.overdue) || (queue === "field" && item.kind === "Field work" && !item.completed) || (queue === "reports" && item.kind === "Report" && !item.completed); const needle = search.trim().toLowerCase(); return matchesQueue && (!needle || `${item.reference} ${item.title} ${item.clientSite} ${item.status}`.toLowerCase().includes(needle)); });
+  const selectedItem = visibleItems.find((item) => item.id === selectedId) ?? visibleItems[0] ?? null;
+  const count = (key: QueueKey) => key === "all" ? workItems.filter((item) => !item.completed).length : workItems.filter((item) => item.queue === key).length;
+  const queues: Array<[QueueKey, string]> = [["all", "All active"], ["urgent", "Urgent"], ["requests", "Customer requests"], ["waiting", "Waiting for customer"], ["overdue", "Overdue"], ["field", "Field review"], ["reports", "Reports"], ["completed", "Completed history"]];
 
-  return (
-    <section className="operations-page" aria-labelledby="operations-title">
-      <div className="operations-toolbar">
-        <div>
-          <p className="page-kicker">FAST OPERATIONS</p>
-          <h1 id="operations-title" style={{ margin: 0, fontSize: "1.75rem", lineHeight: 1.2 }}>Operations Inbox</h1>
-          <p style={{ color: "var(--muted)", margin: "0.5rem 0 0" }}>Start here to see what needs action, who owns it, and what should happen next.</p>
-        </div>
-        <div className="operations-toolbar-actions">
-          <Link className="dashboard-action-link" href="/service-requests">All service requests</Link>
-          <Link className="dashboard-action-link" href="/maintenance">Maintenance pipeline</Link>
-        </div>
-      </div>
-
-      <div className="operations-summary" aria-label="Operations summary">
-        <Link className="operations-summary-card operations-summary-card-alert" href="/service-requests?urgency=URGENT"><span>Urgent requests</span><strong>{urgent}</strong><small>Needs priority action</small></Link>
-        <Link className="operations-summary-card" href="/service-requests?overdue=true"><span>Overdue response</span><strong>{overdue}</strong><small>Older than target</small></Link>
-        <Link className="operations-summary-card" href="/service-requests?status=NEEDS_CUSTOMER_INFO"><span>Waiting for customer</span><strong>{waiting}</strong><small>Follow up or hold</small></Link>
-        <Link className="operations-summary-card" href="/service-requests?owner=unassigned"><span>Needs owner</span><strong>{unassigned}</strong><small>Assign next action</small></Link>
-      </div>
-
-      <Card>
-        <div className="dashboard-section-heading">
-          <div><p className="page-kicker">CURRENT WORK QUEUE</p><h2>Needs action now</h2><p>Prioritized by urgency, then by the oldest outstanding work.</p></div>
-          <span style={{ color: "var(--muted)", fontSize: "0.875rem" }}>{workItems.length} open item{workItems.length === 1 ? "" : "s"}</span>
-        </div>
-        <div className="operations-queue-tabs" aria-label="Operations queues">
-          <Link className="operations-queue-tab" href="/service-requests?status=NEW">New requests <b>{queueCounts.newRequests}</b></Link>
-          <Link className="operations-queue-tab" href="/service-requests?status=TRIAGE">Triage <b>{queueCounts.triage}</b></Link>
-          <Link className="operations-queue-tab" href="/service-requests?status=QUOTE_PREPARATION">Quotations <b>{queueCounts.quotations}</b></Link>
-          <Link className="operations-queue-tab" href="/maintenance?status=SUBMITTED">Field review <b>{queueCounts.fieldReview}</b></Link>
-          <Link className="operations-queue-tab" href="/reports?status=active">Reports <b>{queueCounts.reports}</b></Link>
-        </div>
-        <div className="operations-worklist" style={{ marginTop: "1rem" }}>
-          {workItems.length ? workItems.map((item) => (
-            <Link className="operations-item" href={item.href} key={`${item.kind}-${item.reference}`}>
-              <div className="operations-item-main">
-                <span className="operations-item-title">{item.reference} · {item.title}</span>
-                <span className="operations-item-meta">{item.kind} · {item.detail}</span>
-                <span className="operations-item-next"><strong>Next:</strong> {item.next}</span>
-              </div>
-              <div className="operations-item-side"><StatusBadge>{item.urgency}</StatusBadge><span className="operations-item-meta">{item.age}</span><span className="operations-item-open">Open →</span></div>
-            </Link>
-          )) : <p className="operations-empty">No open operational items. New work will appear here.</p>}
-        </div>
-      </Card>
-    </section>
-  );
+  return <section className="operations-console" aria-labelledby="operations-title">
+    <header className="operations-console-header"><div><p className="page-kicker">FAST OPERATIONS CONSOLE</p><h1 id="operations-title">Operations Inbox</h1><p>Control active customer, field, and report work from one managed queue.</p></div><div className="operations-toolbar-actions"><Link className="dashboard-action-link" href="/service-requests">Service requests</Link><Link className="dashboard-action-link" href="/maintenance">Maintenance</Link></div></header>
+    <div className="operations-console-layout">
+      <nav className="operations-console-nav" aria-label="Operations queues"><p>QUEUES</p>{queues.map(([key, label]) => <button className={queue === key ? "operations-console-nav-active" : ""} key={key} onClick={() => { setQueue(key); setSelectedId(null); }} type="button"><span>{label}</span><b>{count(key)}</b></button>)}</nav>
+      <section className="operations-console-table-panel" aria-label="Operations work table"><div className="operations-console-table-toolbar"><div><strong>{visibleItems.length} visible work items</strong><span> Select a row to inspect its current action.</span></div><input aria-label="Search operations" onChange={(event) => setSearch(event.target.value)} placeholder="Search reference, title, client" value={search} /></div><div className="table-scroll"><table className="data-table operations-console-table"><thead><tr><th>Work</th><th>Customer / site</th><th>Status</th><th>Owner</th><th>SLA / age</th><th>Next action</th></tr></thead><tbody>{visibleItems.map((item) => <tr className={selectedItem?.id === item.id ? "operations-console-row-selected" : ""} key={item.id} onClick={() => setSelectedId(item.id)}><td><button className="operations-console-row-button" type="button"><strong>{item.reference}</strong><span>{item.title}</span><small>{item.kind}</small></button></td><td>{item.clientSite}</td><td><span className="operations-console-status">{item.status}</span><small>{item.urgency}</small></td><td>{item.owner}</td><td className={item.overdue ? "operations-console-overdue" : ""}>{item.overdue ? "Overdue" : item.age}</td><td>{item.nextAction}</td></tr>)}</tbody></table></div>{!visibleItems.length ? <p className="operations-empty">No work in this queue.</p> : null}</section>
+      <aside className="operations-console-detail" aria-label="Selected work detail">{selectedItem ? <><p className="page-kicker">SELECTED WORK</p><div className="operations-console-detail-heading"><span>{selectedItem.kind}</span><strong>{selectedItem.reference}</strong></div><h2>{selectedItem.title}</h2><dl><div><dt>Customer / site</dt><dd>{selectedItem.clientSite}</dd></div><div><dt>Status</dt><dd>{selectedItem.status}</dd></div><div><dt>Owner</dt><dd>{selectedItem.owner}</dd></div><div><dt>SLA / age</dt><dd className={selectedItem.overdue ? "operations-console-overdue" : ""}>{selectedItem.overdue ? "Overdue" : selectedItem.age}</dd></div><div><dt>Current action</dt><dd>{selectedItem.nextAction}</dd></div></dl><Link className="button" href={selectedItem.href}>Open full workspace</Link></> : <p className="operations-empty">Select a work item to inspect it.</p>}</aside>
+    </div>
+  </section>;
 }
