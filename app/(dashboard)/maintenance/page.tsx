@@ -201,7 +201,13 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
-      <PageHeader title="Maintenance" description="Schedule work, follow field progress, start management review, and hand completed jobs to reporting." />
+      <PageHeader title="Maintenance" description="Move planned work through technician delivery, evidence review, reporting, and closure." />
+      <div className="workflow-stepper" aria-label="Maintenance workflow">
+        <div className="workflow-step workflow-step-current"><span>1</span><div><strong>Schedule</strong><small>Assign visit and assets</small></div></div>
+        <div className="workflow-step"><span>2</span><div><strong>Field work</strong><small>Technician checklist</small></div></div>
+        <div className="workflow-step"><span>3</span><div><strong>Field review</strong><small>Validate evidence</small></div></div>
+        <div className="workflow-step"><span>4</span><div><strong>Report and close</strong><small>Issue and complete</small></div></div>
+      </div>
       {params?.created ? (
         <SuccessState message="Maintenance plan and job created." />
       ) : null}
@@ -231,7 +237,9 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
           }
         />
       ) : null}
-      <Card>
+      <Card className="workflow-action-card">
+        <div className="workflow-section-heading"><div><span className="record-card-kicker">PLAN NEW WORK</span><h2 style={{ fontSize: "1rem", margin: "0.25rem 0 0" }}>Schedule a maintenance visit</h2></div><span className="record-status">Start here</span></div>
+        <p style={{ color: "var(--muted)", margin: "0 0 1rem" }}>Choose the client, site, technician, asset, frequency, and service window. The job will enter the Scheduled stage for field delivery.</p>
         <CreateJobForm
           action={createPlanAndJob}
           clients={clientOptions}

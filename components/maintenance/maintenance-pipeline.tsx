@@ -23,11 +23,11 @@ export type MaintenancePipelineJob = {
 };
 
 const columns = [
-  { key: "SCHEDULED", label: "Scheduled", hint: "Planned visits and upcoming work" },
-  { key: "IN_PROGRESS", label: "In progress", hint: "Technician work currently underway" },
-  { key: "SUBMITTED", label: "Field review", hint: "Evidence submitted by the field team" },
-  { key: "UNDER_REVIEW", label: "Report preparation", hint: "Ready for management and reporting" },
-  { key: "COMPLETED", label: "Completed", hint: "Closed maintenance history" }
+  { key: "SCHEDULED", label: "Scheduled", hint: "Planned visits and upcoming work", action: "Confirm visit and technician" },
+  { key: "IN_PROGRESS", label: "In progress", hint: "Technician work currently underway", action: "Track field completion" },
+  { key: "SUBMITTED", label: "Field review", hint: "Evidence submitted by the field team", action: "Review field evidence" },
+  { key: "UNDER_REVIEW", label: "Report preparation", hint: "Ready for management and reporting", action: "Create report from evidence" },
+  { key: "COMPLETED", label: "Completed", hint: "Closed maintenance history", action: "View completed record" }
 ];
 
 export function MaintenancePipeline({ jobs, selectedStatus, overdueCount, reviewQueueCount }: {
@@ -50,18 +50,19 @@ export function MaintenancePipeline({ jobs, selectedStatus, overdueCount, review
           const columnJobs = jobs.filter((job) => job.status === column.key);
           return (
             <section className="maintenance-pipeline-column" key={column.key} aria-labelledby={`maintenance-column-${column.key}`}>
-              <div className="maintenance-pipeline-column-heading"><div><h2 id={`maintenance-column-${column.key}`}>{column.label}</h2><p>{column.hint}</p></div><strong>{columnJobs.length}</strong></div>
+              <div className="maintenance-pipeline-column-heading"><div><h2 id={`maintenance-column-${column.key}`}>{column.label}</h2><p>{column.hint}</p><small>{column.action}</small></div><strong>{columnJobs.length}</strong></div>
               <div className="maintenance-pipeline-cards">
                 {columnJobs.map((job) => <Card className="maintenance-job-card" key={job.id}>
                   <div className="maintenance-job-card-heading"><Link href={`/maintenance/${job.id}`}><strong>{job.jobNumber}</strong></Link><StatusBadge>{job.statusLabel}</StatusBadge></div>
                   <div className="maintenance-job-card-location">{job.clientName} · {job.siteName}</div>
                   <div className="maintenance-job-card-meta"><span>{job.planName}</span><span>{job.scheduledDate}</span><span>{job.technicianName}</span></div>
                   <div className="maintenance-job-card-evidence"><span>{job.assetCount ? `${job.completedAssetCount}/${job.assetCount} checklists` : "No assets"}</span><span className={job.criticalFindingCount ? "maintenance-critical" : ""}>{job.findingCount ? `${job.findingCount} finding${job.findingCount === 1 ? "" : "s"}${job.criticalFindingCount ? ` · ${job.criticalFindingCount} critical` : ""}` : "No findings"}</span></div>
+                  <div className="maintenance-job-card-next"><span>Next action</span><strong>{job.status === "SCHEDULED" ? "Confirm the visit and technician assignment." : job.status === "IN_PROGRESS" ? "Complete assigned checklists and capture findings." : job.status === "SUBMITTED" ? "Review field evidence before report preparation." : job.status === "UNDER_REVIEW" ? "Create the client report from reviewed evidence." : "Record closed work for future reference."}</strong></div>
                   <div className="maintenance-job-card-actions">
-                    {job.status === "SUBMITTED" && job.checklistComplete ? <form action={startJobReview}><input name="job_id" type="hidden" value={job.id} /><Button type="submit" variant="secondary">Start review</Button></form> : null}
+                    {job.status === "SUBMITTED" && job.checklistComplete ? <form action={startJobReview}><input name="job_id" type="hidden" value={job.id} /><Button type="submit" variant="secondary" pendingLabel="Starting review…">Start management review</Button></form> : null}
                     {job.status === "SUBMITTED" && !job.checklistComplete ? <span className="maintenance-critical">Complete assigned checklists first</span> : null}
-                    {job.status === "UNDER_REVIEW" ? <Link href="/reports" className="maintenance-action-link">Generate report →</Link> : null}
-                    {job.report?.status === "ISSUED" && job.status !== "COMPLETED" ? <form action={closeJobFromIssuedReport}><input name="job_id" type="hidden" value={job.id} /><Button type="submit" variant="secondary">Close job</Button></form> : null}
+                    {job.status === "UNDER_REVIEW" ? <Link href="/reports" className="maintenance-action-link">Create report →</Link> : null}
+                    {job.report?.status === "ISSUED" && job.status !== "COMPLETED" ? <form action={closeJobFromIssuedReport}><input name="job_id" type="hidden" value={job.id} /><Button type="submit" variant="secondary" pendingLabel="Closing job…">Close from issued report</Button></form> : null}
                     {job.report ? <Link href={`/reports/${job.report.id}`} className="maintenance-action-link">{job.report.number} · {job.report.status}</Link> : null}
                   </div>
                 </Card>)}

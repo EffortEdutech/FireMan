@@ -808,6 +808,14 @@ select {
   margin: 0.25rem 0 0;
 }
 
+.maintenance-pipeline-column-heading small {
+  color: var(--accent);
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-top: 0.3rem;
+}
+
 .maintenance-pipeline-column-heading > strong {
   align-items: center;
   background: var(--surface);
@@ -857,6 +865,27 @@ select {
 .maintenance-job-card-evidence {
   color: var(--muted);
   font-size: 0.75rem;
+}
+
+.maintenance-job-card-next {
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+  border-left: 3px solid var(--accent);
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.maintenance-job-card-next span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.maintenance-job-card-next strong {
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .maintenance-job-card-evidence {
