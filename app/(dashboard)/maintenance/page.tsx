@@ -22,6 +22,7 @@ type MaintenancePageProps = {
     review?: string;
     status?: string;
     page?: string;
+    sort?: string;
   }>;
 };
 
@@ -175,8 +176,14 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
   };
   const pageSize = 50;
   const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
-  const page = Math.min(requestedPage, Math.max(1, Math.ceil(filteredJobs.length / pageSize)));
-  const pagedJobs = filteredJobs.slice((page - 1) * pageSize, page * pageSize);
+  const selectedSort = ["scheduled_asc", "status", "client"].includes(params?.sort ?? "") ? params?.sort ?? "scheduled_asc" : "scheduled_asc";
+  const sortedJobs = [...filteredJobs].sort((left, right) => {
+    if (selectedSort === "status") return (jobStatusLabel[left.status] ?? left.status).localeCompare(jobStatusLabel[right.status] ?? right.status);
+    if (selectedSort === "client") return (left.clients?.name ?? "").localeCompare(right.clients?.name ?? "");
+    return left.scheduled_date.localeCompare(right.scheduled_date);
+  });
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(sortedJobs.length / pageSize)));
+  const pagedJobs = sortedJobs.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -241,6 +248,11 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
           }))}
           selectedKey={selectedStatus}
         />
+        <form className="table-toolbar" method="get">
+          <input name="status" type="hidden" value={selectedStatus} />
+          <label>Sort jobs<select name="sort" defaultValue={selectedSort}><option value="scheduled_asc">Scheduled date</option><option value="status">Status</option><option value="client">Client</option></select></label>
+          <Button type="submit" variant="secondary">Apply sort</Button>
+        </form>
         {filteredJobs.length > 0 ? (
         <>
         <div className="maintenance-legacy-table">
@@ -389,7 +401,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
           </table>
         </Card>
         </div>
-        <PaginationControls basePath="/maintenance" page={page} pageSize={pageSize} query={{ status: selectedStatus }} total={filteredJobs.length} />
+        <PaginationControls basePath="/maintenance" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={sortedJobs.length} />
         </>
         ) : (
           <EmptyState title="No jobs in this view" message="Choose another status filter or create a new maintenance job." />

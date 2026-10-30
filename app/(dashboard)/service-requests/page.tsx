@@ -30,7 +30,7 @@ function isOverdue(value: string) {
   return Date.now() - new Date(value).getTime() > 86_400_000;
 }
 
-export default async function ServiceRequestsPage({ searchParams }: { searchParams: Promise<{ error?: string; "intake-error"?: string; "intake-updated"?: string; phase?: string; urgency?: string; overdue?: string; owner?: string; page?: string }> }) {
+export default async function ServiceRequestsPage({ searchParams }: { searchParams: Promise<{ error?: string; "intake-error"?: string; "intake-updated"?: string; phase?: string; urgency?: string; overdue?: string; owner?: string; page?: string; sort?: string }> }) {
   const profile = await requireProfile();
   if (!canAccessManagement(profile.role)) redirect("/dashboard");
   const params = await searchParams;
@@ -64,8 +64,14 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
   const pageSize = 50;
   const requestedPage = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
   const page = Math.min(requestedPage, Math.max(1, Math.ceil(visibleRequests.length / pageSize)));
-  const pagedRequests = visibleRequests.slice((page - 1) * pageSize, page * pageSize);
-  const paginationQuery = { phase: params.phase, urgency: params.urgency, overdue: params.overdue, owner: params.owner };
+  const selectedSort = ["updated_desc", "urgency_desc", "reference_asc"].includes(params.sort ?? "") ? params.sort ?? "updated_desc" : "updated_desc";
+  const sortedRequests = [...visibleRequests].sort((left, right) => {
+    if (selectedSort === "urgency_desc") return ({ URGENT: 0, PRIORITY: 1, ROUTINE: 2 }[left.urgency] ?? 3) - ({ URGENT: 0, PRIORITY: 1, ROUTINE: 2 }[right.urgency] ?? 3);
+    if (selectedSort === "reference_asc") return left.request_reference.localeCompare(right.request_reference);
+    return new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime();
+  });
+  const pagedRequests = sortedRequests.slice((page - 1) * pageSize, page * pageSize);
+  const paginationQuery = { phase: params.phase, urgency: params.urgency, overdue: params.overdue, owner: params.owner, sort: selectedSort };
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -83,6 +89,14 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
       <nav className="technician-tabs" aria-label="Request phases">
         {requestPhases.map((phase) => <Link className={selectedPhase === phase.key ? "technician-tab-active" : undefined} href={phase.key === "all" ? "/service-requests" : `/service-requests?phase=${phase.key}`} key={phase.key}>{phase.label} ({phaseCount(phase)})</Link>)}
       </nav>
+      <form className="table-toolbar" method="get">
+        {params.phase ? <input name="phase" type="hidden" value={params.phase} /> : null}
+        {params.urgency ? <input name="urgency" type="hidden" value={params.urgency} /> : null}
+        {params.overdue ? <input name="overdue" type="hidden" value={params.overdue} /> : null}
+        {params.owner ? <input name="owner" type="hidden" value={params.owner} /> : null}
+        <label>Sort requests<select name="sort" defaultValue={selectedSort}><option value="updated_desc">Latest update</option><option value="urgency_desc">Urgency</option><option value="reference_asc">Reference</option></select></label>
+        <Button type="submit" variant="secondary">Apply sort</Button>
+      </form>
       {!error && !visibleRequests.length ? <EmptyState title="No requests in this phase" message="New customer work will appear here when it enters this queue." /> : null}
       <Card className="table-scroll queue-table-card" style={{ padding: 0 }}>
         <table className="data-table queue-table" aria-label="Service request queue">

@@ -23,6 +23,7 @@ type ReportsPageProps = {
     reviewed?: string;
     status?: string;
     page?: string;
+    sort?: string;
   }>;
 };
 
@@ -158,8 +159,14 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   };
   const pageSize = 50;
   const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
-  const page = Math.min(requestedPage, Math.max(1, Math.ceil(filteredReports.length / pageSize)));
-  const pagedReports = filteredReports.slice((page - 1) * pageSize, page * pageSize);
+  const selectedSort = ["generated_desc", "status", "client"].includes(params?.sort ?? "") ? params?.sort ?? "generated_desc" : "generated_desc";
+  const sortedReports = [...filteredReports].sort((left, right) => {
+    if (selectedSort === "status") return (reportStatusLabel[left.status] ?? left.status).localeCompare(reportStatusLabel[right.status] ?? right.status);
+    if (selectedSort === "client") return (left.maintenance_jobs?.clients?.name ?? "").localeCompare(right.maintenance_jobs?.clients?.name ?? "");
+    return new Date(right.generated_at ?? 0).getTime() - new Date(left.generated_at ?? 0).getTime();
+  });
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(sortedReports.length / pageSize)));
+  const pagedReports = sortedReports.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -221,6 +228,11 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
           }))}
           selectedKey={selectedStatus}
         />
+        <form className="table-toolbar" method="get">
+          <input name="status" type="hidden" value={selectedStatus} />
+          <label>Sort reports<select name="sort" defaultValue={selectedSort}><option value="generated_desc">Latest generated</option><option value="status">Status</option><option value="client">Client</option></select></label>
+          <Button type="submit" variant="secondary">Apply sort</Button>
+        </form>
         {filteredReports.length > 0 ? (
         <>
         <div className="legacy-record-table">
@@ -334,7 +346,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
           </table>
         </Card>
         </div>
-        <PaginationControls basePath="/reports" page={page} pageSize={pageSize} query={{ status: selectedStatus }} total={filteredReports.length} />
+        <PaginationControls basePath="/reports" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={sortedReports.length} />
         </>
         ) : (
           <EmptyState title="No reports in this view" message="Choose another status filter or generate a new report shell." />
