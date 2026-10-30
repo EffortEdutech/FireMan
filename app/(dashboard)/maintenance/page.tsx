@@ -54,6 +54,7 @@ const jobStatusFilters = [
 ];
 
 const activeJobStatuses = new Set(["SCHEDULED", "IN_PROGRESS", "SUBMITTED", "UNDER_REVIEW"]);
+const activeJobStatusValues = ["SCHEDULED", "IN_PROGRESS", "SUBMITTED", "UNDER_REVIEW"] as const;
 
 export default async function MaintenancePage({ searchParams }: MaintenancePageProps) {
   const profile = await requireProfile();
@@ -64,12 +65,23 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
 
   const params = await searchParams;
   const supabase = await createClient();
+  const selectedStatus = jobStatusFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
+  const pageSize = 50;
+  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
+  const selectedSort = ["scheduled_asc", "status", "client"].includes(params?.sort ?? "") ? params?.sort ?? "scheduled_asc" : "scheduled_asc";
+  const jobsQuery = supabase
+    .from("maintenance_jobs")
+    .select("id,job_number,scheduled_date,completed_at,status,assigned_technician_id,clients(name),sites(name),maintenance_plans(name,frequency)", { count: "exact" })
+    .order(selectedSort === "status" ? "status" : "scheduled_date", { ascending: true })
+    .range((requestedPage - 1) * pageSize, requestedPage * pageSize - 1);
+  if (selectedStatus === "active") jobsQuery.in("status", activeJobStatusValues);
+  else if (selectedStatus !== "all") jobsQuery.eq("status", selectedStatus as never);
   const [
     { data: clients },
     { data: sites },
     { data: equipment },
     { data: technicians },
-    { data: jobs, error: jobsError },
+    { data: jobs, error: jobsError, count: jobCount },
     { data: reports, error: reportsError }
   ] = await Promise.all([
     supabase.from("clients").select("id,name").eq("active", true).order("name", { ascending: true }),
@@ -85,11 +97,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
       .eq("role", "TECHNICIAN")
       .eq("active", true)
       .order("full_name", { ascending: true }),
-    supabase
-      .from("maintenance_jobs")
-      .select("id,job_number,scheduled_date,completed_at,status,assigned_technician_id,clients(name),sites(name),maintenance_plans(name,frequency)")
-      .order("scheduled_date", { ascending: true })
-      .order("created_at", { ascending: false }),
+    jobsQuery,
     supabase
       .from("reports")
       .select("id,job_id,report_number,status,issued_at")
@@ -146,26 +154,27 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
       reportsByJobId.set(report.job_id, report);
     }
   });
-  const selectedStatus = jobStatusFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
-  const jobCounts = new Map<string, number>();
-  const filteredJobs =
-    jobs?.filter((job) => {
-      jobCounts.set(job.status, (jobCounts.get(job.status) ?? 0) + 1);
-
-      if (selectedStatus === "all") {
-        return true;
-      }
-
-      if (selectedStatus === "active") {
-        return activeJobStatuses.has(job.status);
-      }
-
-      return job.status === selectedStatus;
-    }) ?? [];
-  const activeJobCount = jobs?.filter((job) => activeJobStatuses.has(job.status)).length ?? 0;
+  const filteredJobs = jobs ?? [];
+  const [{ count: activeJobCountRaw }, { count: scheduledJobCount }, { count: inProgressJobCount }, { count: submittedJobCount }, { count: underReviewJobCount }, { count: completedJobCount }, { count: allJobCount }] = await Promise.all([
+    supabase.from("maintenance_jobs").select("id", { count: "exact", head: true }).in("status", activeJobStatusValues),
+    supabase.from("maintenance_jobs").select("id", { count: "exact", head: true }).eq("status", "SCHEDULED"),
+    supabase.from("maintenance_jobs").select("id", { count: "exact", head: true }).eq("status", "IN_PROGRESS"),
+    supabase.from("maintenance_jobs").select("id", { count: "exact", head: true }).eq("status", "SUBMITTED"),
+    supabase.from("maintenance_jobs").select("id", { count: "exact", head: true }).eq("status", "UNDER_REVIEW"),
+    supabase.from("maintenance_jobs").select("id", { count: "exact", head: true }).eq("status", "COMPLETED"),
+    supabase.from("maintenance_jobs").select("id", { count: "exact", head: true })
+  ]);
+  const jobCounts = new Map([
+    ["SCHEDULED", scheduledJobCount ?? 0],
+    ["IN_PROGRESS", inProgressJobCount ?? 0],
+    ["SUBMITTED", submittedJobCount ?? 0],
+    ["UNDER_REVIEW", underReviewJobCount ?? 0],
+    ["COMPLETED", completedJobCount ?? 0]
+  ]);
+  const activeJobCount = activeJobCountRaw ?? 0;
   const filterCountByKey = (key: string) => {
     if (key === "all") {
-      return jobs?.length ?? 0;
+      return allJobCount ?? 0;
     }
 
     if (key === "active") {
@@ -174,16 +183,13 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
 
     return jobCounts.get(key) ?? 0;
   };
-  const pageSize = 50;
-  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
-  const selectedSort = ["scheduled_asc", "status", "client"].includes(params?.sort ?? "") ? params?.sort ?? "scheduled_asc" : "scheduled_asc";
   const sortedJobs = [...filteredJobs].sort((left, right) => {
     if (selectedSort === "status") return (jobStatusLabel[left.status] ?? left.status).localeCompare(jobStatusLabel[right.status] ?? right.status);
     if (selectedSort === "client") return (left.clients?.name ?? "").localeCompare(right.clients?.name ?? "");
     return left.scheduled_date.localeCompare(right.scheduled_date);
   });
-  const page = Math.min(requestedPage, Math.max(1, Math.ceil(sortedJobs.length / pageSize)));
-  const pagedJobs = sortedJobs.slice((page - 1) * pageSize, page * pageSize);
+  const page = requestedPage;
+  const pagedJobs = sortedJobs;
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -401,7 +407,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
           </table>
         </Card>
         </div>
-        <PaginationControls basePath="/maintenance" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={sortedJobs.length} />
+        <PaginationControls basePath="/maintenance" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={jobCount ?? 0} />
         </>
         ) : (
           <EmptyState title="No jobs in this view" message="Choose another status filter or create a new maintenance job." />
