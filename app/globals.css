@@ -991,6 +991,27 @@ select {
   color: var(--muted);
 }
 
+.record-card-next {
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+  border-left: 3px solid var(--accent);
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.record-card-next span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.record-card-next strong {
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
 .report-review-title {
   margin: 0;
 }
