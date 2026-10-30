@@ -1607,6 +1607,10 @@ select {
 .dashboard-command-header h1 { font-size: 1.8rem; margin: 0; }
 .dashboard-command-header p:not(.page-kicker) { color: var(--muted); margin: 0.35rem 0 0; }
 .dashboard-command-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.dashboard-view-tabs { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; display: flex; gap: 0.2rem; overflow-x: auto; padding: 0.3rem; position: sticky; top: 0.75rem; z-index: 5; }
+.dashboard-view-tabs a { align-items: center; border-radius: 5px; color: var(--muted); display: inline-flex; font-size: 0.8rem; font-weight: 700; gap: 0.35rem; padding: 0.6rem 0.75rem; text-decoration: none; white-space: nowrap; }
+.dashboard-view-tabs a:hover, .dashboard-view-tabs a:focus-visible, .dashboard-view-tab-active { background: var(--foreground); color: var(--surface) !important; }
+.dashboard-view-tabs b { align-items: center; background: #a33a2b; border-radius: 999px; color: white; display: inline-flex; font-size: 0.68rem; justify-content: center; min-height: 1.15rem; min-width: 1.15rem; padding: 0 0.2rem; }
 .dashboard-priority-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .dashboard-priority-metric { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; color: inherit; display: grid; gap: 0.2rem; min-width: 0; padding: 0.8rem; text-decoration: none; }
 .dashboard-priority-metric:hover, .dashboard-priority-metric:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent); }
@@ -1618,6 +1622,7 @@ select {
 .dashboard-secondary-workspaces { border-top: 1px solid var(--border); display: grid; gap: 0.75rem; padding-top: 1rem; }
 .dashboard-secondary-workspaces h2 { font-size: 1rem; margin: 0; }
 .dashboard-secondary-workspaces p { color: var(--muted); font-size: 0.875rem; margin: 0.3rem 0 0; }
+.dashboard-muted-detail { color: var(--muted); font-size: 0.875rem; margin-top: 0.3rem; }
 
 @media (max-width: 1100px) {
   .dashboard-priority-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
