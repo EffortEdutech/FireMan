@@ -23,6 +23,66 @@ body {
     sans-serif;
 }
 
+.activity-feedback {
+  align-items: center;
+  animation: activity-feedback-in 160ms ease-out;
+  background: var(--foreground);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgb(22 32 27 / 0.22);
+  color: var(--surface);
+  display: flex;
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 0.55rem;
+  left: 50%;
+  padding: 0.55rem 0.8rem;
+  position: fixed;
+  top: 0.75rem;
+  transform: translateX(-50%);
+  z-index: 1000;
+}
+
+.activity-feedback::after {
+  animation: activity-feedback-progress 1.1s ease-in-out infinite;
+  background: var(--accent-foreground);
+  border-radius: 999px;
+  content: "";
+  height: 2px;
+  left: 0.75rem;
+  opacity: 0.9;
+  position: absolute;
+  right: 0.75rem;
+  top: 100%;
+  transform-origin: left;
+}
+
+.activity-feedback-hint {
+  color: rgb(255 255 255 / 0.68);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.activity-feedback-spinner {
+  animation: button-spin 750ms linear infinite;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+@keyframes activity-feedback-in {
+  from { opacity: 0; transform: translate(-50%, -0.5rem); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes activity-feedback-progress {
+  0% { transform: scaleX(0.12); }
+  50% { transform: scaleX(0.62); }
+  100% { transform: scaleX(0.96); }
+}
+
 a {
   color: inherit;
   text-decoration: none;

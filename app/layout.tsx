@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ActivityFeedback } from "@/components/ui/activity-feedback";
 import { tenantBrand } from "@/lib/tenant/brand";
 
 export const metadata: Metadata = {
@@ -19,7 +20,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body><ActivityFeedback />{children}</body>
     </html>
   );
 }
