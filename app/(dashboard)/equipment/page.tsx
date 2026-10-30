@@ -21,6 +21,7 @@ type EquipmentPageProps = {
     status?: string;
     system?: string;
     page?: string;
+    sort?: string;
   }>;
 };
 
@@ -61,7 +62,7 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
     supabase.from("equipment_type_fields").select("id,equipment_type_id,field_key,label,field_type,unit,options,required,customer_visible,sort_order").eq("active", true).order("sort_order", { ascending: true }),
     supabase
       .from("equipment")
-      .select("id,asset_code,serial_number,brand,model,capacity,location_description,installation_date,technical_data,status,buildings(name,sites(name)),systems(name),equipment_types(id,name,code)")
+      .select("id,asset_code,serial_number,brand,model,capacity,location_description,installation_date,technical_data,status,created_at,buildings(name,sites(name)),systems(name),equipment_types(id,name,code)")
       .order("created_at", { ascending: false })
   ]);
 
@@ -104,10 +105,16 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
 
     return equipmentCounts.get(key) ?? 0;
   };
+  const selectedSort = ["created_desc", "asset_asc", "type"].includes(params?.sort ?? "") ? params?.sort ?? "created_desc" : "created_desc";
+  const sortedEquipment = [...filteredEquipment].sort((left, right) => {
+    if (selectedSort === "asset_asc") return left.asset_code.localeCompare(right.asset_code);
+    if (selectedSort === "type") return (left.equipment_types?.name ?? "").localeCompare(right.equipment_types?.name ?? "");
+    return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+  });
   const pageSize = 50;
   const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
-  const page = Math.min(requestedPage, Math.max(1, Math.ceil(filteredEquipment.length / pageSize)));
-  const pagedEquipment = filteredEquipment.slice((page - 1) * pageSize, page * pageSize);
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(sortedEquipment.length / pageSize)));
+  const pagedEquipment = sortedEquipment.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -186,6 +193,12 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
           <Button type="submit">Search register</Button>
           {searchTerm ? <a className="button button-secondary" href={selectedStatus === "ACTIVE" ? "/equipment" : `/equipment?status=${selectedStatus}`}>Clear</a> : null}
         </form>
+        <form className="table-toolbar" method="get">
+          <input name="status" type="hidden" value={selectedStatus} />
+          {params?.search ? <input name="search" type="hidden" value={params.search} /> : null}
+          <label>Sort assets<select name="sort" defaultValue={selectedSort}><option value="created_desc">Recently added</option><option value="asset_asc">Asset code</option><option value="type">Equipment type</option></select></label>
+          <Button type="submit" variant="secondary">Apply sort</Button>
+        </form>
         <Card style={{ marginTop: "1rem" }}>
           <div className="record-card-heading"><div><span className="record-card-kicker">TECHNICAL LIBRARY</span><h2>Equipment categories & templates</h2></div><span className="record-status">{equipmentTypeOptions.length} categories</span></div>
           <div className="record-grid" style={{ marginTop: "1rem" }}>
@@ -244,7 +257,7 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
           </table>
         </Card>
         </div>
-        <PaginationControls basePath="/equipment" page={page} pageSize={pageSize} query={{ status: selectedStatus, search: params?.search }} total={filteredEquipment.length} />
+        <PaginationControls basePath="/equipment" page={page} pageSize={pageSize} query={{ status: selectedStatus, search: params?.search, sort: selectedSort }} total={sortedEquipment.length} />
         </>
         ) : (
           <EmptyState title="No assets in this view" message="Choose another asset status filter." />

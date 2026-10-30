@@ -16,6 +16,7 @@ type ClientsPageProps = {
     error?: string;
     status?: string;
     page?: string;
+    sort?: string;
   }>;
 };
 
@@ -67,10 +68,16 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
 
     return activeClientCount;
   };
+  const selectedSort = ["created_desc", "name_asc", "status"].includes(params?.sort ?? "") ? params?.sort ?? "created_desc" : "created_desc";
+  const sortedClients = [...filteredClients].sort((left, right) => {
+    if (selectedSort === "name_asc") return left.name.localeCompare(right.name);
+    if (selectedSort === "status") return Number(right.active) - Number(left.active);
+    return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+  });
   const pageSize = 50;
   const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
-  const page = Math.min(requestedPage, Math.max(1, Math.ceil(filteredClients.length / pageSize)));
-  const pagedClients = filteredClients.slice((page - 1) * pageSize, page * pageSize);
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(sortedClients.length / pageSize)));
+  const pagedClients = sortedClients.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -120,6 +127,11 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
             }))}
             selectedKey={selectedStatus}
           />
+          <form className="table-toolbar" method="get">
+            <input name="status" type="hidden" value={selectedStatus} />
+            <label>Sort clients<select name="sort" defaultValue={selectedSort}><option value="created_desc">Recently added</option><option value="name_asc">Name</option><option value="status">Active first</option></select></label>
+            <Button type="submit" variant="secondary">Apply sort</Button>
+          </form>
           {filteredClients.length > 0 ? (
           <>
           <div className="legacy-record-table">
@@ -165,7 +177,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
             </table>
           </Card>
           </div>
-          <PaginationControls basePath="/clients" page={page} pageSize={pageSize} query={{ status: selectedStatus }} total={filteredClients.length} />
+          <PaginationControls basePath="/clients" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={sortedClients.length} />
           </>
           ) : (
             <EmptyState title="No clients in this view" message="Choose another client status filter." />

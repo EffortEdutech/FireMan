@@ -16,6 +16,7 @@ type SitesPageProps = {
     error?: string;
     status?: string;
     page?: string;
+    sort?: string;
   }>;
 };
 
@@ -72,10 +73,16 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
 
     return activeSiteCount;
   };
+  const selectedSort = ["created_desc", "name_asc", "client"].includes(params?.sort ?? "") ? params?.sort ?? "created_desc" : "created_desc";
+  const sortedSites = [...filteredSites].sort((left, right) => {
+    if (selectedSort === "name_asc") return left.name.localeCompare(right.name);
+    if (selectedSort === "client") return (left.clients?.name ?? "").localeCompare(right.clients?.name ?? "");
+    return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+  });
   const pageSize = 50;
   const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
-  const page = Math.min(requestedPage, Math.max(1, Math.ceil(filteredSites.length / pageSize)));
-  const pagedSites = filteredSites.slice((page - 1) * pageSize, page * pageSize);
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(sortedSites.length / pageSize)));
+  const pagedSites = sortedSites.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -133,6 +140,11 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
           }))}
           selectedKey={selectedStatus}
         />
+          <form className="table-toolbar" method="get">
+            <input name="status" type="hidden" value={selectedStatus} />
+            <label>Sort sites<select name="sort" defaultValue={selectedSort}><option value="created_desc">Recently added</option><option value="name_asc">Name</option><option value="client">Client</option></select></label>
+            <Button type="submit" variant="secondary">Apply sort</Button>
+          </form>
         {filteredSites.length > 0 ? (
         <>
         <div className="legacy-record-table">
@@ -174,7 +186,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
           </table>
         </Card>
         </div>
-        <PaginationControls basePath="/sites" page={page} pageSize={pageSize} query={{ status: selectedStatus }} total={filteredSites.length} />
+        <PaginationControls basePath="/sites" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={sortedSites.length} />
         </>
         ) : (
           <EmptyState title="No sites in this view" message="Choose another site status filter." />
