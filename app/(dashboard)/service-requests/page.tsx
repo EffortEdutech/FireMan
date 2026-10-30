@@ -99,16 +99,16 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
       </form>
       {!error && !visibleRequests.length ? <EmptyState title="No requests in this phase" message="New customer work will appear here when it enters this queue." /> : null}
       <Card className="table-scroll queue-table-card" style={{ padding: 0 }}>
-        <table className="data-table queue-table" aria-label="Service request queue">
+        <table className="data-table queue-table responsive-detail-table" aria-label="Service request queue">
           <thead><tr><th>Request</th><th>Customer / site</th><th>Type</th><th>Urgency</th><th>Status</th><th>Next action</th><th /></tr></thead>
           <tbody>{pagedRequests.map((request) => <tr key={request.id}>
-            <td className="queue-primary-cell"><Link href={`/service-requests/${request.id}`}><strong>{request.request_reference}</strong><span>{request.title}</span></Link><small>{ageLabel(request.updated_at)}</small></td>
-            <td><strong>{request.requester_company ?? clientNames.get(request.client_id ?? "") ?? "Unmatched company"}</strong><span>{siteNames.get(request.site_id ?? "") ?? request.site_description ?? "Unmatched site"}</span><small>{request.requester_name} · {request.requester_email}</small></td>
-            <td>{serviceRequestCategoryLabels[request.category]}</td>
-            <td>{serviceRequestUrgencyLabels[request.urgency]}</td>
-            <td><StatusBadge>{serviceRequestStatusLabels[request.status]}</StatusBadge></td>
-            <td className="queue-next-action">{request.next_action ?? "Assign an owner and define the next action."}</td>
-            <td><Link className="maintenance-action-link" href={`/service-requests/${request.id}`}>Open</Link></td>
+            <td className="queue-primary-cell" data-label="Request"><Link href={`/service-requests/${request.id}`}><strong>{request.request_reference}</strong><span>{request.title}</span></Link><small>{ageLabel(request.updated_at)}</small></td>
+            <td data-label="Customer / site"><strong>{request.requester_company ?? clientNames.get(request.client_id ?? "") ?? "Unmatched company"}</strong><span>{siteNames.get(request.site_id ?? "") ?? request.site_description ?? "Unmatched site"}</span><small>{request.requester_name} · {request.requester_email}</small></td>
+            <td data-label="Type">{serviceRequestCategoryLabels[request.category]}</td>
+            <td data-label="Urgency">{serviceRequestUrgencyLabels[request.urgency]}</td>
+            <td data-label="Status"><StatusBadge>{serviceRequestStatusLabels[request.status]}</StatusBadge></td>
+            <td className="queue-next-action" data-label="Next action">{request.next_action ?? "Assign an owner and define the next action."}</td>
+            <td data-label="Open"><Link className="maintenance-action-link" href={`/service-requests/${request.id}`}>Open</Link></td>
           </tr>)}</tbody>
         </table>
       </Card>
