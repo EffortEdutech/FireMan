@@ -42,33 +42,33 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
 
   const params = await searchParams;
   const supabase = await createClient();
-  const [{ data: clients, error: clientsError }, { data: sites, error: sitesError }] = await Promise.all([
+  const selectedStatus = siteFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
+  const pageSize = 50;
+  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
+  const sitesQuery = supabase
+    .from("sites")
+    .select("id,name,site_code,address,city,state,country,active,created_at,clients(name)", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range((requestedPage - 1) * pageSize, requestedPage * pageSize - 1);
+  if (selectedStatus !== "all") sitesQuery.eq("active", selectedStatus === "active");
+  const [{ data: clients, error: clientsError }, { data: sites, error: sitesError, count: siteCount }, { count: activeSiteCountRaw }, { count: inactiveSiteCountRaw }] = await Promise.all([
     supabase.from("clients").select("id,name").eq("active", true).order("name", { ascending: true }),
-    supabase
-      .from("sites")
-      .select("id,name,site_code,address,city,state,country,active,created_at,clients(name)")
-      .order("created_at", { ascending: false })
+    sitesQuery,
+    supabase.from("sites").select("id", { count: "exact", head: true }).eq("active", true),
+    supabase.from("sites").select("id", { count: "exact", head: true }).eq("active", false)
   ]);
 
   const hasClients = Boolean(clients && clients.length > 0);
-  const selectedStatus = siteFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
-  const activeSiteCount = sites?.filter((site) => site.active).length ?? 0;
-  const inactiveSiteCount = sites?.filter((site) => !site.active).length ?? 0;
-  const filteredSites =
-    sites?.filter((site) => {
-      if (selectedStatus === "all") {
-        return true;
-      }
-
-      return selectedStatus === "active" ? site.active : !site.active;
-    }) ?? [];
+  const activeSiteCount = activeSiteCountRaw ?? 0;
+  const inactiveSiteCount = inactiveSiteCountRaw ?? 0;
+  const filteredSites = sites ?? [];
   const filterCountByKey = (key: string) => {
     if (key === "inactive") {
       return inactiveSiteCount;
     }
 
     if (key === "all") {
-      return sites?.length ?? 0;
+      return (activeSiteCountRaw ?? 0) + (inactiveSiteCountRaw ?? 0);
     }
 
     return activeSiteCount;
@@ -79,10 +79,8 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
     if (selectedSort === "client") return (left.clients?.name ?? "").localeCompare(right.clients?.name ?? "");
     return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
   });
-  const pageSize = 50;
-  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
-  const page = Math.min(requestedPage, Math.max(1, Math.ceil(sortedSites.length / pageSize)));
-  const pagedSites = sortedSites.slice((page - 1) * pageSize, page * pageSize);
+  const page = requestedPage;
+  const pagedSites = sortedSites;
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -186,7 +184,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
           </table>
         </Card>
         </div>
-        <PaginationControls basePath="/sites" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={sortedSites.length} />
+        <PaginationControls basePath="/sites" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={siteCount ?? 0} />
         </>
         ) : (
           <EmptyState title="No sites in this view" message="Choose another site status filter." />

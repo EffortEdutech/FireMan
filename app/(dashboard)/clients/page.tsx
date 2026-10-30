@@ -41,29 +41,31 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   }
 
   const params = await searchParams;
-  const supabase = await createClient();
-  const { data: clients, error } = await supabase
-    .from("clients")
-    .select("id,name,registration_no,industry,phone,email,active,created_at")
-    .order("created_at", { ascending: false });
   const selectedStatus = clientFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
-  const activeClientCount = clients?.filter((client) => client.active).length ?? 0;
-  const inactiveClientCount = clients?.filter((client) => !client.active).length ?? 0;
-  const filteredClients =
-    clients?.filter((client) => {
-      if (selectedStatus === "all") {
-        return true;
-      }
-
-      return selectedStatus === "active" ? client.active : !client.active;
-    }) ?? [];
+  const supabase = await createClient();
+  const pageSize = 50;
+  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
+  const clientsQuery = supabase
+    .from("clients")
+    .select("id,name,registration_no,industry,phone,email,active,created_at", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range((requestedPage - 1) * pageSize, requestedPage * pageSize - 1);
+  if (selectedStatus !== "all") clientsQuery.eq("active", selectedStatus === "active");
+  const [{ data: clients, error, count: clientCount }, { count: activeClientCountRaw }, { count: inactiveClientCountRaw }] = await Promise.all([
+    clientsQuery,
+    supabase.from("clients").select("id", { count: "exact", head: true }).eq("active", true),
+    supabase.from("clients").select("id", { count: "exact", head: true }).eq("active", false)
+  ]);
+  const activeClientCount = activeClientCountRaw ?? 0;
+  const inactiveClientCount = inactiveClientCountRaw ?? 0;
+  const filteredClients = clients ?? [];
   const filterCountByKey = (key: string) => {
     if (key === "inactive") {
       return inactiveClientCount;
     }
 
     if (key === "all") {
-      return clients?.length ?? 0;
+      return (activeClientCountRaw ?? 0) + (inactiveClientCountRaw ?? 0);
     }
 
     return activeClientCount;
@@ -74,10 +76,8 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
     if (selectedSort === "status") return Number(right.active) - Number(left.active);
     return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
   });
-  const pageSize = 50;
-  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
-  const page = Math.min(requestedPage, Math.max(1, Math.ceil(sortedClients.length / pageSize)));
-  const pagedClients = sortedClients.slice((page - 1) * pageSize, page * pageSize);
+  const page = requestedPage;
+  const pagedClients = sortedClients;
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -177,7 +177,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
             </table>
           </Card>
           </div>
-          <PaginationControls basePath="/clients" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={sortedClients.length} />
+          <PaginationControls basePath="/clients" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={clientCount ?? 0} />
           </>
           ) : (
             <EmptyState title="No clients in this view" message="Choose another client status filter." />
