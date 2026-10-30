@@ -42,12 +42,15 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
 
   const params = await searchParams;
   const selectedStatus = clientFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
+  const selectedSort = ["created_desc", "name_asc", "status"].includes(params?.sort ?? "") ? params?.sort ?? "created_desc" : "created_desc";
+  const sortColumn = selectedSort === "name_asc" ? "name" : selectedSort === "status" ? "active" : "created_at";
   const supabase = await createClient();
   const pageSize = 50;
   const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
   const clientsQuery = supabase
     .from("clients")
     .select("id,name,registration_no,industry,phone,email,active,created_at", { count: "exact" })
+    .order(sortColumn, { ascending: selectedSort === "name_asc" })
     .order("created_at", { ascending: false })
     .range((requestedPage - 1) * pageSize, requestedPage * pageSize - 1);
   if (selectedStatus !== "all") clientsQuery.eq("active", selectedStatus === "active");
@@ -70,7 +73,6 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
 
     return activeClientCount;
   };
-  const selectedSort = ["created_desc", "name_asc", "status"].includes(params?.sort ?? "") ? params?.sort ?? "created_desc" : "created_desc";
   const sortedClients = [...filteredClients].sort((left, right) => {
     if (selectedSort === "name_asc") return left.name.localeCompare(right.name);
     if (selectedSort === "status") return Number(right.active) - Number(left.active);

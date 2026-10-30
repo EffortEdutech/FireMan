@@ -43,12 +43,13 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
   const params = await searchParams;
   const supabase = await createClient();
   const selectedStatus = siteFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
+  const selectedSort = ["created_desc", "name_asc", "client"].includes(params?.sort ?? "") ? params?.sort ?? "created_desc" : "created_desc";
   const pageSize = 50;
   const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
   const sitesQuery = supabase
     .from("sites")
     .select("id,name,site_code,address,city,state,country,active,created_at,clients(name)", { count: "exact" })
-    .order("created_at", { ascending: false })
+    .order(selectedSort === "name_asc" ? "name" : "created_at", { ascending: selectedSort === "name_asc" })
     .range((requestedPage - 1) * pageSize, requestedPage * pageSize - 1);
   if (selectedStatus !== "all") sitesQuery.eq("active", selectedStatus === "active");
   const [{ data: clients, error: clientsError }, { data: sites, error: sitesError, count: siteCount }, { count: activeSiteCountRaw }, { count: inactiveSiteCountRaw }] = await Promise.all([
@@ -73,7 +74,6 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
 
     return activeSiteCount;
   };
-  const selectedSort = ["created_desc", "name_asc", "client"].includes(params?.sort ?? "") ? params?.sort ?? "created_desc" : "created_desc";
   const sortedSites = [...filteredSites].sort((left, right) => {
     if (selectedSort === "name_asc") return left.name.localeCompare(right.name);
     if (selectedSort === "client") return (left.clients?.name ?? "").localeCompare(right.clients?.name ?? "");
