@@ -213,7 +213,7 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
         <>
         <div className="legacy-record-table">
         <Card className="table-scroll" style={{ padding: 0 }}>
-          <table className="data-table">
+          <table className="data-table responsive-detail-table">
             <colgroup>
               <col style={{ width: 160 }} />
               <col style={{ width: 150 }} />
@@ -235,22 +235,22 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
             <tbody>
               {pagedEquipment.map((asset) => (
                 <tr key={asset.id}>
-                  <td>
+                  <td data-label="Asset">
                     <strong><Link href={`/equipment/${asset.id}`}>{asset.asset_code}</Link></strong>
                     <div style={{ color: "var(--muted)", marginTop: 4 }}>
                       {[asset.brand, asset.model, asset.capacity].filter(Boolean).join(" / ") || "Details not set"}
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Type">
                     {asset.equipment_types?.name ?? "Not set"}
                   </td>
-                  <td>
+                  <td data-label="Building">
                     {asset.buildings?.name ?? "Not set"}
                     <div style={{ color: "var(--muted)", marginTop: 4 }}>{asset.buildings?.sites?.name ?? ""}</div>
                   </td>
-                  <td>{asset.systems?.name ?? "Not set"}</td>
-                  <td>{asset.location_description ?? "Not set"}</td>
-                  <td>{statusLabel[asset.status] ?? asset.status}</td>
+                  <td data-label="System">{asset.systems?.name ?? "Not set"}</td>
+                  <td data-label="Location">{asset.location_description ?? "Not set"}</td>
+                  <td data-label="Status">{statusLabel[asset.status] ?? asset.status}</td>
                 </tr>
               ))}
             </tbody>

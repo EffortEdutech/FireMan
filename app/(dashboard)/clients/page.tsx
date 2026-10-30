@@ -138,7 +138,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
           <>
           <div className="legacy-record-table">
           <Card className="table-scroll" style={{ padding: 0 }}>
-            <table className="data-table">
+            <table className="data-table responsive-detail-table">
               <colgroup>
                 <col style={{ width: 180 }} />
                 <col style={{ width: 150 }} />
@@ -158,19 +158,19 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
               <tbody>
                 {pagedClients.map((client) => (
                   <tr key={client.id}>
-                    <td>
+                    <td data-label="Client">
                       <strong>{client.name}</strong>
                     </td>
-                    <td>
+                    <td data-label="Registration">
                       {client.registration_no ?? "Not set"}
                     </td>
-                    <td>
+                    <td data-label="Industry">
                       {client.industry ?? "Not set"}
                     </td>
-                    <td>
+                    <td data-label="Contact">
                       {client.email ?? client.phone ?? "Not set"}
                     </td>
-                    <td>
+                    <td data-label="Status">
                       {client.active ? "Active" : "Inactive"}
                     </td>
                   </tr>

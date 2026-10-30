@@ -147,7 +147,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
         <>
         <div className="legacy-record-table">
         <Card className="table-scroll" style={{ padding: 0 }}>
-          <table className="data-table">
+          <table className="data-table responsive-detail-table">
             <colgroup>
               <col style={{ width: 180 }} />
               <col style={{ width: 120 }} />
@@ -167,17 +167,17 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
             <tbody>
                 {pagedSites.map((site) => (
                 <tr key={site.id}>
-                  <td>
+                  <td data-label="Site">
                     <strong>{site.name}</strong>
                   </td>
-                  <td>
+                  <td data-label="Code">
                     {site.site_code ?? "Not set"}
                   </td>
-                  <td>{site.clients?.name ?? "Not set"}</td>
-                  <td>
+                  <td data-label="Client">{site.clients?.name ?? "Not set"}</td>
+                  <td data-label="Location">
                     {[site.address, site.city, site.state, site.country].filter(Boolean).join(", ") || "Not set"}
                   </td>
-                  <td>{site.active ? "Active" : "Inactive"}</td>
+                  <td data-label="Status">{site.active ? "Active" : "Inactive"}</td>
                 </tr>
               ))}
             </tbody>
