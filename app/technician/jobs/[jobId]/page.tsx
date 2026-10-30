@@ -343,18 +343,18 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
                                           </div>
                                         ) : null}
                                         {inspection.status === "IN_PROGRESS" ? (
-                                          <form action={saveInspectionReading} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                                          <form action={saveInspectionReading} className="technician-inline-form" style={{ marginTop: 10 }}>
                                             <input name="inspection_id" type="hidden" value={inspection.id} />
                                             <input name="template_item_id" type="hidden" value={item.id} />
                                             <input name="job_id" type="hidden" value={job.id} />
                                             <input name="next" type="hidden" value={next} />
-                                            <input name="reading_value" type="number" step="any" required inputMode="decimal" aria-label={reading.label} defaultValue={savedResult?.value_number ?? ""} style={{ width: 120 }} />
-                                            <select name="reading_unit" aria-label="Unit" defaultValue={savedResult?.reading_unit ?? reading.allowedUnits[0]}>
+                                            <label className="technician-field technician-field-compact">{reading.label}<input name="reading_value" type="number" step="any" required inputMode="decimal" aria-label={reading.label} defaultValue={savedResult?.value_number ?? ""} /></label>
+                                            <label className="technician-field technician-field-compact">Unit<select name="reading_unit" aria-label="Unit" defaultValue={savedResult?.reading_unit ?? reading.allowedUnits[0]}>
                                               {reading.allowedUnits.map((code) => (
                                                 <option key={code} value={code}>{units[code].label}</option>
                                               ))}
-                                            </select>
-                                            <Button type="submit" variant="secondary">Save reading</Button>
+                                            </select></label>
+                                            <Button type="submit" variant="secondary" pendingLabel="Saving reading…">Save reading</Button>
                                           </form>
                                         ) : null}
                                       </>
@@ -369,7 +369,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
                                           <input name="job_id" type="hidden" value={job.id} />
                                           <input name="result_status" type="hidden" value={resultStatus} />
                                           <input name="next" type="hidden" value={next} />
-                                          <Button type="submit" variant={savedResult?.result_status === resultStatus ? "primary" : "secondary"}>
+                                          <Button type="submit" variant={savedResult?.result_status === resultStatus ? "primary" : "secondary"} pendingLabel={`Saving ${resultStatus.toLowerCase()}…`}>
                                             {resultStatus}
                                           </Button>
                                         </form>
@@ -407,7 +407,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
                       <input name="job_equipment_id" type="hidden" value={asset.id} />
                       <input name="job_id" type="hidden" value={job.id} />
                       <input name="next" type="hidden" value={next} />
-                      <Button disabled={!canCompleteChecklist} type="submit" variant="secondary">
+                      <Button disabled={!canCompleteChecklist} type="submit" variant="secondary" pendingLabel="Completing checklist…">
                         Complete Checklist
                       </Button>
                       {!canCompleteChecklist ? (
@@ -432,29 +432,29 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
           <input name="job_id" type="hidden" value={job.id} />
           <input name="next" type="hidden" value={next} />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
-            <input aria-label="Finding title" disabled={job.status !== "IN_PROGRESS"} name="title" placeholder="Finding title" required style={fieldStyle} />
-            <select aria-label="Assigned asset" disabled={job.status !== "IN_PROGRESS" || !jobEquipment?.length} name="equipment_id" style={fieldStyle}>
+            <label className="technician-field">Finding title<input aria-label="Finding title" disabled={job.status !== "IN_PROGRESS"} name="title" placeholder="Finding title" required style={fieldStyle} /></label>
+            <label className="technician-field">Assigned asset<select aria-label="Assigned asset" disabled={job.status !== "IN_PROGRESS" || !jobEquipment?.length} name="equipment_id" style={fieldStyle}>
               <option value="">{jobEquipment?.length ? "Optional assigned asset" : "No assets assigned"}</option>
               {jobEquipment?.map((asset) => (
                 <option key={asset.id} value={asset.equipment_id}>
                   {asset.equipment?.asset_code ?? "Asset"} - {asset.equipment?.equipment_types?.name ?? "Equipment"}
                 </option>
               ))}
-            </select>
-            <select aria-label="Severity" disabled={job.status !== "IN_PROGRESS"} name="severity" style={fieldStyle}>
+            </select></label>
+            <label className="technician-field">Severity<select aria-label="Severity" disabled={job.status !== "IN_PROGRESS"} name="severity" style={fieldStyle}>
               <option value="OBSERVATION">Observation</option>
               <option value="LOW">Low</option>
               <option value="MEDIUM">Medium</option>
               <option value="HIGH">High</option>
               <option value="CRITICAL">Critical</option>
-            </select>
-            <input aria-label="Description" disabled={job.status !== "IN_PROGRESS"} name="description" placeholder="Description" style={fieldStyle} />
-            <input aria-label="Recommendation" disabled={job.status !== "IN_PROGRESS"} name="recommendation" placeholder="Recommendation" style={fieldStyle} />
-            <input accept="image/*" aria-label="Finding photo" disabled={job.status !== "IN_PROGRESS"} name="photo" style={fieldStyle} type="file" />
-            <input aria-label="Photo caption" disabled={job.status !== "IN_PROGRESS"} name="photo_caption" placeholder="Photo caption" style={fieldStyle} />
+            </select></label>
+            <label className="technician-field">Description<input aria-label="Description" disabled={job.status !== "IN_PROGRESS"} name="description" placeholder="Description" style={fieldStyle} /></label>
+            <label className="technician-field">Recommendation<input aria-label="Recommendation" disabled={job.status !== "IN_PROGRESS"} name="recommendation" placeholder="Recommendation" style={fieldStyle} /></label>
+            <label className="technician-file-field">Finding photo<input accept="image/*" aria-label="Finding photo" disabled={job.status !== "IN_PROGRESS"} name="photo" type="file" /></label>
+            <label className="technician-field">Photo caption<input aria-label="Photo caption" disabled={job.status !== "IN_PROGRESS"} name="photo_caption" placeholder="Photo caption" style={fieldStyle} /></label>
           </div>
           <div>
-            <Button disabled={job.status !== "IN_PROGRESS"} type="submit">
+            <Button disabled={job.status !== "IN_PROGRESS"} type="submit" pendingLabel="Saving finding…">
               Capture Finding
             </Button>
           </div>

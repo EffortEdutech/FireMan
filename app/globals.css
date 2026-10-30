@@ -1264,6 +1264,74 @@ select {
   padding: 0.65rem;
 }
 
+.technician-inline-form {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.technician-field,
+.technician-file-field {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.8rem;
+  font-weight: 700;
+  gap: 0.35rem;
+  letter-spacing: 0.02em;
+}
+
+.technician-field input,
+.technician-field select,
+.technician-field textarea,
+.technician-file-field input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  min-height: 44px;
+  padding: 0.7rem 0.75rem;
+}
+
+.technician-field textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.technician-field-compact input,
+.technician-field-compact select {
+  min-width: 8rem;
+}
+
+.technician-file-field input {
+  cursor: pointer;
+  padding: 0.45rem;
+}
+
+.technician-file-field input::file-selector-button {
+  background: var(--surface-muted, #f0f3f0);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  margin-right: 0.65rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.technician-field input:focus-visible,
+.technician-field select:focus-visible,
+.technician-field textarea:focus-visible,
+.technician-file-field input:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  outline: none;
+}
+
 .offline-queue-message,
 .offline-queue-items {
   color: var(--muted);

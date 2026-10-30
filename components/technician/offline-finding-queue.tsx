@@ -74,11 +74,11 @@ export function OfflineFindingQueue({ jobId }: { jobId: string }) {
   return <div className="offline-queue">
     <div className="offline-queue-heading"><strong>Offline finding capture</strong><span className={online ? "pwa-status pwa-status-online" : "pwa-status pwa-status-offline"}>{online ? "Online" : "Offline"}</span></div>
     <form onSubmit={enqueue} style={{ display: "grid", gap: "0.65rem" }}>
-      <input aria-label="Offline finding title" onChange={(event) => setTitle(event.target.value)} placeholder="Finding title" value={title} />
-      <select aria-label="Offline finding severity" onChange={(event) => setSeverity(event.target.value as OfflineFinding["severity"])} value={severity}><option>OBSERVATION</option><option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select>
-      <textarea aria-label="Offline finding description" onChange={(event) => setDescription(event.target.value)} placeholder="Description" value={description} />
-      <input accept="image/*" aria-label="Offline finding photo" onChange={(event) => setPhoto(event.target.files?.[0] ?? null)} type="file" />
-      <input aria-label="Offline photo caption" onChange={(event) => setPhotoCaption(event.target.value)} placeholder="Photo caption (optional)" value={photoCaption} />
+      <label className="technician-field">Finding title<input aria-label="Offline finding title" onChange={(event) => setTitle(event.target.value)} placeholder="Finding title" value={title} /></label>
+      <label className="technician-field">Severity<select aria-label="Offline finding severity" onChange={(event) => setSeverity(event.target.value as OfflineFinding["severity"])} value={severity}><option>OBSERVATION</option><option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select></label>
+      <label className="technician-field">Description<textarea aria-label="Offline finding description" onChange={(event) => setDescription(event.target.value)} placeholder="Description" value={description} /></label>
+      <label className="technician-file-field">Finding photo<input accept="image/*" aria-label="Offline finding photo" onChange={(event) => setPhoto(event.target.files?.[0] ?? null)} type="file" /></label>
+      <label className="technician-field">Photo caption<input aria-label="Offline photo caption" onChange={(event) => setPhotoCaption(event.target.value)} placeholder="Photo caption (optional)" value={photoCaption} /></label>
       <Button type="submit" variant="secondary" pendingLabel="Saving draft…">Save finding draft</Button>
     </form>
     {message ? <div aria-live="polite" className="offline-queue-message">{message}</div> : null}
