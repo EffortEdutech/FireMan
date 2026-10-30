@@ -37,7 +37,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
   const activeItems = metrics.jobs.overdue + metrics.jobs.awaitingReview + metrics.reports.generated + metrics.reports.reviewed + metrics.attention.criticalFindings;
 
   return <div className="dashboard-page dashboard-command-page">
-    <header className="dashboard-command-header"><div><p className="page-kicker">FAST COMMAND CENTER</p><h1>Operations Dashboard</h1><p>Choose a work area. Each view stays focused so important information is easy to find.</p></div><div className="dashboard-command-actions"><Link className="button" href="/service-requests">Service requests</Link><Link className="dashboard-action-link" href="/maintenance">Maintenance workspace</Link></div></header>
+    <header className="dashboard-command-header"><div><p className="page-kicker">FAST COMMAND CENTER</p><h1>Operations Dashboard</h1><p>Choose a work area. Each view stays focused so important information is easy to find.</p></div></header>
     <nav className="dashboard-view-tabs" aria-label="Dashboard work areas">{dashboardViews.map(([key, label]) => <Link className={view === key ? "dashboard-view-tab-active" : ""} href={`/dashboard?view=${key}`} key={key}>{label}{key === "attention" ? <b>{activeItems}</b> : null}</Link>)}</nav>
     {error ? <EmptyState title="Operational metrics unavailable" message="The dashboard could not load current priority counts." /> : null}
     {queuesError ? <EmptyState title="Management queues unavailable" message="Actionable work could not be loaded." /> : null}
