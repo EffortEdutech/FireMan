@@ -1275,6 +1275,11 @@ select {
   color: var(--accent);
 }
 
+.queue-primary-cell {
+  border-left: 3px solid var(--accent);
+  padding-left: 0.9rem !important;
+}
+
 .queue-primary-cell a span {
   color: var(--foreground);
   font-weight: 600;
