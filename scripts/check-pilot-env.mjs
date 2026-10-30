@@ -1,3 +1,8 @@
+import { createRequire } from "node:module";
+
+const { loadEnvConfig } = createRequire(import.meta.url)("@next/env");
+loadEnvConfig(process.cwd());
+
 const required = [
   ["E2E_OWNER_EMAIL", "owner email"],
   ["E2E_OWNER_PASSWORD", "owner password"],
@@ -18,7 +23,7 @@ else if (!/^https:\/\//.test(url)) missing.push("NEXT_PUBLIC_SUPABASE_URL (must 
 if (missing.length) {
   console.error("Pilot environment is not ready. Missing or invalid values:");
   for (const item of missing) console.error(`- ${item}`);
-  console.error("Set these only in the local shell or an ignored env file; never commit pilot credentials.");
+  console.error("Set these in the local shell or .env.local (git-ignored); never commit or share pilot credentials.");
   process.exit(1);
 }
 

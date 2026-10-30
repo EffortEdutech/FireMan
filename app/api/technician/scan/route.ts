@@ -6,26 +6,43 @@ import { normalizeAssetCode } from "@/lib/maintenance/asset-scan";
 
 export async function GET(request: Request) {
   const profile = await getCurrentProfile();
-  if (!profile || !canAccessTechnician(profile.role)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!profile || !canAccessTechnician(profile.role))
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const code = normalizeAssetCode(new URL(request.url).searchParams.get("assetCode") ?? "");
-  if (!code) return NextResponse.json({ error: "missing-asset-code" }, { status: 400 });
+  const searchParams = new URL(request.url).searchParams;
+  const code = normalizeAssetCode(searchParams.get("assetCode") ?? "");
+  const qrToken = normalizeAssetCode(searchParams.get("qrToken") ?? "");
+  if (!code && !qrToken)
+    return NextResponse.json({ error: "missing-asset-code" }, { status: 400 });
 
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const equipmentQuery = supabase
     .from("equipment")
-    .select("id,asset_code,status,location_description,buildings(name,sites(name,clients(name)),systems(name),equipment_types(name))")
-    .eq("asset_code", code)
-    .eq("status", "ACTIVE")
-    .maybeSingle();
+    .select(
+      "id,asset_code,status,location_description,qr_token,buildings(name,sites(name,clients(name))),systems(name),equipment_types(name)",
+    )
+    .eq("status", "ACTIVE");
+  const { data, error } = qrToken
+    ? await equipmentQuery.eq("qr_token", qrToken).maybeSingle()
+    : await equipmentQuery.eq("asset_code", code).maybeSingle();
 
-  if (error) return NextResponse.json({ error: "lookup-failed" }, { status: 500 });
-  if (!data) return NextResponse.json({ error: "asset-not-found" }, { status: 404 });
+  if (error)
+    return NextResponse.json({ error: "lookup-failed" }, { status: 500 });
+  if (!data)
+    return NextResponse.json({ error: "asset-not-found" }, { status: 404 });
 
-  const building = Array.isArray(data.buildings) ? data.buildings[0] : data.buildings;
-  const site = Array.isArray(building?.sites) ? building?.sites[0] : building?.sites;
-  const client = Array.isArray(site?.clients) ? site?.clients[0] : site?.clients;
-  const type = Array.isArray(building?.equipment_types) ? building?.equipment_types[0] : building?.equipment_types;
+  const building = Array.isArray(data.buildings)
+    ? data.buildings[0]
+    : data.buildings;
+  const site = Array.isArray(building?.sites)
+    ? building?.sites[0]
+    : building?.sites;
+  const client = Array.isArray(site?.clients)
+    ? site?.clients[0]
+    : site?.clients;
+  const type = Array.isArray(data.equipment_types)
+    ? data.equipment_types[0]
+    : data.equipment_types;
 
   return NextResponse.json({
     asset: {
@@ -36,7 +53,8 @@ export async function GET(request: Request) {
       location: data.location_description ?? "Location not set",
       buildingName: building?.name ?? "Building not set",
       siteName: site?.name ?? "Site not set",
-      clientName: client?.name ?? "Client not set"
-    }
+      clientName: client?.name ?? "Client not set",
+      fieldUrl: `/technician/asset/${data.id}`,
+    },
   });
 }

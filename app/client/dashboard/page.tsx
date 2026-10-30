@@ -37,22 +37,35 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
     .select("id,job_id,report_number,title,issued_at,status,maintenance_jobs(job_number,scheduled_date,sites(name))")
     .eq("status", "ISSUED")
     .order("issued_at", { ascending: false });
+  if (error) {
+    console.error("[client-dashboard] issued reports query failed", { code: error.code });
+  }
   const reportJobIds = reports?.map((report) => report.job_id).filter(Boolean) ?? [];
-  const { data: findings, error: findingsError } =
+  const [{ data: findings, error: findingsError }, { data: jobEquipment, error: jobEquipmentError }] =
     reportJobIds.length > 0
-      ? await supabase
-          .from("findings")
-          .select("id,job_id,title,severity,status,recommendation")
-          .in("job_id", reportJobIds)
-          .order("created_at", { ascending: false })
-      : { data: [], error: null };
-  const { data: jobEquipment, error: jobEquipmentError } =
-    reportJobIds.length > 0
-      ? await supabase
-          .from("job_equipment")
-          .select("id,job_id")
-          .in("job_id", reportJobIds)
-      : { data: [], error: null };
+      ? await Promise.all([
+          supabase
+            .from("findings")
+            .select("id,job_id,title,severity,status,recommendation")
+            .in("job_id", reportJobIds)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("job_equipment")
+            .select("id,job_id")
+            .in("job_id", reportJobIds)
+        ])
+      : [
+          { data: [], error: null },
+          { data: [], error: null }
+        ];
+  const findingIds = findings?.map((finding) => finding.id) ?? [];
+  const { data: quoteRequests, error: quoteRequestsError } = findingIds.length > 0
+    ? await supabase
+        .from("finding_quote_requests")
+        .select("id,finding_id,request_reference,external_quote_reference,status,updated_at")
+        .in("finding_id", findingIds)
+        .order("updated_at", { ascending: false })
+    : { data: [], error: null };
   const jobEquipmentIds = jobEquipment?.map((asset) => asset.id) ?? [];
   const { data: inspections, error: inspectionsError } =
     jobEquipmentIds.length > 0
@@ -71,6 +84,7 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
       : { data: [], error: null };
 
   const findingsByJobId = new Map<string, NonNullable<typeof findings>>();
+  const findingById = new Map(findings?.map((finding) => [finding.id, finding]) ?? []);
   const inspectionJobIdById = new Map(inspections?.map((inspection) => [inspection.id, inspection.job_id]) ?? []);
   const checklistResultCountByJobId = new Map<string, number>();
 
@@ -137,7 +151,7 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
       <PageHeader title="Client Dashboard" description="Review issued maintenance reports and attached evidence." />
       {error ? (
         <EmptyState title="Reports unavailable" message="Issued reports could not be loaded." />
-      ) : findingsError || jobEquipmentError || inspectionsError || resultsError ? (
+      ) : findingsError || quoteRequestsError || jobEquipmentError || inspectionsError || resultsError ? (
         <EmptyState title="Evidence unavailable" message="Report evidence could not be loaded." />
       ) : reports && reports.length > 0 ? (
         <>
@@ -246,6 +260,35 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
         ) : (
           <EmptyState title="No reports in this view" message="Choose another evidence filter to see issued reports." />
         )}
+        {quoteRequests && quoteRequests.length > 0 ? (
+          <Card>
+            <h2 style={{ fontSize: "1rem", margin: "0 0 0.75rem" }}>Corrective quotation status</h2>
+            <p style={{ color: "var(--muted)", fontSize: "0.875rem", margin: "0 0 0.75rem" }}>
+              Read-only status updates for findings included in your issued reports.
+            </p>
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr><th>Request</th><th>Finding</th><th>Status</th><th>External quote</th><th>Updated</th></tr>
+                </thead>
+                <tbody>
+                  {quoteRequests.map((request) => {
+                    const finding = findingById.get(request.finding_id);
+                    return (
+                      <tr key={request.id}>
+                        <td><strong>{request.request_reference}</strong></td>
+                        <td>{finding?.title ?? "Finding"}</td>
+                        <td>{request.status}</td>
+                        <td>{request.external_quote_reference ?? "Not recorded"}</td>
+                        <td style={{ whiteSpace: "nowrap" }}>{formatDate(request.updated_at)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : null}
         </>
       ) : (
         <EmptyState title="No issued reports loaded" message="Client data stays read-only and RLS-scoped." />

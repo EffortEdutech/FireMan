@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { closeJobFromIssuedReport, createPlanAndJob, startJobReview } from "@/app/(dashboard)/maintenance/actions";
 import { CreateJobForm } from "@/app/(dashboard)/maintenance/create-job-form";
+import { MaintenancePipeline, type MaintenancePipelineJob } from "@/components/maintenance/maintenance-pipeline";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterBar } from "@/components/ui/filter-bar";
@@ -171,6 +172,32 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
 
     return jobCounts.get(key) ?? 0;
   };
+  const today = new Date().toISOString().slice(0, 10);
+  const overdueCount = jobs?.filter((job) => activeJobStatuses.has(job.status) && job.scheduled_date < today).length ?? 0;
+  const reviewQueueCount = jobs?.filter((job) => job.status === "SUBMITTED" || job.status === "UNDER_REVIEW").length ?? 0;
+  const pipelineJobs: MaintenancePipelineJob[] = filteredJobs.map((job) => {
+    const report = reportsByJobId.get(job.id);
+    const jobFindings = findingsByJobId.get(job.id) ?? [];
+    const jobAssets = equipmentByJobId.get(job.id) ?? [];
+    const completedAssetCount = jobAssets.filter((asset) => asset.status === "COMPLETED").length;
+    return {
+      id: job.id,
+      jobNumber: job.job_number,
+      clientName: job.clients?.name ?? "Not set",
+      siteName: job.sites?.name ?? "Not set",
+      scheduledDate: job.scheduled_date,
+      technicianName: job.assigned_technician_id ? techniciansById.get(job.assigned_technician_id) ?? "Assigned" : "Unassigned",
+      planName: job.maintenance_plans?.name ?? "Ad hoc",
+      status: job.status,
+      statusLabel: jobStatusLabel[job.status] ?? job.status,
+      assetCount: jobAssets.length,
+      completedAssetCount,
+      findingCount: jobFindings.length,
+      criticalFindingCount: jobFindings.filter((finding) => finding.severity === "CRITICAL").length,
+      checklistComplete: jobAssets.length === 0 || completedAssetCount === jobAssets.length,
+      report: report ? { id: report.id, number: report.report_number, status: reportStatusLabel[report.status] ?? report.status } : null
+    };
+  });
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -233,6 +260,9 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
           selectedKey={selectedStatus}
         />
         {filteredJobs.length > 0 ? (
+        <>
+        <MaintenancePipeline jobs={pipelineJobs} selectedStatus={selectedStatus} overdueCount={overdueCount} reviewQueueCount={reviewQueueCount} />
+        <div className="maintenance-legacy-table">
         <Card className="table-scroll" style={{ padding: 0 }}>
           <table className="data-table">
             <colgroup>
@@ -377,6 +407,8 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
             </tbody>
           </table>
         </Card>
+        </div>
+        </>
         ) : (
           <EmptyState title="No jobs in this view" message="Choose another status filter or create a new maintenance job." />
         )}

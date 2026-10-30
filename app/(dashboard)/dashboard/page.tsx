@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/states";
-import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
+import { OperationsInbox } from "@/components/dashboard/operations-inbox";
 import { createClient } from "@/lib/supabase/server";
 import { fetchOperationalKpis } from "@/lib/dashboard/operational-kpis";
 import { fetchAttentionQueues } from "@/lib/dashboard/attention-queues";
@@ -33,6 +33,22 @@ function MetricCard({ href, label, value, note }: { href?: string; label: string
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const [{ data: inboxRequests }, { data: inboxJobs }, { data: inboxReports }] = await Promise.all([
+    supabase
+      .from("service_requests")
+      .select("id,request_reference,title,category,status,urgency,requester_company,site_description,next_action,updated_at")
+      .order("updated_at", { ascending: true }),
+    supabase
+      .from("maintenance_jobs")
+      .select("id,job_number,status,scheduled_date,clients(name),sites(name)")
+      .in("status", ["SUBMITTED", "UNDER_REVIEW"])
+      .order("scheduled_date", { ascending: true }),
+    supabase
+      .from("reports")
+      .select("id,report_number,title,status,maintenance_jobs(job_number,clients(name),sites(name))")
+      .in("status", ["GENERATED", "REVIEWED"])
+      .order("created_at", { ascending: true })
+  ]);
   const { data: kpis, error } = await fetchOperationalKpis(supabase);
   const { data: queues, error: queuesError } = await fetchAttentionQueues(supabase);
   const { data: schedule, error: scheduleError } = await fetchScheduledIntelligence(supabase);
@@ -48,7 +64,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="dashboard-page">
-      <PageHeader title="Dashboard" description="Management queues for jobs, reports, and client delivery." />
+      <OperationsInbox now={new Date().toISOString()} requests={inboxRequests ?? []} jobs={inboxJobs ?? []} reports={inboxReports ?? []} />
       <section className={`dashboard-attention ${metrics.attention.criticalFindings > 0 || metrics.jobs.overdue > 0 ? "dashboard-attention-alert" : ""}`} aria-label="Management attention summary">
         <div>
           <strong>{metrics.attention.criticalFindings + metrics.jobs.overdue + metrics.jobs.awaitingReview + metrics.reports.reviewed} active management item{metrics.attention.criticalFindings + metrics.jobs.overdue + metrics.jobs.awaitingReview + metrics.reports.reviewed === 1 ? "" : "s"}</strong>

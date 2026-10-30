@@ -36,6 +36,41 @@ function systemTypeValue(formData: FormData) {
   return type && systemTypes.has(type as SystemType) ? (type as SystemType) : null;
 }
 
+type TechnicalField = {
+  field_key: string;
+  field_type: Database["public"]["Enums"]["template_field_type"];
+  required: boolean;
+};
+
+function technicalDataValue(formData: FormData, fields: TechnicalField[]) {
+  const technicalData: Record<string, string | number | boolean> = {};
+
+  for (const field of fields) {
+    const raw = value(formData, `technical_${field.field_key}`);
+
+    if (!raw) {
+      if (field.required) {
+        return { error: field.field_key };
+      }
+      continue;
+    }
+
+    if (field.field_type === "NUMBER") {
+      const numberValue = Number(raw);
+      if (!Number.isFinite(numberValue)) {
+        return { error: field.field_key };
+      }
+      technicalData[field.field_key] = numberValue;
+    } else if (field.field_type === "YES_NO") {
+      technicalData[field.field_key] = raw === "true";
+    } else {
+      technicalData[field.field_key] = raw;
+    }
+  }
+
+  return { data: technicalData };
+}
+
 export async function createBuildingRecord(formData: FormData) {
   const profile = await requireProfile();
 
@@ -143,7 +178,7 @@ export async function createEquipmentRecord(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const [{ data: building, error: buildingError }, { data: system, error: systemError }] = await Promise.all([
+  const [{ data: building, error: buildingError }, { data: system, error: systemError }, { data: equipmentType, error: equipmentTypeError }] = await Promise.all([
     supabase
       .from("buildings")
       .select("id")
@@ -159,7 +194,14 @@ export async function createEquipmentRecord(formData: FormData) {
           .eq("organisation_id", profile.organisation_id)
           .eq("active", true)
           .maybeSingle()
-      : Promise.resolve({ data: null, error: null })
+      : Promise.resolve({ data: null, error: null }),
+    supabase
+      .from("equipment_types")
+      .select("id")
+      .eq("id", equipmentTypeId)
+      .or(`organisation_id.is.null,organisation_id.eq.${profile.organisation_id}`)
+      .eq("active", true)
+      .maybeSingle()
   ]);
 
   if (buildingError || !building) {
@@ -168,6 +210,26 @@ export async function createEquipmentRecord(formData: FormData) {
 
   if (systemError || (systemId && system?.building_id !== buildingId)) {
     redirect("/equipment?error=system-building-mismatch");
+  }
+
+  if (equipmentTypeError || !equipmentType) {
+    redirect("/equipment?error=equipment-type-mismatch");
+  }
+
+  const { data: technicalFields, error: fieldsError } = await supabase
+    .from("equipment_type_fields")
+    .select("field_key,field_type,required")
+    .eq("equipment_type_id", equipmentTypeId)
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+
+  if (fieldsError) {
+    redirect("/equipment?error=technical-template-unavailable");
+  }
+
+  const technicalData = technicalDataValue(formData, technicalFields ?? []);
+  if (technicalData.error) {
+    redirect(`/equipment?error=${encodeURIComponent(`invalid-technical-data-${technicalData.error}`)}`);
   }
 
   const { error } = await supabase.from("equipment").insert({
@@ -181,7 +243,8 @@ export async function createEquipmentRecord(formData: FormData) {
     model: value(formData, "model"),
     capacity: value(formData, "capacity"),
     location_description: value(formData, "location_description"),
-    installation_date: value(formData, "installation_date")
+    installation_date: value(formData, "installation_date"),
+    technical_data: technicalData.data ?? {}
   });
 
   if (error) {
@@ -191,4 +254,87 @@ export async function createEquipmentRecord(formData: FormData) {
   revalidatePath("/equipment");
   revalidatePath("/dashboard");
   redirect("/equipment?equipment=1");
+}
+
+export async function updateEquipmentTechnicalData(formData: FormData) {
+  const profile = await requireProfile();
+  if (!canAccessManagement(profile.role)) redirect("/dashboard");
+
+  const equipmentId = value(formData, "equipment_id");
+  if (!equipmentId) redirect("/equipment?error=missing-equipment");
+
+  const supabase = await createClient();
+  const { data: equipment, error: equipmentError } = await supabase
+    .from("equipment")
+    .select("id,equipment_type_id")
+    .eq("id", equipmentId)
+    .eq("organisation_id", profile.organisation_id)
+    .maybeSingle();
+  if (equipmentError || !equipment) redirect(`/equipment/${equipmentId}?error=equipment-not-found`);
+
+  const { data: fields, error: fieldsError } = await supabase
+    .from("equipment_type_fields")
+    .select("field_key,field_type,required")
+    .eq("equipment_type_id", equipment.equipment_type_id)
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+  if (fieldsError) redirect(`/equipment/${equipmentId}?error=technical-template-unavailable`);
+
+  const technicalData = technicalDataValue(formData, fields ?? []);
+  if (technicalData.error) redirect(`/equipment/${equipmentId}?error=${encodeURIComponent(`invalid-technical-data-${technicalData.error}`)}`);
+
+  const { error } = await supabase.from("equipment").update({ technical_data: technicalData.data ?? {} }).eq("id", equipmentId);
+  if (error) redirect(`/equipment/${equipmentId}?error=technical-data-save-failed`);
+
+  revalidatePath(`/equipment/${equipmentId}`);
+  revalidatePath("/equipment");
+  redirect(`/equipment/${equipmentId}?saved=technical-data`);
+}
+
+export async function uploadEquipmentDocument(formData: FormData) {
+  const profile = await requireProfile();
+  if (!canAccessManagement(profile.role)) redirect("/dashboard");
+
+  const equipmentId = value(formData, "equipment_id");
+  const title = value(formData, "title");
+  const documentType = value(formData, "document_type");
+  const fileEntry = formData.get("file");
+  if (!equipmentId || !title || !documentType || !(fileEntry instanceof File) || fileEntry.size === 0) {
+    redirect(`/equipment/${equipmentId ?? ""}?error=missing-document`);
+  }
+  if (fileEntry.size > 15 * 1024 * 1024) redirect(`/equipment/${equipmentId}?error=document-too-large`);
+
+  const supabase = await createClient();
+  const { data: equipment, error: equipmentError } = await supabase
+    .from("equipment")
+    .select("id")
+    .eq("id", equipmentId)
+    .eq("organisation_id", profile.organisation_id)
+    .maybeSingle();
+  if (equipmentError || !equipment) redirect(`/equipment/${equipmentId}?error=equipment-not-found`);
+
+  const extension = fileEntry.name.includes(".") ? fileEntry.name.split(".").pop()?.toLowerCase() : "bin";
+  const storagePath = `${profile.organisation_id}/equipment/${equipmentId}/${crypto.randomUUID()}.${extension}`;
+  const { error: uploadError } = await supabase.storage.from("documents").upload(storagePath, fileEntry, { contentType: fileEntry.type || "application/octet-stream", upsert: false });
+  if (uploadError) redirect(`/equipment/${equipmentId}?error=document-upload-failed`);
+
+  const { error: documentError } = await supabase.from("equipment_documents").insert({
+    organisation_id: profile.organisation_id,
+    equipment_id: equipmentId,
+    title,
+    document_type: documentType,
+    storage_path: storagePath,
+    file_name: fileEntry.name,
+    mime_type: fileEntry.type || null,
+    size_bytes: fileEntry.size,
+    customer_visible: formData.get("customer_visible") === "on",
+    uploaded_by: profile.id
+  });
+  if (documentError) {
+    await supabase.storage.from("documents").remove([storagePath]);
+    redirect(`/equipment/${equipmentId}?error=document-record-failed`);
+  }
+
+  revalidatePath(`/equipment/${equipmentId}`);
+  redirect(`/equipment/${equipmentId}?saved=document`);
 }

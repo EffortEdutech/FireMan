@@ -212,6 +212,21 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
           selectedKey={selectedStatus}
         />
         {filteredReports.length > 0 ? (
+        <>
+        <div className="report-review-grid" aria-label="Report review queue">
+          {filteredReports.map((report) => {
+            const reportFindings = findingsByJobId.get(report.job_id) ?? [];
+            const checklistResultCount = checklistResultCountByJobId.get(report.job_id) ?? 0;
+            return <Card className="report-review-card" key={report.id}>
+              <div className="record-card-heading"><div><span className="record-card-kicker">REPORT REVIEW</span><Link href={`/reports/${report.id}`}><h2>{report.report_number}</h2></Link></div><StatusBadge>{reportStatusLabel[report.status] ?? report.status}</StatusBadge></div>
+              <p className="report-review-title">{report.title ?? "Untitled maintenance report"}</p>
+              <div className="record-card-facts"><div><span>Job / site</span><strong>{report.maintenance_jobs?.job_number ?? "Not set"} · {report.maintenance_jobs?.sites?.name ?? "Not set"}</strong></div><div><span>Client</span><strong>{report.maintenance_jobs?.clients?.name ?? "Not set"}</strong></div></div>
+              <div className="report-evidence-summary"><span>{reportFindings.length} finding{reportFindings.length === 1 ? "" : "s"}</span><span>{checklistResultCount} checklist result{checklistResultCount === 1 ? "" : "s"}</span></div>
+              <div className="report-review-actions"><Link href={`/reports/${report.id}`} className="maintenance-action-link">Open report →</Link>{report.status === "GENERATED" ? <form action={reviewReport}><input name="report_id" type="hidden" value={report.id} /><Button type="submit" variant="secondary">Mark reviewed</Button></form> : null}{report.status === "REVIEWED" ? <form action={issueReport}><input name="report_id" type="hidden" value={report.id} /><Button type="submit">Issue report</Button></form> : null}</div>
+            </Card>;
+          })}
+        </div>
+        <div className="legacy-record-table">
         <Card className="table-scroll" style={{ padding: 0 }}>
           <table className="data-table">
             <colgroup>
@@ -321,6 +336,8 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
             </tbody>
           </table>
         </Card>
+        </div>
+        </>
         ) : (
           <EmptyState title="No reports in this view" message="Choose another status filter or generate a new report shell." />
         )}

@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
+import { canTransitionQuoteRequest, isQuoteRequestStatus } from "@/lib/corrective/quote-request-status";
+import { isValidManagementExceptionReason, isValidWorkOrderDate, isWorkOrderAuthorization } from "@/lib/corrective/work-order";
+import { isValidVerificationNotes } from "@/lib/corrective/repair-evidence";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 
@@ -177,6 +180,261 @@ export async function startJobReview(formData: FormData) {
   revalidatePath("/reports");
   revalidatePath("/dashboard");
   redirect("/maintenance?review=1");
+}
+
+export async function createFindingQuoteRequest(formData: FormData) {
+  const profile = await requireProfile();
+
+  if (!canAccessManagement(profile.role)) {
+    redirect("/dashboard");
+  }
+
+  const findingId = value(formData, "finding_id");
+  const jobId = value(formData, "job_id");
+  const requestNotes = value(formData, "request_notes");
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  if (!findingId || !jobId || !uuidPattern.test(findingId) || !uuidPattern.test(jobId) || (requestNotes?.length ?? 0) > 2000) {
+    redirect("/maintenance?error=quote-request-invalid");
+  }
+
+  const supabase = await createClient();
+  const { data: finding, error: findingError } = await supabase
+    .from("findings")
+    .select("id,job_id")
+    .eq("id", findingId)
+    .eq("job_id", jobId)
+    .eq("organisation_id", profile.organisation_id)
+    .maybeSingle();
+
+  if (findingError || !finding) {
+    redirect(`/maintenance/${jobId}?quote-request=unavailable`);
+  }
+
+  const { error } = await supabase.from("finding_quote_requests").insert({
+    organisation_id: profile.organisation_id,
+    finding_id: finding.id,
+    created_by: profile.id,
+    request_notes: requestNotes
+  });
+
+  if (error) {
+    redirect(`/maintenance/${jobId}?quote-request=${error.code === "23505" ? "exists" : "failed"}`);
+  }
+
+  revalidatePath(`/maintenance/${jobId}`);
+  revalidatePath("/maintenance");
+  revalidatePath("/dashboard");
+  redirect(`/maintenance/${jobId}?quote-request=created`);
+}
+
+export async function updateFindingQuoteRequest(formData: FormData) {
+  const profile = await requireProfile();
+
+  if (!canAccessManagement(profile.role)) {
+    redirect("/dashboard");
+  }
+
+  const requestId = value(formData, "request_id");
+  const jobId = value(formData, "job_id");
+  const nextStatusValue = value(formData, "status");
+  const submittedExternalReference = value(formData, "external_quote_reference");
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  if (!requestId || !jobId || !uuidPattern.test(requestId) || !uuidPattern.test(jobId) || !nextStatusValue || !isQuoteRequestStatus(nextStatusValue)) {
+    redirect("/maintenance?error=quote-request-invalid");
+  }
+
+  if ((submittedExternalReference?.length ?? 0) > 160) {
+    redirect(`/maintenance/${jobId}?quote-request=invalid-reference`);
+  }
+
+  const supabase = await createClient();
+  const { data: request, error: requestError } = await supabase
+    .from("finding_quote_requests")
+    .select("id,finding_id,status,external_quote_reference")
+    .eq("id", requestId)
+    .eq("organisation_id", profile.organisation_id)
+    .maybeSingle();
+
+  if (requestError || !request || !isQuoteRequestStatus(request.status)) {
+    redirect(`/maintenance/${jobId}?quote-request=unavailable`);
+  }
+
+  const { data: finding, error: findingError } = await supabase
+    .from("findings")
+    .select("id")
+    .eq("id", request.finding_id)
+    .eq("job_id", jobId)
+    .eq("organisation_id", profile.organisation_id)
+    .maybeSingle();
+
+  if (findingError || !finding) {
+    redirect(`/maintenance/${jobId}?quote-request=unavailable`);
+  }
+
+  const nextStatus = nextStatusValue;
+  if (nextStatus !== request.status && !canTransitionQuoteRequest(request.status, nextStatus)) {
+    redirect(`/maintenance/${jobId}?quote-request=invalid-transition`);
+  }
+
+  const externalQuoteReference = submittedExternalReference ?? request.external_quote_reference;
+  if (nextStatus === "SUBMITTED" && !externalQuoteReference?.trim()) {
+    redirect(`/maintenance/${jobId}?quote-request=reference-required`);
+  }
+
+  if (nextStatus === request.status && externalQuoteReference === request.external_quote_reference) {
+    redirect(`/maintenance/${jobId}?quote-request=no-change`);
+  }
+
+  const { data: updatedRequest, error: updateError } = await supabase
+    .from("finding_quote_requests")
+    .update({ status: nextStatus, external_quote_reference: externalQuoteReference })
+    .eq("id", request.id)
+    .eq("organisation_id", profile.organisation_id)
+    .select("id")
+    .maybeSingle();
+
+  if (updateError || !updatedRequest) {
+    redirect(`/maintenance/${jobId}?quote-request=update-failed`);
+  }
+
+  revalidatePath(`/maintenance/${jobId}`);
+  revalidatePath("/maintenance");
+  revalidatePath("/dashboard");
+  revalidatePath("/client/dashboard");
+  redirect(`/maintenance/${jobId}?quote-request=updated`);
+}
+
+export async function createCorrectiveWorkOrder(formData: FormData) {
+  const profile = await requireProfile();
+
+  if (!canAccessManagement(profile.role)) {
+    redirect("/dashboard");
+  }
+
+  const findingId = value(formData, "finding_id");
+  const jobId = value(formData, "job_id");
+  const quoteRequestId = value(formData, "quote_request_id");
+  const authorizationType = value(formData, "authorization_type");
+  const technicianId = value(formData, "assigned_technician_id");
+  const scheduledDate = value(formData, "scheduled_date");
+  const exceptionReason = value(formData, "exception_reason");
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  if (
+    !findingId || !jobId || !technicianId || !scheduledDate || !authorizationType
+    || !uuidPattern.test(findingId) || !uuidPattern.test(jobId) || !uuidPattern.test(technicianId)
+    || (quoteRequestId !== null && !uuidPattern.test(quoteRequestId))
+    || !isWorkOrderAuthorization(authorizationType)
+    || !isValidWorkOrderDate(scheduledDate)
+  ) {
+    redirect("/maintenance?corrective=invalid");
+  }
+
+  if (authorizationType === "APPROVED_QUOTE" && !quoteRequestId) {
+    redirect(`/maintenance/${jobId}?corrective=quote-required`);
+  }
+
+  if (authorizationType === "MANAGEMENT_EXCEPTION" && !isValidManagementExceptionReason(exceptionReason)) {
+    redirect(`/maintenance/${jobId}?corrective=reason-required`);
+  }
+
+  const supabase = await createClient();
+  const { data: finding, error: findingError } = await supabase
+    .from("findings")
+    .select("id,status")
+    .eq("id", findingId)
+    .eq("job_id", jobId)
+    .eq("organisation_id", profile.organisation_id)
+    .maybeSingle();
+
+  if (findingError || !finding || !["OPEN", "IN_PROGRESS"].includes(finding.status)) {
+    redirect(`/maintenance/${jobId}?corrective=unavailable`);
+  }
+
+  const { data: technician, error: technicianError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", technicianId)
+    .eq("organisation_id", profile.organisation_id)
+    .eq("role", "TECHNICIAN")
+    .eq("active", true)
+    .maybeSingle();
+
+  if (technicianError || !technician) {
+    redirect(`/maintenance/${jobId}?corrective=technician-invalid`);
+  }
+
+  if (authorizationType === "APPROVED_QUOTE" && quoteRequestId) {
+    const { data: approvedRequest, error: quoteError } = await supabase
+      .from("finding_quote_requests")
+      .select("id")
+      .eq("id", quoteRequestId)
+      .eq("finding_id", finding.id)
+      .eq("organisation_id", profile.organisation_id)
+      .eq("status", "APPROVED")
+      .maybeSingle();
+
+    if (quoteError || !approvedRequest) {
+      redirect(`/maintenance/${jobId}?corrective=quote-not-approved`);
+    }
+  }
+
+  const { error: insertError } = await supabase.from("corrective_work_orders").insert({
+    organisation_id: profile.organisation_id,
+    finding_id: finding.id,
+    quote_request_id: authorizationType === "APPROVED_QUOTE" ? quoteRequestId : null,
+    authorization_type: authorizationType,
+    exception_reason: authorizationType === "MANAGEMENT_EXCEPTION" ? exceptionReason : null,
+    assigned_technician_id: technician.id,
+    scheduled_date: scheduledDate,
+    created_by: profile.id
+  });
+
+  if (insertError) {
+    redirect(`/maintenance/${jobId}?corrective=${insertError.code === "23505" ? "exists" : "failed"}`);
+  }
+
+  revalidatePath(`/maintenance/${jobId}`);
+  revalidatePath("/maintenance");
+  revalidatePath("/dashboard");
+  revalidatePath("/technician/today");
+  redirect(`/maintenance/${jobId}?corrective=created`);
+}
+
+export async function verifyCorrectiveWorkOrder(formData: FormData) {
+  const profile = await requireProfile();
+
+  if (!canAccessManagement(profile.role)) {
+    redirect("/dashboard");
+  }
+
+  const workOrderId = value(formData, "work_order_id");
+  const jobId = value(formData, "job_id");
+  const verificationNotes = value(formData, "verification_notes");
+
+  if (!workOrderId || !jobId || !verificationNotes || !isValidVerificationNotes(verificationNotes)) {
+    redirect("/maintenance?corrective=verification-invalid");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("verify_corrective_work_order", {
+    p_work_order_id: workOrderId,
+    p_verification_notes: verificationNotes
+  });
+
+  if (error) {
+    redirect(`/maintenance/${jobId}?corrective=verification-failed`);
+  }
+
+  revalidatePath(`/maintenance/${jobId}`);
+  revalidatePath("/maintenance");
+  revalidatePath("/dashboard");
+  revalidatePath("/technician/today");
+  revalidatePath("/client/dashboard");
+  revalidatePath("/reports");
+  redirect(`/maintenance/${jobId}?corrective=verified`);
 }
 
 export async function closeJobFromIssuedReport(formData: FormData) {

@@ -15,10 +15,14 @@
     "check:pilot": "node scripts/check-pilot-env.mjs"
   },
   "dependencies": {
+    "@next/env": "16.3.8",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
+    "@types/qrcode": "^1.5.6",
+    "@zxing/browser": "^0.2.1",
     "clsx": "latest",
     "next": "latest",
+    "qrcode": "^1.5.4",
     "react": "latest",
     "react-dom": "latest",
     "sharp": "^0.35.5",

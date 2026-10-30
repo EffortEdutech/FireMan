@@ -3,7 +3,9 @@ import { signOut } from "@/app/(auth)/actions";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { CurrentUserBadge } from "@/components/layout/current-user-badge";
+import { ManagementNav } from "@/components/layout/management-nav";
 import type { Profile } from "@/lib/supabase/types";
+import { tenantBrand } from "@/lib/tenant/brand";
 
 type ManagementShellProps = Readonly<{
   children: React.ReactNode;
@@ -15,19 +17,10 @@ type ManagementShellProps = Readonly<{
   description?: string;
 }>;
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/clients", label: "Clients" },
-  { href: "/sites", label: "Sites" },
-  { href: "/equipment", label: "Equipment" },
-  { href: "/maintenance", label: "Maintenance" },
-  { href: "/reports", label: "Reports" },
-  { href: "/report-templates", label: "Report Settings" }
-];
-
 export function ManagementShell({ children, currentUser, title, description }: ManagementShellProps) {
   return (
     <div
+      className="management-shell"
       style={{
         display: "grid",
         minHeight: "100vh",
@@ -35,20 +28,15 @@ export function ManagementShell({ children, currentUser, title, description }: M
       }}
     >
       <aside
+        className="management-shell-sidebar"
         style={{
           borderRight: "1px solid var(--border)",
           background: "var(--surface)",
           padding: "1.25rem"
         }}
       >
-        <strong>FireMaint</strong>
-        <nav style={{ display: "grid", gap: "0.75rem", marginTop: "2rem" }}>
-          {navItems.map((item) => (
-            <Link href={item.href} key={item.href}>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <Link href="/" style={{ display: "grid", gap: "0.2rem" }}><strong>{tenantBrand.name}</strong><span style={{ color: "var(--muted)", fontSize: "0.75rem" }}>FireMaint operations</span></Link>
+        <ManagementNav />
         <div style={{ borderTop: "1px solid var(--border)", marginTop: "2rem", paddingTop: "1rem" }}>
           <CurrentUserBadge email={currentUser.email} profile={currentUser.profile} />
         </div>
@@ -58,7 +46,7 @@ export function ManagementShell({ children, currentUser, title, description }: M
           </Button>
         </form>
       </aside>
-      <main style={{ display: "grid", alignContent: "start", gap: "1.5rem", minWidth: 0, padding: "2rem" }}>
+      <main className="management-shell-main" style={{ display: "grid", alignContent: "start", gap: "1.5rem", minWidth: 0, padding: "2rem" }}>
         {title ? <PageHeader {...(description ? { description } : {})} title={title} /> : null}
         {children}
       </main>

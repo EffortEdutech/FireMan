@@ -27,6 +27,13 @@ type EquipmentTypeOption = {
   id: string;
   name: string;
   code: string;
+  fields: Array<{
+    field_key: string;
+    label: string;
+    field_type: string;
+    unit: string | null;
+    required: boolean;
+  }>;
 };
 
 type EquipmentFormsProps = {
@@ -73,6 +80,7 @@ export function EquipmentForms({
 }: EquipmentFormsProps) {
   const [systemBuildingId, setSystemBuildingId] = useState("");
   const [equipmentBuildingId, setEquipmentBuildingId] = useState("");
+  const [equipmentTypeId, setEquipmentTypeId] = useState("");
 
   const buildingSystems = useMemo(
     () => systems.filter((system) => system.buildingId === equipmentBuildingId),
@@ -81,6 +89,7 @@ export function EquipmentForms({
   const canCreateBuilding = sites.length > 0;
   const canCreateSystem = buildings.length > 0;
   const canCreateEquipment = equipmentBuildingId.length > 0 && equipmentTypes.length > 0;
+  const selectedEquipmentType = equipmentTypes.find((type) => type.id === equipmentTypeId);
 
   return (
     <>
@@ -178,7 +187,7 @@ export function EquipmentForms({
                 </option>
               ))}
             </select>
-            <select aria-label="Equipment type" disabled={!canCreateEquipment} name="equipment_type_id" required style={fieldStyle}>
+            <select aria-label="Equipment type" disabled={!canCreateEquipment} name="equipment_type_id" onChange={(event) => setEquipmentTypeId(event.target.value)} required style={fieldStyle} value={equipmentTypeId}>
               <option value="">{equipmentTypes.length > 0 ? "Select equipment type" : "Seed equipment types first"}</option>
               {equipmentTypes.map((type) => (
                 <option key={type.id} value={type.id}>
@@ -194,6 +203,19 @@ export function EquipmentForms({
             <input aria-label="Location description" disabled={!canCreateEquipment} name="location_description" placeholder="Location" style={fieldStyle} />
             <input aria-label="Installation date" disabled={!canCreateEquipment} name="installation_date" style={fieldStyle} type="date" />
           </div>
+          {selectedEquipmentType?.fields.length ? (
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: "1rem" }}>
+              <h3 style={{ fontSize: "0.95rem", margin: "0 0 0.75rem" }}>Technical information · {selectedEquipmentType.name}</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
+                {selectedEquipmentType.fields.map((field) => (
+                  <label key={field.field_key} style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: "0.85rem" }}>
+                    <span>{field.label}{field.required ? " *" : ""}{field.unit ? ` (${field.unit})` : ""}</span>
+                    <input aria-label={field.label} name={`technical_${field.field_key}`} required={field.required} style={fieldStyle} type={field.field_type === "NUMBER" ? "number" : field.field_type === "DATE" ? "date" : "text"} />
+                  </label>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <div>
             <Button disabled={!canCreateEquipment} type="submit">
               Register Equipment

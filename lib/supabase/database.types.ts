@@ -252,6 +252,7 @@ export type Database = {
           serial_number: string | null
           status: Database["public"]["Enums"]["equipment_status"]
           system_id: string | null
+          technical_data: Json
           updated_at: string
         }
         Insert: {
@@ -273,6 +274,7 @@ export type Database = {
           serial_number?: string | null
           status?: Database["public"]["Enums"]["equipment_status"]
           system_id?: string | null
+          technical_data?: Json
           updated_at?: string
         }
         Update: {
@@ -294,6 +296,7 @@ export type Database = {
           serial_number?: string | null
           status?: Database["public"]["Enums"]["equipment_status"]
           system_id?: string | null
+          technical_data?: Json
           updated_at?: string
         }
         Relationships: [
@@ -325,6 +328,115 @@ export type Database = {
             referencedRelation: "systems"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      equipment_documents: {
+        Row: {
+          created_at: string
+          customer_visible: boolean
+          document_type: string
+          equipment_id: string
+          expires_at: string | null
+          file_name: string | null
+          id: string
+          mime_type: string | null
+          organisation_id: string
+          size_bytes: number | null
+          storage_path: string
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_visible?: boolean
+          document_type: string
+          equipment_id: string
+          expires_at?: string | null
+          file_name?: string | null
+          id?: string
+          mime_type?: string | null
+          organisation_id: string
+          size_bytes?: number | null
+          storage_path: string
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_visible?: boolean
+          document_type?: string
+          equipment_id?: string
+          expires_at?: string | null
+          file_name?: string | null
+          id?: string
+          mime_type?: string | null
+          organisation_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          { foreignKeyName: "equipment_documents_equipment_id_fkey"; columns: ["equipment_id"]; isOneToOne: false; referencedRelation: "equipment"; referencedColumns: ["id"] },
+          { foreignKeyName: "equipment_documents_organisation_id_fkey"; columns: ["organisation_id"]; isOneToOne: false; referencedRelation: "organisations"; referencedColumns: ["id"] },
+          { foreignKeyName: "equipment_documents_uploaded_by_fkey"; columns: ["uploaded_by"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
+        ]
+      }
+      equipment_type_fields: {
+        Row: {
+          active: boolean
+          created_at: string
+          customer_visible: boolean
+          equipment_type_id: string
+          field_key: string
+          field_type: Database["public"]["Enums"]["template_field_type"]
+          id: string
+          label: string
+          options: Json
+          organisation_id: string | null
+          required: boolean
+          sort_order: number
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          customer_visible?: boolean
+          equipment_type_id: string
+          field_key: string
+          field_type: Database["public"]["Enums"]["template_field_type"]
+          id?: string
+          label: string
+          options?: Json
+          organisation_id?: string | null
+          required?: boolean
+          sort_order?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          customer_visible?: boolean
+          equipment_type_id?: string
+          field_key?: string
+          field_type?: Database["public"]["Enums"]["template_field_type"]
+          id?: string
+          label?: string
+          options?: Json
+          organisation_id?: string | null
+          required?: boolean
+          sort_order?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: "equipment_type_fields_equipment_type_id_fkey"; columns: ["equipment_type_id"]; isOneToOne: false; referencedRelation: "equipment_types"; referencedColumns: ["id"] },
+          { foreignKeyName: "equipment_type_fields_organisation_id_fkey"; columns: ["organisation_id"]; isOneToOne: false; referencedRelation: "organisations"; referencedColumns: ["id"] },
         ]
       }
       equipment_types: {
@@ -589,6 +701,189 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_requests: {
+        Row: {
+          affected_asset: string | null
+          appointment_at: string | null
+          category: Database["public"]["Enums"]["service_request_category"]
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_message: string
+          details: string
+          hold_reason: string | null
+          id: string
+          next_action: string
+          next_action_owner: string
+          onsite_contact: string | null
+          organisation_id: string
+          preferred_access_window: string | null
+          public_tracking_token: string
+          public_update_visible: boolean
+          reference_note: string | null
+          requester_company: string | null
+          requester_email: string
+          requester_name: string
+          requester_phone: string | null
+          requester_user_id: string | null
+          request_reference: string
+          site_description: string | null
+          site_id: string | null
+          status: Database["public"]["Enums"]["service_request_status"]
+          title: string
+          updated_at: string
+          urgency: Database["public"]["Enums"]["service_request_urgency"]
+        }
+        Insert: {
+          affected_asset?: string | null
+          appointment_at?: string | null
+          category: Database["public"]["Enums"]["service_request_category"]
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_message?: string
+          details: string
+          hold_reason?: string | null
+          id?: string
+          next_action?: string
+          next_action_owner?: string
+          onsite_contact?: string | null
+          organisation_id: string
+          preferred_access_window?: string | null
+          public_tracking_token?: string
+          public_update_visible?: boolean
+          reference_note?: string | null
+          requester_company?: string | null
+          requester_email: string
+          requester_name: string
+          requester_phone?: string | null
+          requester_user_id?: string | null
+          request_reference?: string
+          site_description?: string | null
+          site_id?: string | null
+          status?: Database["public"]["Enums"]["service_request_status"]
+          title: string
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["service_request_urgency"]
+        }
+        Update: {
+          affected_asset?: string | null
+          appointment_at?: string | null
+          category?: Database["public"]["Enums"]["service_request_category"]
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_message?: string
+          details?: string
+          hold_reason?: string | null
+          id?: string
+          next_action?: string
+          next_action_owner?: string
+          onsite_contact?: string | null
+          organisation_id?: string
+          preferred_access_window?: string | null
+          public_tracking_token?: string
+          public_update_visible?: boolean
+          reference_note?: string | null
+          requester_company?: string | null
+          requester_email?: string
+          requester_name?: string
+          requester_phone?: string | null
+          requester_user_id?: string | null
+          request_reference?: string
+          site_description?: string | null
+          site_id?: string | null
+          status?: Database["public"]["Enums"]["service_request_status"]
+          title?: string
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["service_request_urgency"]
+        }
+        Relationships: []
+      }
+      service_request_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event_type: string
+          from_status: Database["public"]["Enums"]["service_request_status"] | null
+          id: number
+          message: string
+          next_action: string
+          next_action_owner: string
+          organisation_id: string
+          public_visible: boolean
+          hold_reason: string | null
+          appointment_at: string | null
+          service_request_id: string
+          to_status: Database["public"]["Enums"]["service_request_status"]
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event_type: string
+          from_status?: Database["public"]["Enums"]["service_request_status"] | null
+          id?: never
+          message: string
+          next_action: string
+          next_action_owner: string
+          organisation_id: string
+          public_visible?: boolean
+          hold_reason?: string | null
+          appointment_at?: string | null
+          service_request_id: string
+          to_status: Database["public"]["Enums"]["service_request_status"]
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event_type?: string
+          from_status?: Database["public"]["Enums"]["service_request_status"] | null
+          id?: never
+          message?: string
+          next_action?: string
+          next_action_owner?: string
+          organisation_id?: string
+          public_visible?: boolean
+          hold_reason?: string | null
+          appointment_at?: string | null
+          service_request_id?: string
+          to_status?: Database["public"]["Enums"]["service_request_status"]
+        }
+        Relationships: []
+      }
+      service_request_replies: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          organisation_id: string
+          public_visible: boolean
+          sender_user_id: string | null
+          sender_type: "CUSTOMER" | "FAST"
+          service_request_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          organisation_id: string
+          public_visible?: boolean
+          sender_user_id?: string | null
+          sender_type: "CUSTOMER" | "FAST"
+          service_request_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          organisation_id?: string
+          public_visible?: boolean
+          sender_user_id?: string | null
+          sender_type?: "CUSTOMER" | "FAST"
+          service_request_id?: string
+        }
+        Relationships: []
       }
       corrective_work_orders: {
         Row: {
@@ -1333,6 +1628,7 @@ export type Database = {
           logo_url: string | null
           name: string
           phone: string | null
+          public_request_enabled: boolean
           registration_no: string | null
           report_prefix: string
           timezone: string
@@ -1348,6 +1644,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           phone?: string | null
+          public_request_enabled?: boolean
           registration_no?: string | null
           report_prefix?: string
           timezone?: string
@@ -1363,6 +1660,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           phone?: string | null
+          public_request_enabled?: boolean
           registration_no?: string | null
           report_prefix?: string
           timezone?: string
@@ -1718,6 +2016,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_public_service_request: {
+        Args: {
+          p_affected_asset: string | null
+          p_category: Database["public"]["Enums"]["service_request_category"]
+          p_details: string
+          p_onsite_contact: string | null
+          p_preferred_access_window: string | null
+          p_reference_note: string | null
+          p_requester_company: string | null
+          p_requester_name: string
+          p_requester_phone: string | null
+          p_site_description: string | null
+          p_title: string
+          p_urgency: Database["public"]["Enums"]["service_request_urgency"]
+        }
+        Returns: string
+      }
+      reply_to_service_request: {
+        Args: { p_message: string; p_service_request_id: string }
+        Returns: string
+      }
+      reply_to_service_request_public: {
+        Args: { p_message: string; p_service_request_id: string }
+        Returns: string
+      }
+      is_public_request_intake_enabled: { Args: never; Returns: boolean }
       start_corrective_work_order: {
         Args: { p_work_order_id: string }
         Returns: undefined
@@ -1939,6 +2263,9 @@ export type Database = {
       notification_status: "UNREAD" | "READ" | "ARCHIVED"
       report_status: "DRAFT" | "GENERATED" | "REVIEWED" | "ISSUED" | "VOID"
       report_type: "MAINTENANCE" | "INSPECTION" | "FINDING" | "OTHER"
+      service_request_category: "REACTIVE_ISSUE" | "PLANNED_SERVICE" | "INSPECTION" | "FINDING_FOLLOW_UP" | "QUOTATION" | "OTHER"
+      service_request_status: "NEW" | "TRIAGE" | "NEEDS_CUSTOMER_INFO" | "SITE_VISIT_TO_ARRANGE" | "QUOTE_PREPARATION" | "READY_TO_SCHEDULE" | "AWAITING_CUSTOMER_DECISION" | "APPROVED" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CLOSED" | "DECLINED" | "CANCELLED" | "UNABLE_TO_PROCEED" | "CLOSED_WITHOUT_WORK"
+      service_request_urgency: "ROUTINE" | "PRIORITY" | "URGENT"
       system_type:
         | "FIRE_ALARM"
         | "FIRE_EXTINGUISHING"
@@ -2117,6 +2444,9 @@ export const Constants = {
       notification_status: ["UNREAD", "READ", "ARCHIVED"],
       report_status: ["DRAFT", "GENERATED", "REVIEWED", "ISSUED", "VOID"],
       report_type: ["MAINTENANCE", "INSPECTION", "FINDING", "OTHER"],
+      service_request_category: ["REACTIVE_ISSUE", "PLANNED_SERVICE", "INSPECTION", "FINDING_FOLLOW_UP", "QUOTATION", "OTHER"],
+      service_request_status: ["NEW", "TRIAGE", "NEEDS_CUSTOMER_INFO", "SITE_VISIT_TO_ARRANGE", "QUOTE_PREPARATION", "READY_TO_SCHEDULE", "AWAITING_CUSTOMER_DECISION", "APPROVED", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "CLOSED", "DECLINED", "CANCELLED", "UNABLE_TO_PROCEED", "CLOSED_WITHOUT_WORK"],
+      service_request_urgency: ["ROUTINE", "PRIORITY", "URGENT"],
       system_type: [
         "FIRE_ALARM",
         "FIRE_EXTINGUISHING",

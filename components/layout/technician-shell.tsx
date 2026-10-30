@@ -4,6 +4,7 @@ import { TechnicianNav } from "@/components/layout/technician-nav";
 import { PwaRuntime } from "@/components/layout/pwa-runtime";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@/lib/supabase/types";
+import { tenantBrand } from "@/lib/tenant/brand";
 
 type TechnicianShellProps = Readonly<{
   children: React.ReactNode;
@@ -32,7 +33,7 @@ export function TechnicianShell({ children, currentUser }: TechnicianShellProps)
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
           <div>
-            <strong>FireMaint Field</strong>
+            <strong>{tenantBrand.name} Field Service</strong>
             <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: "0.25rem" }}>
               <PwaRuntime />
             </div>

@@ -1,4 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import { createRequire } from "node:module";
+
+const { loadEnvConfig } = createRequire(import.meta.url)("@next/env") as typeof import("@next/env");
+loadEnvConfig(process.cwd());
 
 export default defineConfig({
   testDir: "tests/e2e",

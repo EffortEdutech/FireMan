@@ -2,6 +2,8 @@ import { signOut } from "@/app/(auth)/actions";
 import { CurrentUserBadge } from "@/components/layout/current-user-badge";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@/lib/supabase/types";
+import { tenantBrand } from "@/lib/tenant/brand";
+import Link from "next/link";
 
 type ClientShellProps = Readonly<{
   children: React.ReactNode;
@@ -22,7 +24,11 @@ export function ClientShell({ children, currentUser }: ClientShellProps) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
-          <strong>FireMaint Client Portal</strong>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <strong>{tenantBrand.name} Customer Portal</strong>
+            <Link href="/client/requests">Service requests</Link>
+            <Link href="/client/equipment">Equipment</Link>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
             <CurrentUserBadge email={currentUser.email} profile={currentUser.profile} />
             <form action={signOut}>

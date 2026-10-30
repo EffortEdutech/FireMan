@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createBuildingRecord, createEquipmentRecord, createSystemRecord } from "@/app/(dashboard)/equipment/actions";
 import { EquipmentForms } from "@/app/(dashboard)/equipment/equipment-forms";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { EmptyState, ErrorState, SuccessState } from "@/components/ui/states";
 import { PageHeader } from "@/components/ui/page-header";
@@ -14,6 +16,7 @@ type EquipmentPageProps = {
     building?: string;
     equipment?: string;
     error?: string;
+    search?: string;
     status?: string;
     system?: string;
   }>;
@@ -46,15 +49,17 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
     { data: buildings, error: buildingsError },
     { data: systems, error: systemsError },
     { data: equipmentTypes, error: typesError },
+    { data: technicalFields, error: fieldsError },
     { data: equipment, error: equipmentError }
   ] = await Promise.all([
     supabase.from("sites").select("id,name,clients(name)").eq("active", true).order("name", { ascending: true }),
     supabase.from("buildings").select("id,name,code,active,sites(name,clients(name))").eq("active", true).order("name", { ascending: true }),
     supabase.from("systems").select("id,building_id,name,code,system_type,active,buildings(name,sites(name))").eq("active", true).order("name", { ascending: true }),
     supabase.from("equipment_types").select("id,name,code,system_type").or(`organisation_id.is.null,organisation_id.eq.${profile.organisation_id}`).eq("active", true).order("name", { ascending: true }),
+    supabase.from("equipment_type_fields").select("id,equipment_type_id,field_key,label,field_type,unit,options,required,customer_visible,sort_order").eq("active", true).order("sort_order", { ascending: true }),
     supabase
       .from("equipment")
-      .select("id,asset_code,brand,model,capacity,location_description,status,buildings(name,sites(name)),systems(name),equipment_types(name,code)")
+      .select("id,asset_code,serial_number,brand,model,capacity,location_description,installation_date,technical_data,status,buildings(name,sites(name)),systems(name),equipment_types(id,name,code)")
       .order("created_at", { ascending: false })
   ]);
 
@@ -79,18 +84,16 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
       buildingName: system.buildings?.name ?? "Building"
     })) ?? [];
   const equipmentTypeOptions =
-    equipmentTypes?.map((type) => ({ id: type.id, name: type.name, code: type.code })) ?? [];
+    equipmentTypes?.map((type) => ({ id: type.id, name: type.name, code: type.code, fields: (technicalFields ?? []).filter((field) => field.equipment_type_id === type.id) })) ?? [];
   const selectedStatus = equipmentFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "ACTIVE" : "ACTIVE";
+  const searchTerm = (params?.search ?? "").trim().toLowerCase();
   const equipmentCounts = new Map<string, number>();
   const filteredEquipment =
     equipment?.filter((asset) => {
       equipmentCounts.set(asset.status, (equipmentCounts.get(asset.status) ?? 0) + 1);
 
-      if (selectedStatus === "all") {
-        return true;
-      }
-
-      return asset.status === selectedStatus;
+      const searchable = [asset.asset_code, asset.serial_number, asset.brand, asset.model, asset.capacity, asset.location_description, asset.buildings?.name, asset.buildings?.sites?.name, asset.systems?.name, asset.equipment_types?.name, asset.equipment_types?.code].filter(Boolean).join(" ").toLowerCase();
+      return (selectedStatus === "all" || asset.status === selectedStatus) && (!searchTerm || searchable.includes(searchTerm));
     }) ?? [];
   const filterCountByKey = (key: string) => {
     if (key === "all") {
@@ -128,11 +131,17 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
                         ? "Choose an active building from your organisation."
                         : params.error === "system-building-mismatch"
                           ? "Choose a system that belongs to the selected building."
+                          : params.error === "equipment-type-mismatch"
+                            ? "Choose an active equipment category from the register."
+                            : params.error.startsWith("invalid-technical-data-")
+                              ? `Enter a valid value for technical field ${params.error.replace("invalid-technical-data-", "").replaceAll("_", " ")}.`
+                              : params.error === "technical-template-unavailable"
+                                ? "The technical template could not be loaded. Try again or contact an administrator."
                   : "The register item could not be saved."
           }
         />
       ) : null}
-      {sitesError || buildingsError || systemsError || typesError ? (
+      {sitesError || buildingsError || systemsError || typesError || fieldsError ? (
         <ErrorState title="Register setup unavailable" message="Some register choices could not be loaded." />
       ) : null}
 
@@ -162,7 +171,32 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
           }))}
           selectedKey={selectedStatus}
         />
+        <form method="get" style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center", marginTop: "1rem" }}>
+          <input aria-label="Search equipment" defaultValue={params?.search ?? ""} name="search" placeholder="Search asset, serial, brand, model, building, site or system" style={{ minHeight: 44, border: "1px solid var(--border)", borderRadius: 6, padding: 12, flex: "1 1 320px" }} />
+          <input name="status" type="hidden" value={selectedStatus} />
+          <Button type="submit">Search register</Button>
+          {searchTerm ? <a className="button button-secondary" href={selectedStatus === "ACTIVE" ? "/equipment" : `/equipment?status=${selectedStatus}`}>Clear</a> : null}
+        </form>
+        <Card style={{ marginTop: "1rem" }}>
+          <div className="record-card-heading"><div><span className="record-card-kicker">TECHNICAL LIBRARY</span><h2>Equipment categories & templates</h2></div><span className="record-status">{equipmentTypeOptions.length} categories</span></div>
+          <div className="record-grid" style={{ marginTop: "1rem" }}>
+            {equipmentTypeOptions.map((type) => <div className="record-card" key={type.id}>
+              <div className="record-card-heading"><h3 style={{ margin: 0 }}>{type.name}</h3><span className="record-status">{type.code}</span></div>
+              <p style={{ color: "var(--muted)", margin: "0.5rem 0 0" }}>{type.fields.length} technical fields · {type.fields.filter((field) => field.customer_visible).length} customer visible</p>
+              <small>{type.fields.map((field) => `${field.label}${field.required ? " *" : ""}`).join(" · ") || "No technical fields configured"}</small>
+            </div>)}
+          </div>
+        </Card>
         {filteredEquipment.length > 0 ? (
+        <>
+        <div className="record-grid" aria-label="Equipment register">
+          {filteredEquipment.map((asset) => <Card className="record-card" key={asset.id}>
+            <div className="record-card-heading"><div><span className="record-card-kicker">ASSET REGISTER</span><h2><Link href={`/equipment/${asset.id}`}>{asset.asset_code}</Link></h2></div><span className={asset.status === "ACTIVE" ? "record-status record-status-active" : "record-status"}>{statusLabel[asset.status] ?? asset.status}</span></div>
+            <div className="record-card-facts"><div><span>Equipment type</span><strong>{asset.equipment_types?.name ?? "Not set"}</strong></div><div><span>System</span><strong>{asset.systems?.name ?? "Not set"}</strong></div></div>
+            <div className="record-card-contact"><span>Building / site</span><strong>{asset.buildings?.name ?? "Not set"} · {asset.buildings?.sites?.name ?? "Not set"}</strong><small>{[asset.brand, asset.model, asset.capacity].filter(Boolean).join(" / ") || asset.location_description || "Details not set"}</small><small>Technical data: {Object.keys((asset.technical_data && typeof asset.technical_data === "object" && !Array.isArray(asset.technical_data) ? asset.technical_data : {}) as Record<string, unknown>).length} fields recorded</small></div>
+          </Card>)}
+        </div>
+        <div className="legacy-record-table">
         <Card className="table-scroll" style={{ padding: 0 }}>
           <table className="data-table">
             <colgroup>
@@ -187,7 +221,7 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
               {filteredEquipment.map((asset) => (
                 <tr key={asset.id}>
                   <td>
-                    <strong>{asset.asset_code}</strong>
+                    <strong><Link href={`/equipment/${asset.id}`}>{asset.asset_code}</Link></strong>
                     <div style={{ color: "var(--muted)", marginTop: 4 }}>
                       {[asset.brand, asset.model, asset.capacity].filter(Boolean).join(" / ") || "Details not set"}
                     </div>
@@ -207,6 +241,8 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
             </tbody>
           </table>
         </Card>
+        </div>
+        </>
         ) : (
           <EmptyState title="No assets in this view" message="Choose another asset status filter." />
         )}
