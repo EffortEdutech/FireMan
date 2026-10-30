@@ -12,6 +12,11 @@ export function ActivityFeedback() {
   const [activity, setActivity] = useState<{ kind: ActivityKind; routeKey: string } | null>(null);
 
   useEffect(() => {
+    const clearAfterNavigation = window.setTimeout(() => setActivity(null), 0);
+    return () => window.clearTimeout(clearAfterNavigation);
+  }, [routeKey]);
+
+  useEffect(() => {
     let clearTimer: number | null = null;
 
     function start(nextKind: ActivityKind) {
@@ -54,8 +59,7 @@ export function ActivityFeedback() {
     };
   }, []);
 
-  const active = activity !== null && activity.routeKey === routeKey;
-  if (!active || !activity) return null;
+  if (!activity) return null;
 
   return (
     <div aria-live="polite" className="activity-feedback" role="status">
