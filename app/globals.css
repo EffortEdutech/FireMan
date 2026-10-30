@@ -352,6 +352,23 @@ select {
   font-weight: 800;
 }
 
+@media (min-width: 761px) {
+  .management-shell-sidebar {
+    box-sizing: border-box;
+    height: 100vh;
+    overflow-y: auto;
+    position: fixed;
+    width: 240px;
+    z-index: 10;
+  }
+
+  .management-shell-main {
+    grid-column: 2;
+    height: 100vh;
+    overflow-y: auto;
+  }
+}
+
 .operations-page {
   display: grid;
   gap: 1.25rem;
@@ -1217,6 +1234,64 @@ select {
   margin-top: 0.5rem;
 }
 
+.register-summary {
+  align-items: baseline;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.7rem 0;
+}
+
+.register-summary strong {
+  font-size: 0.95rem;
+}
+
+.register-summary span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: right;
+}
+
+.queue-table-card {
+  border: 1px solid var(--border);
+}
+
+.queue-table td,
+.queue-table th {
+  vertical-align: top;
+}
+
+.queue-table td > span,
+.queue-table td > small,
+.queue-primary-cell a,
+.queue-primary-cell small {
+  display: block;
+}
+
+.queue-primary-cell a {
+  color: var(--accent);
+}
+
+.queue-primary-cell a span {
+  color: var(--foreground);
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+
+.queue-table td small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  margin-top: 0.25rem;
+}
+
+.queue-next-action {
+  color: var(--muted);
+  max-width: 18rem;
+}
+
 @media (max-width: 760px) {
   .workflow-stepper,
   .workflow-summary-grid {
@@ -1240,6 +1315,16 @@ select {
 
   .workflow-section-heading-meta {
     white-space: normal;
+  }
+
+  .register-summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .register-summary span {
+    text-align: left;
   }
 
   .request-command-status {
@@ -1862,12 +1947,19 @@ select {
 
   .management-shell {
     grid-template-columns: 1fr !important;
+    height: auto !important;
+    min-height: 100vh;
+    overflow: visible !important;
   }
 
   .management-shell-sidebar {
     border-bottom: 1px solid var(--border);
     border-right: 0 !important;
+    height: auto;
+    overflow: visible;
+    position: static;
     padding: 1rem !important;
+    width: auto;
   }
 
   .management-shell-sidebar .management-nav {
@@ -1901,6 +1993,8 @@ select {
   }
 
   .management-shell-main {
+    height: auto;
+    overflow: visible;
     padding: 1rem !important;
   }
 

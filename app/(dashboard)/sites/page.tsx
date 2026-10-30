@@ -74,18 +74,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       <PageHeader title="Sites" description="Set up the buildings and service locations where FAST work takes place." />
-      <div className="workflow-stepper" aria-label="Site setup workflow">
-        <div className="workflow-step workflow-step-complete"><span>1</span><div><strong>Client account</strong><small>Organisation selected</small></div></div>
-        <div className="workflow-step workflow-step-current"><span>2</span><div><strong>Service site</strong><small>Property and address</small></div></div>
-        <div className="workflow-step"><span>3</span><div><strong>Equipment</strong><small>Fire assets</small></div></div>
-        <div className="workflow-step"><span>4</span><div><strong>Maintenance</strong><small>Plan service work</small></div></div>
-      </div>
-      <div className="workflow-summary-grid" aria-label="Site register summary">
-        <div className="workflow-summary-card"><span>Active sites</span><strong>{activeSiteCount}</strong><small>Available for asset setup</small></div>
-        <div className="workflow-summary-card"><span>Inactive sites</span><strong>{inactiveSiteCount}</strong><small>Historical locations</small></div>
-        <div className="workflow-summary-card"><span>Client dependency</span><strong>{clients?.length ?? 0}</strong><small>Active clients available</small></div>
-        <div className="workflow-summary-card"><span>Next step</span><strong>Equipment</strong><small>Register fire assets</small></div>
-      </div>
+      <div className="register-summary"><strong>{activeSiteCount} active sites</strong><span>{inactiveSiteCount} inactive · choose a site below to review its property record</span></div>
       {params?.created ? (
         <SuccessState message="Site created." />
       ) : null}
@@ -140,14 +129,6 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
         />
         {filteredSites.length > 0 ? (
         <>
-        <div className="record-grid" aria-label="Client sites">
-          {filteredSites.map((site) => <Card className="record-card" key={site.id}>
-            <div className="record-card-heading"><div><span className="record-card-kicker">SERVICE SITE</span><h2>{site.name}</h2></div><span className={site.active ? "record-status record-status-active" : "record-status"}>{site.active ? "Active" : "Inactive"}</span></div>
-            <div className="record-card-facts"><div><span>Client</span><strong>{site.clients?.name ?? "Not set"}</strong></div><div><span>Site code</span><strong>{site.site_code ?? "Not set"}</strong></div></div>
-            <div className="record-card-contact"><span>Location</span><strong>{[site.address, site.city, site.state, site.country].filter(Boolean).join(", ") || "Not set"}</strong></div>
-            <div className="record-card-next"><span>Next action</span><strong>{site.active ? "Register buildings, systems, and equipment for this site." : "Reactivate this site before planning new work."}</strong></div>
-          </Card>)}
-        </div>
         <div className="legacy-record-table">
         <Card className="table-scroll" style={{ padding: 0 }}>
           <table className="data-table">

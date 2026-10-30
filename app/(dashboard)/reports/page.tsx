@@ -158,18 +158,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       <PageHeader title="Reports" description="Move completed field work through evidence review, report approval, and client issue." />
-      <div className="workflow-stepper" aria-label="Report workflow">
-        <div className="workflow-step workflow-step-complete"><span>1</span><div><strong>Field evidence</strong><small>Technician submission</small></div></div>
-        <div className="workflow-step workflow-step-current"><span>2</span><div><strong>Create report</strong><small>Build from reviewed evidence</small></div></div>
-        <div className="workflow-step"><span>3</span><div><strong>Review report</strong><small>Approve content</small></div></div>
-        <div className="workflow-step"><span>4</span><div><strong>Issue to client</strong><small>Publish approved report</small></div></div>
-      </div>
-      <div className="workflow-summary-grid" aria-label="Report workflow summary">
-        <Link className="workflow-summary-card" href="/reports?status=all"><span>Field jobs ready</span><strong>{reportableJobs.length}</strong><small>Completed management review</small></Link>
-        <Link className="workflow-summary-card" href="/reports?status=GENERATED"><span>Needs review</span><strong>{generatedReportCount}</strong><small>Report content awaiting approval</small></Link>
-        <Link className="workflow-summary-card" href="/reports?status=REVIEWED"><span>Ready to issue</span><strong>{reviewedReportCount}</strong><small>Approved for client delivery</small></Link>
-        <Link className="workflow-summary-card" href="/reports?status=ISSUED"><span>Issued reports</span><strong>{issuedReportCount}</strong><small>Visible in the client portal</small></Link>
-      </div>
+      <div className="register-summary"><strong>{activeReportCount} reports need action</strong><span>{generatedReportCount} awaiting review · {reviewedReportCount} ready to issue · {issuedReportCount} already issued</span></div>
       {params?.created ? (
         <SuccessState message="Report shell generated. Open it to review field and checklist evidence." />
       ) : null}
@@ -228,19 +217,6 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
         />
         {filteredReports.length > 0 ? (
         <>
-        <div className="report-review-grid" aria-label="Report review queue">
-          {filteredReports.map((report) => {
-            const reportFindings = findingsByJobId.get(report.job_id) ?? [];
-            const checklistResultCount = checklistResultCountByJobId.get(report.job_id) ?? 0;
-            return <Card className="report-review-card" key={report.id}>
-              <div className="record-card-heading"><div><span className="record-card-kicker">REPORT REVIEW</span><Link href={`/reports/${report.id}`}><h2>{report.report_number}</h2></Link></div><StatusBadge>{reportStatusLabel[report.status] ?? report.status}</StatusBadge></div>
-              <p className="report-review-title">{report.title ?? "Untitled maintenance report"}</p>
-              <div className="record-card-facts"><div><span>Job / site</span><strong>{report.maintenance_jobs?.job_number ?? "Not set"} · {report.maintenance_jobs?.sites?.name ?? "Not set"}</strong></div><div><span>Client</span><strong>{report.maintenance_jobs?.clients?.name ?? "Not set"}</strong></div></div>
-              <div className="report-evidence-summary"><span>{reportFindings.length} finding{reportFindings.length === 1 ? "" : "s"}</span><span>{checklistResultCount} checklist result{checklistResultCount === 1 ? "" : "s"}</span></div>
-              <div className="report-review-actions"><Link href={`/reports/${report.id}`} className="maintenance-action-link">Review report →</Link>{report.status === "GENERATED" ? <form action={reviewReport}><input name="report_id" type="hidden" value={report.id} /><Button type="submit" variant="secondary" pendingLabel="Approving report…">Approve for issue</Button></form> : null}{report.status === "REVIEWED" ? <form action={issueReport}><input name="report_id" type="hidden" value={report.id} /><Button type="submit" pendingLabel="Issuing to client…">Issue to client</Button></form> : null}</div>
-            </Card>;
-          })}
-        </div>
         <div className="legacy-record-table">
         <Card className="table-scroll" style={{ padding: 0 }}>
           <table className="data-table">

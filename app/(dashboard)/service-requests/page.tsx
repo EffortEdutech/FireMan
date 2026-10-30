@@ -64,18 +64,7 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       <PageHeader title="Service requests" description="Move customer work from intake through triage, quotation, delivery, and closure." />
-      <div className="workflow-stepper" aria-label="Service request workflow">
-        <div className="workflow-step workflow-step-current"><span>1</span><div><strong>Intake</strong><small>New customer request</small></div></div>
-        <div className="workflow-step"><span>2</span><div><strong>Triage</strong><small>Confirm scope and owner</small></div></div>
-        <div className="workflow-step"><span>3</span><div><strong>Plan and quote</strong><small>Arrange work or quotation</small></div></div>
-        <div className="workflow-step"><span>4</span><div><strong>Deliver and close</strong><small>Track work and outcome</small></div></div>
-      </div>
-      <div className="workflow-summary-grid" aria-label="Service request summary">
-        <Link className="workflow-summary-card" href="/service-requests?phase=intake"><span>New intake</span><strong>{phaseCount(requestPhases[1])}</strong><small>Needs first review</small></Link>
-        <Link className="workflow-summary-card" href="/service-requests?phase=triage"><span>Triage</span><strong>{phaseCount(requestPhases[2])}</strong><small>Scope or information needed</small></Link>
-        <Link className="workflow-summary-card" href="/service-requests?phase=scope"><span>Scope and quote</span><strong>{phaseCount(requestPhases[3])}</strong><small>Prepare the next decision</small></Link>
-        <Link className="workflow-summary-card" href="/service-requests?phase=delivery"><span>Delivery</span><strong>{phaseCount(requestPhases[4])}</strong><small>Approved or in progress</small></Link>
-      </div>
+      <div className="register-summary"><strong>{activeRequests.length} active requests</strong><span>{phaseCount(requestPhases[1])} new · {phaseCount(requestPhases[2])} in triage · {phaseCount(requestPhases[4])} in delivery</span></div>
       {params.error ? <Card role="alert">The update could not be saved. Check the request’s allowed status path and try again.</Card> : null}
       {params["intake-error"] ? <Card role="alert">Public intake could not be changed. Another organisation may already have it enabled.</Card> : null}
       {params["intake-updated"] ? <Card role="status">Public request intake setting updated.</Card> : null}
@@ -89,17 +78,20 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
         {requestPhases.map((phase) => <Link className={selectedPhase === phase.key ? "technician-tab-active" : undefined} href={phase.key === "all" ? "/service-requests" : `/service-requests?phase=${phase.key}`} key={phase.key}>{phase.label} ({phaseCount(phase)})</Link>)}
       </nav>
       {!error && !visibleRequests.length ? <EmptyState title="No requests in this phase" message="New customer work will appear here when it enters this queue." /> : null}
-      <div className="record-grid" aria-label="Service request queue">
-        {visibleRequests.map((request) => (
-          <Card className="record-card" key={request.id}>
-            <div className="record-card-heading"><div><span className="record-card-kicker">{request.request_reference}</span><h2>{request.title}</h2></div><StatusBadge>{serviceRequestStatusLabels[request.status]}</StatusBadge></div>
-            <div className="record-card-facts"><div><span>Urgency</span><strong>{serviceRequestUrgencyLabels[request.urgency]}</strong></div><div><span>Age</span><strong>{ageLabel(request.updated_at)}</strong></div></div>
-            <div className="record-card-contact"><span>Client / site</span><strong>{request.requester_company ?? clientNames.get(request.client_id ?? "") ?? "Unmatched company"} · {siteNames.get(request.site_id ?? "") ?? request.site_description ?? "Unmatched site"}</strong><small>{serviceRequestCategoryLabels[request.category]} · {request.requester_name} · {request.requester_email}</small></div>
-            <div className="record-card-next"><span>Next action</span><strong>{request.next_action ?? "Assign an owner and define the next action."}</strong></div>
-            <Link className="maintenance-action-link" href={`/service-requests/${request.id}`}>Open request workspace →</Link>
-          </Card>
-        ))}
-      </div>
+      <Card className="table-scroll queue-table-card" style={{ padding: 0 }}>
+        <table className="data-table queue-table" aria-label="Service request queue">
+          <thead><tr><th>Request</th><th>Customer / site</th><th>Type</th><th>Urgency</th><th>Status</th><th>Next action</th><th /></tr></thead>
+          <tbody>{visibleRequests.map((request) => <tr key={request.id}>
+            <td className="queue-primary-cell"><Link href={`/service-requests/${request.id}`}><strong>{request.request_reference}</strong><span>{request.title}</span></Link><small>{ageLabel(request.updated_at)}</small></td>
+            <td><strong>{request.requester_company ?? clientNames.get(request.client_id ?? "") ?? "Unmatched company"}</strong><span>{siteNames.get(request.site_id ?? "") ?? request.site_description ?? "Unmatched site"}</span><small>{request.requester_name} · {request.requester_email}</small></td>
+            <td>{serviceRequestCategoryLabels[request.category]}</td>
+            <td>{serviceRequestUrgencyLabels[request.urgency]}</td>
+            <td><StatusBadge>{serviceRequestStatusLabels[request.status]}</StatusBadge></td>
+            <td className="queue-next-action">{request.next_action ?? "Assign an owner and define the next action."}</td>
+            <td><Link className="maintenance-action-link" href={`/service-requests/${request.id}`}>Open</Link></td>
+          </tr>)}</tbody>
+        </table>
+      </Card>
     </div>
   );
 }

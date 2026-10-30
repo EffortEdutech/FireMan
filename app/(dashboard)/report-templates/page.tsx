@@ -86,36 +86,12 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
         </p>
       </div>
 
-      <div className="workflow-stepper" aria-label="Report template setup workflow">
-        <div className="workflow-step workflow-step-current">
-          <span className="workflow-step-number">1</span>
-          <div><strong>Define template</strong><small>Create the report purpose and name.</small></div>
-        </div>
-        <div className="workflow-step">
-          <span className="workflow-step-number">2</span>
-          <div><strong>Configure sections</strong><small>Choose the technical content and fields.</small></div>
-        </div>
-        <div className="workflow-step">
-          <span className="workflow-step-number">3</span>
-          <div><strong>Preview</strong><small>Inspect the layout before use.</small></div>
-        </div>
-        <div className="workflow-step">
-          <span className="workflow-step-number">4</span>
-          <div><strong>Lock when used</strong><small>Issued reports keep their original template.</small></div>
-        </div>
-      </div>
+      <div className="register-summary"><strong>{templateRows.length} report templates</strong><span>{activeCount} active · {editableCount} editable · {lockedCount} locked or already used</span></div>
 
       {params?.created ? <SuccessState message="Report template created. It is now available when generating a report shell." /> : null}
       {params?.activated ? <SuccessState message="Report template activated. It is available for new report shells." /> : null}
       {params?.deactivated ? <SuccessState message="Report template deactivated. Existing reports still keep their selected template." /> : null}
       {params?.error ? <ErrorState title="Template not saved" message={errorMessage(params.error)} /> : null}
-
-      <div className="workflow-summary-grid">
-        <div className="workflow-summary-card"><span>Total templates</span><strong>{templateRows.length}</strong><small>Available configurations</small></div>
-        <div className="workflow-summary-card"><span>Active</span><strong>{activeCount}</strong><small>Available for new reports</small></div>
-        <div className="workflow-summary-card"><span>Editable</span><strong>{editableCount}</strong><small>Can still be changed</small></div>
-        <div className="workflow-summary-card"><span>Locked / in use</span><strong>{lockedCount}</strong><small>Protected from retroactive changes</small></div>
-      </div>
 
       <Card className="workflow-action-card">
         <div className="workflow-section-kicker">CONFIGURATION ACTION</div>

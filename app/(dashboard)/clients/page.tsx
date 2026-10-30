@@ -69,18 +69,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       <PageHeader title="Clients" description="Set up the organisations that own or manage the properties FAST services." />
-      <div className="workflow-stepper" aria-label="Records setup workflow">
-        <div className="workflow-step workflow-step-current"><span>1</span><div><strong>Client account</strong><small>Organisation and contact</small></div></div>
-        <div className="workflow-step"><span>2</span><div><strong>Sites</strong><small>Service locations</small></div></div>
-        <div className="workflow-step"><span>3</span><div><strong>Equipment</strong><small>Fire assets</small></div></div>
-        <div className="workflow-step"><span>4</span><div><strong>Maintenance</strong><small>Plan service work</small></div></div>
-      </div>
-      <div className="workflow-summary-grid" aria-label="Client register summary">
-        <div className="workflow-summary-card"><span>Active clients</span><strong>{activeClientCount}</strong><small>Available for new sites</small></div>
-        <div className="workflow-summary-card"><span>Inactive clients</span><strong>{inactiveClientCount}</strong><small>Historical accounts</small></div>
-        <div className="workflow-summary-card"><span>Setup sequence</span><strong>1 of 4</strong><small>Next: create service sites</small></div>
-        <div className="workflow-summary-card"><span>Purpose</span><strong>Accounts</strong><small>Owner and contact context</small></div>
-      </div>
+      <div className="register-summary"><strong>{activeClientCount} active clients</strong><span>{inactiveClientCount} inactive · create or review the organisation record below</span></div>
         {params?.created ? (
           <SuccessState message="Client created." />
         ) : null}
@@ -127,14 +116,6 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
           />
           {filteredClients.length > 0 ? (
           <>
-          <div className="record-grid" aria-label="Client accounts">
-            {filteredClients.map((client) => <Card className="record-card" key={client.id}>
-              <div className="record-card-heading"><div><span className="record-card-kicker">CLIENT ACCOUNT</span><h2>{client.name}</h2></div><span className={client.active ? "record-status record-status-active" : "record-status"}>{client.active ? "Active" : "Inactive"}</span></div>
-              <div className="record-card-facts"><div><span>Industry</span><strong>{client.industry ?? "Not set"}</strong></div><div><span>Registration</span><strong>{client.registration_no ?? "Not set"}</strong></div></div>
-              <div className="record-card-contact"><span>Primary contact</span><strong>{client.email ?? "Email not set"}</strong><small>{client.phone ?? "Phone not set"}</small></div>
-              <div className="record-card-next"><span>Next action</span><strong>{client.active ? "Add or review service sites for this client." : "Reactivate this account before planning new work."}</strong></div>
-            </Card>)}
-          </div>
           <div className="legacy-record-table">
           <Card className="table-scroll" style={{ padding: 0 }}>
             <table className="data-table">

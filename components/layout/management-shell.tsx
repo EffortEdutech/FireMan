@@ -23,7 +23,9 @@ export function ManagementShell({ children, currentUser, title, description }: M
       className="management-shell"
       style={{
         display: "grid",
+        height: "100vh",
         minHeight: "100vh",
+        overflow: "hidden",
         gridTemplateColumns: "minmax(180px, 240px) minmax(0, 1fr)"
       }}
     >

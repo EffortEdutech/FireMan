@@ -202,12 +202,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       <PageHeader title="Maintenance" description="Move planned work through technician delivery, evidence review, reporting, and closure." />
-      <div className="workflow-stepper" aria-label="Maintenance workflow">
-        <div className="workflow-step workflow-step-current"><span>1</span><div><strong>Schedule</strong><small>Assign visit and assets</small></div></div>
-        <div className="workflow-step"><span>2</span><div><strong>Field work</strong><small>Technician checklist</small></div></div>
-        <div className="workflow-step"><span>3</span><div><strong>Field review</strong><small>Validate evidence</small></div></div>
-        <div className="workflow-step"><span>4</span><div><strong>Report and close</strong><small>Issue and complete</small></div></div>
-      </div>
+      <div className="register-summary"><strong>Maintenance delivery queue</strong><span>Schedule work, monitor field completion, review evidence, and close issued work.</span></div>
       {params?.created ? (
         <SuccessState message="Maintenance plan and job created." />
       ) : null}

@@ -106,18 +106,7 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       <PageHeader title="Equipment" description="Build the technical asset register FAST uses for inspections, maintenance, reports, and customer records." />
-      <div className="workflow-stepper" aria-label="Equipment setup workflow">
-        <div className="workflow-step workflow-step-complete"><span>1</span><div><strong>Client and site</strong><small>Service location</small></div></div>
-        <div className="workflow-step workflow-step-current"><span>2</span><div><strong>Building and system</strong><small>Technical structure</small></div></div>
-        <div className="workflow-step"><span>3</span><div><strong>Equipment asset</strong><small>Asset and technical data</small></div></div>
-        <div className="workflow-step"><span>4</span><div><strong>Maintenance</strong><small>Inspection history</small></div></div>
-      </div>
-      <div className="workflow-summary-grid" aria-label="Equipment register summary">
-        <div className="workflow-summary-card"><span>Active assets</span><strong>{equipment?.filter((asset) => asset.status === "ACTIVE").length ?? 0}</strong><small>Available for jobs</small></div>
-        <div className="workflow-summary-card"><span>Categories</span><strong>{equipmentTypeOptions.length}</strong><small>Technical templates</small></div>
-        <div className="workflow-summary-card"><span>Out of service</span><strong>{equipment?.filter((asset) => asset.status === "OUT_OF_SERVICE").length ?? 0}</strong><small>Needs attention</small></div>
-        <div className="workflow-summary-card"><span>Next action</span><strong>Link assets</strong><small>Use them in maintenance plans</small></div>
-      </div>
+      <div className="register-summary"><strong>{equipment?.filter((asset) => asset.status === "ACTIVE").length ?? 0} active assets</strong><span>{equipmentTypeOptions.length} categories · search the register or open an asset record below</span></div>
       {params?.building ? (
         <SuccessState message="Building created." />
       ) : null}
@@ -203,14 +192,6 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
         </Card>
         {filteredEquipment.length > 0 ? (
         <>
-        <div className="record-grid" aria-label="Equipment register">
-          {filteredEquipment.map((asset) => <Card className="record-card" key={asset.id}>
-            <div className="record-card-heading"><div><span className="record-card-kicker">ASSET REGISTER</span><h2><Link href={`/equipment/${asset.id}`}>{asset.asset_code}</Link></h2></div><span className={asset.status === "ACTIVE" ? "record-status record-status-active" : "record-status"}>{statusLabel[asset.status] ?? asset.status}</span></div>
-            <div className="record-card-facts"><div><span>Equipment type</span><strong>{asset.equipment_types?.name ?? "Not set"}</strong></div><div><span>System</span><strong>{asset.systems?.name ?? "Not set"}</strong></div></div>
-            <div className="record-card-contact"><span>Building / site</span><strong>{asset.buildings?.name ?? "Not set"} · {asset.buildings?.sites?.name ?? "Not set"}</strong><small>{[asset.brand, asset.model, asset.capacity].filter(Boolean).join(" / ") || asset.location_description || "Details not set"}</small><small>Technical data: {Object.keys((asset.technical_data && typeof asset.technical_data === "object" && !Array.isArray(asset.technical_data) ? asset.technical_data : {}) as Record<string, unknown>).length} fields recorded</small></div>
-            <div className="record-card-next"><span>Next action</span><strong>Open the asset record to add documents, QR label, and inspection history.</strong></div>
-          </Card>)}
-        </div>
         <div className="legacy-record-table">
         <Card className="table-scroll" style={{ padding: 0 }}>
           <table className="data-table">
