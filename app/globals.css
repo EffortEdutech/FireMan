@@ -1602,6 +1602,34 @@ select {
   color: var(--surface);
 }
 
+.dashboard-command-page { gap: 1rem; }
+.dashboard-command-header { align-items: end; display: flex; gap: 1rem; justify-content: space-between; }
+.dashboard-command-header h1 { font-size: 1.8rem; margin: 0; }
+.dashboard-command-header p:not(.page-kicker) { color: var(--muted); margin: 0.35rem 0 0; }
+.dashboard-command-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.dashboard-priority-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.dashboard-priority-metric { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; color: inherit; display: grid; gap: 0.2rem; min-width: 0; padding: 0.8rem; text-decoration: none; }
+.dashboard-priority-metric:hover, .dashboard-priority-metric:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent); }
+.dashboard-priority-metric span { color: var(--muted); font-size: 0.76rem; font-weight: 800; line-height: 1.2; }
+.dashboard-priority-metric strong { font-size: 1.7rem; line-height: 1; }
+.dashboard-priority-metric small { color: var(--muted); font-size: 0.72rem; line-height: 1.25; }
+.dashboard-priority-metric-alert { border-color: #edc5bf; }
+.dashboard-priority-metric-alert strong { color: #a33a2b; }
+.dashboard-secondary-workspaces { border-top: 1px solid var(--border); display: grid; gap: 0.75rem; padding-top: 1rem; }
+.dashboard-secondary-workspaces h2 { font-size: 1rem; margin: 0; }
+.dashboard-secondary-workspaces p { color: var(--muted); font-size: 0.875rem; margin: 0.3rem 0 0; }
+
+@media (max-width: 1100px) {
+  .dashboard-priority-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .dashboard-command-header { align-items: flex-start; flex-direction: column; }
+  .dashboard-command-actions { width: 100%; }
+  .dashboard-command-actions > * { flex: 1 1 auto; text-align: center; }
+  .dashboard-priority-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 .dashboard-panel {
   min-width: 0;
 }
