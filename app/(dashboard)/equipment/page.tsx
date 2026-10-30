@@ -47,23 +47,35 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
 
   const params = await searchParams;
   const supabase = await createClient();
+  const selectedStatus = equipmentFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "ACTIVE" : "ACTIVE";
+  const selectedSort = ["created_desc", "asset_asc", "type"].includes(params?.sort ?? "") ? params?.sort ?? "created_desc" : "created_desc";
+  const searchTerm = (params?.search ?? "").trim().toLowerCase();
+  const pageSize = 50;
+  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
+  const equipmentQuery = supabase
+    .from("equipment")
+    .select("id,asset_code,serial_number,brand,model,capacity,location_description,installation_date,technical_data,status,created_at,buildings(name,sites(name)),systems(name),equipment_types(id,name,code)", { count: "exact" })
+    .order(selectedSort === "asset_asc" ? "asset_code" : "created_at", { ascending: selectedSort === "asset_asc" })
+    .range((requestedPage - 1) * pageSize, requestedPage * pageSize - 1);
+  if (selectedStatus !== "all") equipmentQuery.eq("status", selectedStatus as never);
+  if (searchTerm) {
+    const safeSearch = searchTerm.replaceAll(",", " ").replaceAll("(", " ").replaceAll(")", "");
+    equipmentQuery.or(["asset_code", "serial_number", "brand", "model", "capacity", "location_description"].map((field) => `${field}.ilike.%${safeSearch}%`).join(","));
+  }
   const [
     { data: sites, error: sitesError },
     { data: buildings, error: buildingsError },
     { data: systems, error: systemsError },
     { data: equipmentTypes, error: typesError },
     { data: technicalFields, error: fieldsError },
-    { data: equipment, error: equipmentError }
+    { data: equipment, error: equipmentError, count: equipmentCount }
   ] = await Promise.all([
     supabase.from("sites").select("id,name,clients(name)").eq("active", true).order("name", { ascending: true }),
     supabase.from("buildings").select("id,name,code,active,sites(name,clients(name))").eq("active", true).order("name", { ascending: true }),
     supabase.from("systems").select("id,building_id,name,code,system_type,active,buildings(name,sites(name))").eq("active", true).order("name", { ascending: true }),
     supabase.from("equipment_types").select("id,name,code,system_type").or(`organisation_id.is.null,organisation_id.eq.${profile.organisation_id}`).eq("active", true).order("name", { ascending: true }),
     supabase.from("equipment_type_fields").select("id,equipment_type_id,field_key,label,field_type,unit,options,required,customer_visible,sort_order").eq("active", true).order("sort_order", { ascending: true }),
-    supabase
-      .from("equipment")
-      .select("id,asset_code,serial_number,brand,model,capacity,location_description,installation_date,technical_data,status,created_at,buildings(name,sites(name)),systems(name),equipment_types(id,name,code)")
-      .order("created_at", { ascending: false })
+    equipmentQuery,
   ]);
 
   const siteOptions =
@@ -88,38 +100,26 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
     })) ?? [];
   const equipmentTypeOptions =
     equipmentTypes?.map((type) => ({ id: type.id, name: type.name, code: type.code, fields: (technicalFields ?? []).filter((field) => field.equipment_type_id === type.id) })) ?? [];
-  const selectedStatus = equipmentFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "ACTIVE" : "ACTIVE";
-  const searchTerm = (params?.search ?? "").trim().toLowerCase();
-  const equipmentCounts = new Map<string, number>();
-  const filteredEquipment =
-    equipment?.filter((asset) => {
-      equipmentCounts.set(asset.status, (equipmentCounts.get(asset.status) ?? 0) + 1);
-
-      const searchable = [asset.asset_code, asset.serial_number, asset.brand, asset.model, asset.capacity, asset.location_description, asset.buildings?.name, asset.buildings?.sites?.name, asset.systems?.name, asset.equipment_types?.name, asset.equipment_types?.code].filter(Boolean).join(" ").toLowerCase();
-      return (selectedStatus === "all" || asset.status === selectedStatus) && (!searchTerm || searchable.includes(searchTerm));
-    }) ?? [];
+  const filteredEquipment = equipment ?? [];
+  const [{ count: activeEquipmentCount }, { count: outOfServiceEquipmentCount }, { count: retiredEquipmentCount }, { count: allEquipmentCount }] = await Promise.all([
+    supabase.from("equipment").select("id", { count: "exact", head: true }).eq("status", "ACTIVE"),
+    supabase.from("equipment").select("id", { count: "exact", head: true }).eq("status", "OUT_OF_SERVICE"),
+    supabase.from("equipment").select("id", { count: "exact", head: true }).eq("status", "RETIRED"),
+    supabase.from("equipment").select("id", { count: "exact", head: true })
+  ]);
   const filterCountByKey = (key: string) => {
-    if (key === "all") {
-      return equipment?.length ?? 0;
-    }
-
-    return equipmentCounts.get(key) ?? 0;
+    if (key === "all") return allEquipmentCount ?? 0;
+    if (key === "ACTIVE") return activeEquipmentCount ?? 0;
+    if (key === "OUT_OF_SERVICE") return outOfServiceEquipmentCount ?? 0;
+    return retiredEquipmentCount ?? 0;
   };
-  const selectedSort = ["created_desc", "asset_asc", "type"].includes(params?.sort ?? "") ? params?.sort ?? "created_desc" : "created_desc";
-  const sortedEquipment = [...filteredEquipment].sort((left, right) => {
-    if (selectedSort === "asset_asc") return left.asset_code.localeCompare(right.asset_code);
-    if (selectedSort === "type") return (left.equipment_types?.name ?? "").localeCompare(right.equipment_types?.name ?? "");
-    return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
-  });
-  const pageSize = 50;
-  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
-  const page = Math.min(requestedPage, Math.max(1, Math.ceil(sortedEquipment.length / pageSize)));
-  const pagedEquipment = sortedEquipment.slice((page - 1) * pageSize, page * pageSize);
+  const page = requestedPage;
+  const pagedEquipment = filteredEquipment;
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       <PageHeader title="Equipment" description="Build the technical asset register FAST uses for inspections, maintenance, reports, and customer records." />
-      <div className="register-summary"><strong>{equipment?.filter((asset) => asset.status === "ACTIVE").length ?? 0} active assets</strong><span>{equipmentTypeOptions.length} categories · search the register or open an asset record below</span></div>
+      <div className="register-summary"><strong>{activeEquipmentCount ?? 0} active assets</strong><span>{equipmentTypeOptions.length} categories · search the register or open an asset record below</span></div>
       {params?.building ? (
         <SuccessState message="Building created." />
       ) : null}
@@ -257,7 +257,7 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
           </table>
         </Card>
         </div>
-        <PaginationControls basePath="/equipment" page={page} pageSize={pageSize} query={{ status: selectedStatus, search: params?.search, sort: selectedSort }} total={sortedEquipment.length} />
+        <PaginationControls basePath="/equipment" page={page} pageSize={pageSize} query={{ status: selectedStatus, search: params?.search, sort: selectedSort }} total={equipmentCount ?? 0} />
         </>
         ) : (
           <EmptyState title="No assets in this view" message="Choose another asset status filter." />
