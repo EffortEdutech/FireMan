@@ -1,20 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 type ActivityKind = "navigation" | "submission";
 
 export function ActivityFeedback() {
   const pathname = usePathname();
-  const [activity, setActivity] = useState<{ kind: ActivityKind; pathname: string } | null>(null);
+  const searchParams = useSearchParams();
+  const routeKey = `${pathname}?${searchParams.toString()}`;
+  const [activity, setActivity] = useState<{ kind: ActivityKind; routeKey: string } | null>(null);
 
   useEffect(() => {
     let clearTimer: number | null = null;
 
     function start(nextKind: ActivityKind) {
       if (clearTimer !== null) window.clearTimeout(clearTimer);
-      setActivity({ kind: nextKind, pathname: window.location.pathname });
+      setActivity({ kind: nextKind, routeKey: `${window.location.pathname}?${window.location.search.slice(1)}` });
       clearTimer = window.setTimeout(() => setActivity(null), 15000);
     }
 
@@ -52,7 +54,7 @@ export function ActivityFeedback() {
     };
   }, []);
 
-  const active = activity !== null && activity.pathname === pathname;
+  const active = activity !== null && activity.routeKey === routeKey;
   if (!active || !activity) return null;
 
   return (

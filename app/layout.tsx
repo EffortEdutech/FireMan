@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { ActivityFeedback } from "@/components/ui/activity-feedback";
 import { tenantBrand } from "@/lib/tenant/brand";
@@ -20,7 +21,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body><ActivityFeedback />{children}</body>
+      <body><Suspense fallback={null}><ActivityFeedback /></Suspense>{children}</body>
     </html>
   );
 }
