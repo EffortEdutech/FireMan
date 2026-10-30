@@ -394,6 +394,14 @@ select {
   border-color: var(--accent);
 }
 
+.operations-queue-tab b {
+  background: var(--background);
+  border-radius: 999px;
+  color: var(--foreground);
+  font-size: 0.72rem;
+  padding: 0.15rem 0.45rem;
+}
+
 .operations-summary {
   align-items: stretch;
   display: grid;
@@ -406,6 +414,27 @@ select {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.85rem;
+}
+
+.operations-summary-card {
+  display: grid;
+  gap: 0.2rem;
+  text-decoration: none;
+}
+
+.operations-summary-card small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.operations-summary-card:hover,
+.operations-summary-card:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 2px 10px rgb(21 61 92 / 0.1);
+}
+
+.operations-summary-card-alert {
+  border-color: color-mix(in srgb, #b42318 38%, var(--border));
 }
 
 .operations-summary-card strong {
@@ -463,6 +492,12 @@ select {
   gap: 0.4rem;
   justify-items: end;
   white-space: nowrap;
+}
+
+.operations-item-open {
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .operations-empty {

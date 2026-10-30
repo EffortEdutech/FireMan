@@ -60,6 +60,13 @@ export function OperationsInbox({ requests, jobs, reports, now }: OperationsInbo
   const waiting = activeRequests.filter((request) => request.status === "NEEDS_CUSTOMER_INFO").length;
   const unassigned = activeRequests.filter((request) => !request.next_action).length;
   const overdue = activeRequests.filter((request) => new Date(now).getTime() - new Date(request.updated_at).getTime() > 86_400_000).length;
+  const queueCounts = {
+    newRequests: activeRequests.filter((request) => request.status === "NEW").length,
+    triage: activeRequests.filter((request) => request.status === "TRIAGE" || request.status === "NEEDS_CUSTOMER_INFO").length,
+    quotations: activeRequests.filter((request) => ["QUOTE_PREPARATION", "AWAITING_CUSTOMER_DECISION"].includes(request.status)).length,
+    fieldReview: jobs.filter((job) => job.status === "SUBMITTED").length,
+    reports: reports.filter((report) => ["GENERATED", "REVIEWED"].includes(report.status)).length
+  };
   const workItems = [
     ...activeRequests.map((request) => ({
       href: `/service-requests/${request.id}`,
@@ -102,7 +109,7 @@ export function OperationsInbox({ requests, jobs, reports, now }: OperationsInbo
         <div>
           <p className="page-kicker">FAST OPERATIONS</p>
           <h1 id="operations-title" style={{ margin: 0, fontSize: "1.75rem", lineHeight: 1.2 }}>Operations Inbox</h1>
-          <p style={{ color: "var(--muted)", margin: "0.5rem 0 0" }}>Move customer requests, field work, and client delivery forward from one place.</p>
+          <p style={{ color: "var(--muted)", margin: "0.5rem 0 0" }}>Start here to see what needs action, who owns it, and what should happen next.</p>
         </div>
         <div className="operations-toolbar-actions">
           <Link className="dashboard-action-link" href="/service-requests">All service requests</Link>
@@ -111,23 +118,23 @@ export function OperationsInbox({ requests, jobs, reports, now }: OperationsInbo
       </div>
 
       <div className="operations-summary" aria-label="Operations summary">
-        <div className="operations-summary-card"><span>Urgent</span><strong>{urgent}</strong></div>
-        <div className="operations-summary-card"><span>Overdue response</span><strong>{overdue}</strong></div>
-        <div className="operations-summary-card"><span>Waiting for customer</span><strong>{waiting}</strong></div>
-        <div className="operations-summary-card"><span>Needs owner</span><strong>{unassigned}</strong></div>
+        <Link className="operations-summary-card operations-summary-card-alert" href="/service-requests?urgency=URGENT"><span>Urgent requests</span><strong>{urgent}</strong><small>Needs priority action</small></Link>
+        <Link className="operations-summary-card" href="/service-requests?overdue=true"><span>Overdue response</span><strong>{overdue}</strong><small>Older than target</small></Link>
+        <Link className="operations-summary-card" href="/service-requests?status=NEEDS_CUSTOMER_INFO"><span>Waiting for customer</span><strong>{waiting}</strong><small>Follow up or hold</small></Link>
+        <Link className="operations-summary-card" href="/service-requests?owner=unassigned"><span>Needs owner</span><strong>{unassigned}</strong><small>Assign next action</small></Link>
       </div>
 
       <Card>
         <div className="dashboard-section-heading">
-          <div><h2>Needs action</h2><p>Prioritized by urgency, then by the oldest outstanding work.</p></div>
+          <div><p className="page-kicker">CURRENT WORK QUEUE</p><h2>Needs action now</h2><p>Prioritized by urgency, then by the oldest outstanding work.</p></div>
           <span style={{ color: "var(--muted)", fontSize: "0.875rem" }}>{workItems.length} open item{workItems.length === 1 ? "" : "s"}</span>
         </div>
         <div className="operations-queue-tabs" aria-label="Operations queues">
-          <Link className="operations-queue-tab" href="/service-requests?status=NEW">New requests</Link>
-          <Link className="operations-queue-tab" href="/service-requests?status=TRIAGE">Triage</Link>
-          <Link className="operations-queue-tab" href="/service-requests?status=QUOTE_PREPARATION">Quotations</Link>
-          <Link className="operations-queue-tab" href="/maintenance?status=SUBMITTED">Field review</Link>
-          <Link className="operations-queue-tab" href="/reports?status=active">Reports</Link>
+          <Link className="operations-queue-tab" href="/service-requests?status=NEW">New requests <b>{queueCounts.newRequests}</b></Link>
+          <Link className="operations-queue-tab" href="/service-requests?status=TRIAGE">Triage <b>{queueCounts.triage}</b></Link>
+          <Link className="operations-queue-tab" href="/service-requests?status=QUOTE_PREPARATION">Quotations <b>{queueCounts.quotations}</b></Link>
+          <Link className="operations-queue-tab" href="/maintenance?status=SUBMITTED">Field review <b>{queueCounts.fieldReview}</b></Link>
+          <Link className="operations-queue-tab" href="/reports?status=active">Reports <b>{queueCounts.reports}</b></Link>
         </div>
         <div className="operations-worklist" style={{ marginTop: "1rem" }}>
           {workItems.length ? workItems.map((item) => (
@@ -137,7 +144,7 @@ export function OperationsInbox({ requests, jobs, reports, now }: OperationsInbo
                 <span className="operations-item-meta">{item.kind} · {item.detail}</span>
                 <span className="operations-item-next"><strong>Next:</strong> {item.next}</span>
               </div>
-              <div className="operations-item-side"><StatusBadge>{item.urgency}</StatusBadge><span className="operations-item-meta">{item.age}</span></div>
+              <div className="operations-item-side"><StatusBadge>{item.urgency}</StatusBadge><span className="operations-item-meta">{item.age}</span><span className="operations-item-open">Open →</span></div>
             </Link>
           )) : <p className="operations-empty">No open operational items. New work will appear here.</p>}
         </div>
