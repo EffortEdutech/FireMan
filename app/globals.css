@@ -1242,6 +1242,111 @@ select {
   font-size: 0.875rem;
 }
 
+.technician-job-hero {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.technician-job-objective {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0.9rem 0 0;
+  max-width: 42rem;
+}
+
+.technician-stepper {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.technician-step {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0.65rem 0.75rem;
+}
+
+.technician-step span {
+  align-items: center;
+  background: var(--background);
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 1.5rem;
+  height: 1.5rem;
+  justify-content: center;
+  width: 1.5rem;
+}
+
+.technician-step-current {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border-color: var(--accent);
+  color: var(--foreground);
+}
+
+.technician-step-current span,
+.technician-step-complete span {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.technician-step-complete {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  color: var(--foreground);
+}
+
+.technician-tabs {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+}
+
+.technician-tabs a {
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.7rem 0.8rem;
+  white-space: nowrap;
+}
+
+.technician-tabs a:hover,
+.technician-tabs a:focus-visible,
+.technician-tabs .technician-tab-active {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+
+.technician-section-heading {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 760px) {
+  .technician-job-hero {
+    flex-direction: column;
+  }
+
+  .technician-stepper {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .technician-job-meta {
   align-items: center;
   display: flex;

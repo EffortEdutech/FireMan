@@ -141,10 +141,12 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
       ? "No assets assigned"
       : `${completedAssetCount}/${assignedAssetCount} complete`;
   const nextChecklistAsset = jobEquipment?.find((asset) => !inspectionsByAssetId.has(asset.id));
+  const workflowStep = job.status === "SCHEDULED" ? 1 : job.status === "SUBMITTED" ? 4 : assignedAssetsComplete ? 3 : 2;
+  const workflowSteps = ["Start job", "Complete checklist", "Capture findings", "Submit for review"];
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "flex-start" }}>
+      <div className="technician-job-hero">
         <div>
           <Link href="/technician/today" style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
             Back to today
@@ -153,9 +155,25 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
           <div style={{ color: "var(--muted)", marginTop: 4 }}>
             {job.clients?.name ?? "Client not set"} / {job.sites?.name ?? "Site not set"}
           </div>
+          <p className="technician-job-objective">Objective: complete the assigned inspection evidence and submit the field result for FAST management review.</p>
         </div>
         <StatusBadge>{jobStatusLabel[job.status] ?? job.status}</StatusBadge>
       </div>
+
+      <nav aria-label="Technician workflow" className="technician-stepper">
+        {workflowSteps.map((step, index) => {
+          const stepNumber = index + 1;
+          const state = stepNumber < workflowStep ? "complete" : stepNumber === workflowStep ? "current" : "upcoming";
+          return <a className={`technician-step technician-step-${state}`} href={stepNumber === 2 ? "#asset-checklists" : stepNumber === 3 ? "#field-findings" : stepNumber === 4 ? "#submit-review" : "#current-action"} key={step}><span>{state === "complete" ? "✓" : stepNumber}</span>{step}</a>;
+        })}
+      </nav>
+
+      <nav aria-label="Job sections" className="technician-tabs">
+        <a className="technician-tab-active" href="#current-action">Current task</a>
+        <a href="#asset-checklists">Checklist</a>
+        <a href="#field-findings">Findings</a>
+        <a href="#submit-review">Submit</a>
+      </nav>
 
       {query?.started ? (
         <SuccessState message="Job started." />
@@ -203,7 +221,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
       </Card>
 
       <Card>
-        <h2 style={{ fontSize: "1rem", margin: "0 0 1rem" }}>Next field action</h2>
+        <div id="current-action" className="technician-section-heading"><div><span className="record-card-kicker">CURRENT TASK</span><h2 style={{ fontSize: "1rem", margin: "0.25rem 0 0" }}>What to do now</h2></div><span className="record-status">Step {workflowStep} of 4</span></div>
         {job.status === "SCHEDULED" ? (
           <div style={{ display: "grid", gap: "0.75rem" }}>
             <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
@@ -234,10 +252,10 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
         {job.status === "IN_PROGRESS" && !nextChecklistAsset && !assignedAssetsComplete ? (
           <div style={{ display: "grid", gap: "0.75rem" }}>
             <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
-              Continue the checklist in progress, then complete it before submitting.
+              Continue the checklist below, save every required result, then complete it here.
             </div>
             <a href="#asset-checklists" style={{ color: "var(--accent)", fontWeight: 700 }}>
-              Go to checklist
+              Open checklist ↓
             </a>
           </div>
         ) : null}
@@ -262,12 +280,12 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
       </Card>
 
       <Card>
-        <h2 style={{ fontSize: "1rem", margin: "0 0 1rem" }}>Field workflow</h2>
+        <div className="technician-section-heading"><div><span className="record-card-kicker">WORK AREA</span><h2 style={{ fontSize: "1rem", margin: "0.25rem 0 0" }}>Complete the work</h2></div><span className="record-status">Follow the stepper</span></div>
         <div style={{ borderBottom: "1px solid var(--border)", marginBottom: "1rem", paddingBottom: "1rem" }}>
           <h3 style={{ fontSize: "0.95rem", margin: "0 0 0.75rem" }}>1. Start field work</h3>
           {job.status === "SCHEDULED" ? (
             <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
-              Use the Next field action above to start this job.
+              Use the Start job button in the Current task section.
             </div>
           ) : null}
           {job.status === "IN_PROGRESS" ? (
@@ -388,7 +406,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
                   ) : null}
                   {job.status === "IN_PROGRESS" && !inspection ? (
                     <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: "0.75rem" }}>
-                      Use the Next field action above to start the next pending checklist.
+                      Use Start Checklist in the Current task section to begin this asset.
                     </div>
                   ) : null}
                   {job.status === "SCHEDULED" && !inspection ? (
@@ -406,7 +424,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
                       <input name="inspection_id" type="hidden" value={inspection.id} />
                       <input name="job_equipment_id" type="hidden" value={asset.id} />
                       <input name="job_id" type="hidden" value={job.id} />
-                      <input name="next" type="hidden" value={next} />
+                      <input name="next" type="hidden" value={`${next}#field-findings`} />
                       <Button disabled={!canCompleteChecklist} type="submit" variant="secondary" pendingLabel="Completing checklist…">
                         Complete Checklist
                       </Button>
@@ -426,7 +444,7 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
         )}
       </Card>
 
-      <Card>
+      <Card id="field-findings">
         <h2 style={{ fontSize: "1rem", margin: "0 0 1rem" }}>3. Capture findings</h2>
         <form action={addFinding} style={{ display: "grid", gap: "1rem" }}>
           <input name="job_id" type="hidden" value={job.id} />
@@ -474,17 +492,24 @@ export default async function TechnicianJobPage({ params, searchParams }: Techni
         </div>
       </Card>
 
-      <Card>
-        <h2 style={{ fontSize: "1rem", margin: "0 0 1rem" }}>4. Submit for management review</h2>
+      <Card id="submit-review">
+        <div className="technician-section-heading"><div><span className="record-card-kicker">FINAL STEP</span><h2 style={{ fontSize: "1rem", margin: "0.25rem 0 0" }}>Submit for management review</h2></div><span className="record-status">Step 4 of 4</span></div>
         {job.status === "IN_PROGRESS" ? (
           <div style={{ display: "grid", gap: "0.75rem" }}>
             <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
-              Submit from the Next field action above when field evidence is complete. Submitted jobs are locked for management review.
+              When the checklist is complete, submit the field evidence here. The job will then be locked for management review.
             </div>
             {!assignedAssetsComplete ? (
               <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
                 Complete assigned asset checklists before submitting this job.
               </div>
+            ) : null}
+            {assignedAssetsComplete ? (
+              <form action={submitJob}>
+                <input name="job_id" type="hidden" value={job.id} />
+                <input name="next" type="hidden" value={next} />
+                <Button type="submit" pendingLabel="Submitting for review…">Submit for management review</Button>
+              </form>
             ) : null}
           </div>
         ) : null}
