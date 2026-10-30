@@ -23,6 +23,7 @@ type MaintenancePageProps = {
     status?: string;
     page?: string;
     sort?: string;
+    search?: string;
   }>;
 };
 
@@ -68,6 +69,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
   const selectedStatus = jobStatusFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
   const pageSize = 50;
   const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
+  const searchTerm = (params?.search ?? "").trim();
   const selectedSort = ["scheduled_asc", "status", "client"].includes(params?.sort ?? "") ? params?.sort ?? "scheduled_asc" : "scheduled_asc";
   const jobsQuery = supabase
     .from("maintenance_jobs")
@@ -76,6 +78,10 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
     .range((requestedPage - 1) * pageSize, requestedPage * pageSize - 1);
   if (selectedStatus === "active") jobsQuery.in("status", activeJobStatusValues);
   else if (selectedStatus !== "all") jobsQuery.eq("status", selectedStatus as never);
+  if (searchTerm) {
+    const safeSearch = searchTerm.replaceAll(",", " ").replaceAll("(", " ").replaceAll(")", "");
+    jobsQuery.ilike("job_number", `%${safeSearch}%`);
+  }
   const [
     { data: clients },
     { data: sites },
@@ -256,6 +262,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
         />
         <form className="table-toolbar" method="get">
           <input name="status" type="hidden" value={selectedStatus} />
+          <label>Find jobs<input name="search" defaultValue={params?.search ?? ""} placeholder="Job number" /></label>
           <label>Sort jobs<select name="sort" defaultValue={selectedSort}><option value="scheduled_asc">Scheduled date</option><option value="status">Status</option><option value="client">Client</option></select></label>
           <Button type="submit" variant="secondary">Apply sort</Button>
         </form>
@@ -407,7 +414,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
           </table>
         </Card>
         </div>
-        <PaginationControls basePath="/maintenance" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={jobCount ?? 0} />
+        <PaginationControls basePath="/maintenance" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort, search: params?.search }} total={jobCount ?? 0} />
         </>
         ) : (
           <EmptyState title="No jobs in this view" message="Choose another status filter or create a new maintenance job." />

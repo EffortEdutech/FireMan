@@ -24,6 +24,7 @@ type ReportsPageProps = {
     status?: string;
     page?: string;
     sort?: string;
+    search?: string;
   }>;
 };
 
@@ -58,6 +59,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const selectedStatus = reportStatusFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
   const pageSize = 50;
   const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
+  const searchTerm = (params?.search ?? "").trim();
   const selectedSort = ["generated_desc", "status", "client"].includes(params?.sort ?? "") ? params?.sort ?? "generated_desc" : "generated_desc";
   const reportsQuery = supabase
     .from("reports")
@@ -66,6 +68,10 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
     .range((requestedPage - 1) * pageSize, requestedPage * pageSize - 1);
   if (selectedStatus === "active") reportsQuery.in("status", activeReportStatusValues);
   else if (selectedStatus !== "all") reportsQuery.eq("status", selectedStatus as never);
+  if (searchTerm) {
+    const safeSearch = searchTerm.replaceAll(",", " ").replaceAll("(", " ").replaceAll(")", "");
+    reportsQuery.or(["report_number", "title"].map((field) => `${field}.ilike.%${safeSearch}%`).join(","));
+  }
   const [{ data: jobs }, { data: reports, error: reportsError, count: reportCount }, { data: templates, error: templatesError }] = await Promise.all([
     supabase
       .from("maintenance_jobs")
@@ -223,6 +229,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
         />
         <form className="table-toolbar" method="get">
           <input name="status" type="hidden" value={selectedStatus} />
+          <label>Find reports<input name="search" defaultValue={params?.search ?? ""} placeholder="Report number or title" /></label>
           <label>Sort reports<select name="sort" defaultValue={selectedSort}><option value="generated_desc">Latest generated</option><option value="status">Status</option><option value="client">Client</option></select></label>
           <Button type="submit" variant="secondary">Apply sort</Button>
         </form>
@@ -339,7 +346,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
           </table>
         </Card>
         </div>
-        <PaginationControls basePath="/reports" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={reportCount ?? 0} />
+        <PaginationControls basePath="/reports" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort, search: params?.search }} total={reportCount ?? 0} />
         </>
         ) : (
           <EmptyState title="No reports in this view" message="Choose another status filter or generate a new report shell." />

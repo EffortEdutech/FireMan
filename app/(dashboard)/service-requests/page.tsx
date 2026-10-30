@@ -32,7 +32,7 @@ function overdueCutoffIso() {
   return new Date(Date.now() - 86_400_000).toISOString();
 }
 
-export default async function ServiceRequestsPage({ searchParams }: { searchParams: Promise<{ error?: string; "intake-error"?: string; "intake-updated"?: string; phase?: string; urgency?: string; overdue?: string; owner?: string; page?: string; sort?: string }> }) {
+export default async function ServiceRequestsPage({ searchParams }: { searchParams: Promise<{ error?: string; "intake-error"?: string; "intake-updated"?: string; phase?: string; urgency?: string; overdue?: string; owner?: string; page?: string; sort?: string; search?: string }> }) {
   const profile = await requireProfile();
   if (!canAccessManagement(profile.role)) redirect("/dashboard");
   const params = await searchParams;
@@ -40,6 +40,7 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
   const supabase = await createClient();
   const pageSize = 50;
   const requestedPage = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
+  const searchTerm = (params.search ?? "").trim();
   const selectedSort = ["updated_desc", "urgency_desc", "reference_asc"].includes(params.sort ?? "") ? params.sort ?? "updated_desc" : "updated_desc";
   const selectedPhaseDefinition = requestPhases.find((phase) => phase.key === selectedPhase) ?? requestPhases[0];
   const requestQuery = supabase.from("service_requests")
@@ -51,6 +52,10 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
   if (params.urgency === "URGENT") requestQuery.eq("urgency", "URGENT");
   if (params.overdue === "true") requestQuery.lt("updated_at", overdueCutoffIso());
   if (params.owner === "unassigned") requestQuery.is("next_action", null);
+  if (searchTerm) {
+    const safeSearch = searchTerm.replaceAll(",", " ").replaceAll("(", " ").replaceAll(")", "");
+    requestQuery.or(["request_reference", "title", "requester_name", "requester_email", "requester_company"].map((field) => `${field}.ilike.%${safeSearch}%`).join(","));
+  }
   const { data: requests, error, count: requestCount } = await requestQuery;
   const clientIds = [...new Set(requests?.map((request) => request.client_id).filter((id): id is string => Boolean(id)) ?? [])];
   const siteIds = [...new Set(requests?.map((request) => request.site_id).filter((id): id is string => Boolean(id)) ?? [])];
@@ -71,7 +76,7 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
   const phaseCount = (phase: (typeof requestPhases)[number]) => phaseCounts.get(phase.key) ?? 0;
   const page = requestedPage;
   const pagedRequests = visibleRequests;
-  const paginationQuery = { phase: params.phase, urgency: params.urgency, overdue: params.overdue, owner: params.owner, sort: selectedSort };
+  const paginationQuery = { phase: params.phase, urgency: params.urgency, overdue: params.overdue, owner: params.owner, sort: selectedSort, search: params.search };
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -94,6 +99,7 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
         {params.urgency ? <input name="urgency" type="hidden" value={params.urgency} /> : null}
         {params.overdue ? <input name="overdue" type="hidden" value={params.overdue} /> : null}
         {params.owner ? <input name="owner" type="hidden" value={params.owner} /> : null}
+        <label>Find requests<input name="search" defaultValue={params.search ?? ""} placeholder="Reference, title, requester" /></label>
         <label>Sort requests<select name="sort" defaultValue={selectedSort}><option value="updated_desc">Latest update</option><option value="urgency_desc">Urgency</option><option value="reference_asc">Reference</option></select></label>
         <Button type="submit" variant="secondary">Apply sort</Button>
       </form>
