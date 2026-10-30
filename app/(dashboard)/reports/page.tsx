@@ -44,6 +44,7 @@ const reportStatusFilters = [
 ];
 
 const activeReportStatuses = new Set(["GENERATED", "REVIEWED"]);
+const activeReportStatusValues = ["GENERATED", "REVIEWED"] as const;
 
 export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const profile = await requireProfile();
@@ -54,16 +55,24 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
 
   const params = await searchParams;
   const supabase = await createClient();
-  const [{ data: jobs }, { data: reports, error: reportsError }, { data: templates, error: templatesError }] = await Promise.all([
+  const selectedStatus = reportStatusFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
+  const pageSize = 50;
+  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
+  const selectedSort = ["generated_desc", "status", "client"].includes(params?.sort ?? "") ? params?.sort ?? "generated_desc" : "generated_desc";
+  const reportsQuery = supabase
+    .from("reports")
+    .select("id,job_id,report_number,title,status,generated_at,maintenance_jobs(job_number,clients(name),sites(name)),report_templates(name)", { count: "exact" })
+    .order(selectedSort === "status" ? "status" : "created_at", { ascending: selectedSort === "status" })
+    .range((requestedPage - 1) * pageSize, requestedPage * pageSize - 1);
+  if (selectedStatus === "active") reportsQuery.in("status", activeReportStatusValues);
+  else if (selectedStatus !== "all") reportsQuery.eq("status", selectedStatus as never);
+  const [{ data: jobs }, { data: reports, error: reportsError, count: reportCount }, { data: templates, error: templatesError }] = await Promise.all([
     supabase
       .from("maintenance_jobs")
       .select("id,job_number,scheduled_date,clients(name),sites(name)")
       .eq("status", "UNDER_REVIEW")
       .order("scheduled_date", { ascending: false }),
-    supabase
-      .from("reports")
-      .select("id,job_id,report_number,title,status,generated_at,maintenance_jobs(job_number,clients(name),sites(name)),report_templates(name)")
-      .order("created_at", { ascending: false }),
+    reportsQuery,
     supabase
       .from("report_templates")
       .select("id,name,description,is_default,layout")
@@ -126,47 +135,31 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const reportableJobs = jobs?.filter((job) => !reportedJobIds.has(job.id)) ?? [];
   const sortedTemplates = templates ?? [];
   const defaultTemplateId = sortedTemplates.find((template) => template.is_default)?.id ?? sortedTemplates[0]?.id ?? "";
-  const selectedStatus = reportStatusFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "active" : "active";
-  const reportCounts = new Map<string, number>();
-  const filteredReports =
-    reports?.filter((report) => {
-      reportCounts.set(report.status, (reportCounts.get(report.status) ?? 0) + 1);
-
-      if (selectedStatus === "all") {
-        return true;
-      }
-
-      if (selectedStatus === "active") {
-        return activeReportStatuses.has(report.status);
-      }
-
-      return report.status === selectedStatus;
-    }) ?? [];
-  const activeReportCount = reports?.filter((report) => activeReportStatuses.has(report.status)).length ?? 0;
-  const generatedReportCount = reports?.filter((report) => report.status === "GENERATED").length ?? 0;
-  const reviewedReportCount = reports?.filter((report) => report.status === "REVIEWED").length ?? 0;
-  const issuedReportCount = reports?.filter((report) => report.status === "ISSUED").length ?? 0;
+  const [{ count: activeReportCountRaw }, { count: generatedReportCountRaw }, { count: reviewedReportCountRaw }, { count: issuedReportCountRaw }, { count: allReportCountRaw }] = await Promise.all([
+    supabase.from("reports").select("id", { count: "exact", head: true }).in("status", activeReportStatusValues),
+    supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "GENERATED"),
+    supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "REVIEWED"),
+    supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "ISSUED"),
+    supabase.from("reports").select("id", { count: "exact", head: true })
+  ]);
+  const filteredReports = reports ?? [];
+  const activeReportCount = activeReportCountRaw ?? 0;
+  const generatedReportCount = generatedReportCountRaw ?? 0;
+  const reviewedReportCount = reviewedReportCountRaw ?? 0;
+  const issuedReportCount = issuedReportCountRaw ?? 0;
   const filterCountByKey = (key: string) => {
     if (key === "all") {
-      return reports?.length ?? 0;
+      return allReportCountRaw ?? 0;
     }
 
     if (key === "active") {
       return activeReportCount;
     }
 
-    return reportCounts.get(key) ?? 0;
+    return key === "GENERATED" ? generatedReportCount : key === "REVIEWED" ? reviewedReportCount : 0;
   };
-  const pageSize = 50;
-  const requestedPage = Math.max(1, Number.parseInt(params?.page ?? "1", 10) || 1);
-  const selectedSort = ["generated_desc", "status", "client"].includes(params?.sort ?? "") ? params?.sort ?? "generated_desc" : "generated_desc";
-  const sortedReports = [...filteredReports].sort((left, right) => {
-    if (selectedSort === "status") return (reportStatusLabel[left.status] ?? left.status).localeCompare(reportStatusLabel[right.status] ?? right.status);
-    if (selectedSort === "client") return (left.maintenance_jobs?.clients?.name ?? "").localeCompare(right.maintenance_jobs?.clients?.name ?? "");
-    return new Date(right.generated_at ?? 0).getTime() - new Date(left.generated_at ?? 0).getTime();
-  });
-  const page = Math.min(requestedPage, Math.max(1, Math.ceil(sortedReports.length / pageSize)));
-  const pagedReports = sortedReports.slice((page - 1) * pageSize, page * pageSize);
+  const page = requestedPage;
+  const pagedReports = filteredReports;
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -346,7 +339,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
           </table>
         </Card>
         </div>
-        <PaginationControls basePath="/reports" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={sortedReports.length} />
+        <PaginationControls basePath="/reports" page={page} pageSize={pageSize} query={{ status: selectedStatus, sort: selectedSort }} total={reportCount ?? 0} />
         </>
         ) : (
           <EmptyState title="No reports in this view" message="Choose another status filter or generate a new report shell." />
