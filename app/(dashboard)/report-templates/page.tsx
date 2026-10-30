@@ -71,13 +71,38 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
     .order("is_default", { ascending: false })
     .order("created_at", { ascending: false });
 
+  const templateRows = templates ?? [];
+  const activeCount = templateRows.filter((template) => template.active).length;
+  const editableCount = templateRows.filter((template) => !template.is_default && (template.reports?.length ?? 0) === 0).length;
+  const lockedCount = templateRows.filter((template) => template.is_default || (template.reports?.length ?? 0) > 0).length;
+  const defaultTemplate = templateRows.find((template) => template.is_default);
+
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       <div>
         <h1 style={{ fontSize: "1.75rem", margin: 0 }}>Report Settings</h1>
         <p style={{ color: "var(--muted)", margin: "0.5rem 0 0" }}>
-          Create controlled report layouts, then choose the layout when generating each maintenance report.
+          Configure the report layouts used by future reports. This is an administration area, not the daily report review queue.
         </p>
+      </div>
+
+      <div className="workflow-stepper" aria-label="Report template setup workflow">
+        <div className="workflow-step workflow-step-current">
+          <span className="workflow-step-number">1</span>
+          <div><strong>Define template</strong><small>Create the report purpose and name.</small></div>
+        </div>
+        <div className="workflow-step">
+          <span className="workflow-step-number">2</span>
+          <div><strong>Configure sections</strong><small>Choose the technical content and fields.</small></div>
+        </div>
+        <div className="workflow-step">
+          <span className="workflow-step-number">3</span>
+          <div><strong>Preview</strong><small>Inspect the layout before use.</small></div>
+        </div>
+        <div className="workflow-step">
+          <span className="workflow-step-number">4</span>
+          <div><strong>Lock when used</strong><small>Issued reports keep their original template.</small></div>
+        </div>
       </div>
 
       {params?.created ? <SuccessState message="Report template created. It is now available when generating a report shell." /> : null}
@@ -85,14 +110,34 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
       {params?.deactivated ? <SuccessState message="Report template deactivated. Existing reports still keep their selected template." /> : null}
       {params?.error ? <ErrorState title="Template not saved" message={errorMessage(params.error)} /> : null}
 
-      <Card>
-        <h2 style={{ fontSize: "1rem", margin: "0 0 0.5rem" }}>Create Report Setting</h2>
+      <div className="workflow-summary-grid">
+        <div className="workflow-summary-card"><span>Total templates</span><strong>{templateRows.length}</strong><small>Available configurations</small></div>
+        <div className="workflow-summary-card"><span>Active</span><strong>{activeCount}</strong><small>Available for new reports</small></div>
+        <div className="workflow-summary-card"><span>Editable</span><strong>{editableCount}</strong><small>Can still be changed</small></div>
+        <div className="workflow-summary-card"><span>Locked / in use</span><strong>{lockedCount}</strong><small>Protected from retroactive changes</small></div>
+      </div>
+
+      <Card className="workflow-action-card">
+        <div className="workflow-section-kicker">CONFIGURATION ACTION</div>
+        <h2 style={{ fontSize: "1.1rem", margin: "0 0 0.35rem" }}>Create a report template</h2>
+        <p style={{ color: "var(--muted)", margin: "0 0 1rem", maxWidth: "48rem" }}>
+          Start a layout for future reports. Creating or editing a template does not change reports that have already been issued.
+        </p>
         <ReportTemplateCreateForm action={createReportTemplate} />
       </Card>
 
       {error ? (
         <ErrorState title="Templates unavailable" message="Report templates could not be loaded." />
-      ) : templates && templates.length > 0 ? (
+      ) : templateRows.length > 0 ? (
+        <section>
+          <div className="workflow-section-heading">
+            <div>
+              <div className="workflow-section-kicker">TEMPLATE CATALOGUE</div>
+              <h2>Manage report layouts</h2>
+              <p>Inspect, edit, activate, or duplicate a template. Templates become locked after they are used by a report.</p>
+            </div>
+            <div className="workflow-section-heading-meta">Default: {defaultTemplate?.name ?? "Not configured"}</div>
+          </div>
         <Card className="table-scroll" style={{ padding: 0 }}>
           <table className="data-table">
             <thead>
@@ -107,7 +152,7 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
               </tr>
             </thead>
             <tbody>
-              {templates.map((template) => {
+              {templateRows.map((template) => {
                 const stats = templateStats(template.layout);
                 const reportCount = template.reports?.length ?? 0;
                 const locked = template.is_default || reportCount > 0;
@@ -123,7 +168,7 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
                       </div>
                     </td>
                     <td>{template.description ?? "No description"}</td>
-                    <td>{template.active ? "Active" : "Inactive"}</td>
+                    <td><span className={`status-pill ${template.active ? "status-pill-success" : "status-pill-muted"}`}>{template.active ? "Active" : "Inactive"}</span></td>
                     <td>
                       <strong>{stats.sectionCount}</strong> section{stats.sectionCount === 1 ? "" : "s"}
                       <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
@@ -167,6 +212,7 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
             </tbody>
           </table>
         </Card>
+        </section>
       ) : (
         <EmptyState title="No templates yet" message="Create a template to make it available during report generation." />
       )}

@@ -25,7 +25,11 @@ function ageLabel(value: string) {
   return hours < 24 ? `${hours}h old` : `${Math.floor(hours / 24)}d old`;
 }
 
-export default async function ServiceRequestsPage({ searchParams }: { searchParams: Promise<{ error?: string; "intake-error"?: string; "intake-updated"?: string; phase?: string }> }) {
+function isOverdue(value: string) {
+  return Date.now() - new Date(value).getTime() > 86_400_000;
+}
+
+export default async function ServiceRequestsPage({ searchParams }: { searchParams: Promise<{ error?: string; "intake-error"?: string; "intake-updated"?: string; phase?: string; urgency?: string; overdue?: string; owner?: string }> }) {
   const profile = await requireProfile();
   if (!canAccessManagement(profile.role)) redirect("/dashboard");
   const params = await searchParams;
@@ -45,7 +49,16 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
   const { data: organisation } = await supabase.from("organisations").select("public_request_enabled").eq("id", profile.organisation_id).maybeSingle();
   const activeRequests = requests?.filter((request) => !["CLOSED", "DECLINED", "CANCELLED", "UNABLE_TO_PROCEED", "CLOSED_WITHOUT_WORK"].includes(request.status)) ?? [];
   const selectedPhaseDefinition = requestPhases.find((phase) => phase.key === selectedPhase) ?? requestPhases[0];
-  const visibleRequests = (selectedPhase === "all" ? requests ?? [] : (requests ?? []).filter((request) => selectedPhaseDefinition.statuses.includes(request.status as never)));
+  const phaseRequests = selectedPhase === "all"
+    ? activeRequests
+    : (requests ?? []).filter((request) => selectedPhaseDefinition.statuses.includes(request.status as never));
+  const visibleRequests = phaseRequests.filter((request) => {
+    const matchesUrgency = params.urgency === "URGENT" ? request.urgency === "URGENT" : true;
+    const matchesOverdue = params.overdue === "true" ? isOverdue(request.updated_at) : true;
+    const matchesOwner = params.owner === "unassigned" ? !request.next_action : true;
+    return matchesUrgency && matchesOverdue && matchesOwner;
+  });
+  const queueFilterLabel = params.urgency === "URGENT" ? "Urgent requests" : params.overdue === "true" ? "Overdue response" : params.owner === "unassigned" ? "Needs owner" : selectedPhaseDefinition.label;
   const phaseCount = (phase: (typeof requestPhases)[number]) => phase.key === "all" ? activeRequests.length : (requests ?? []).filter((request) => phase.statuses.includes(request.status as never)).length;
 
   return (
@@ -71,7 +84,7 @@ export default async function ServiceRequestsPage({ searchParams }: { searchPara
         <form action={setPublicRequestIntake}><input type="hidden" name="enabled" value={organisation?.public_request_enabled ? "false" : "true"} /><Button type="submit" variant="secondary">{organisation?.public_request_enabled ? "Disable intake" : "Enable intake"}</Button></form>
       </Card>
       {error ? <Card role="alert">Requests could not be loaded. Please retry.</Card> : null}
-      <div className="workflow-section-heading workflow-section-heading-spaced"><div><span className="record-card-kicker">REQUEST QUEUE</span><h2 style={{ margin: "0.25rem 0 0" }}>{selectedPhaseDefinition.label}</h2><p style={{ color: "var(--muted)", margin: "0.35rem 0 0" }}>Open a request to update its status, owner, customer message, and next action.</p></div><span className="record-status">{visibleRequests.length} request{visibleRequests.length === 1 ? "" : "s"}</span></div>
+      <div className="workflow-section-heading workflow-section-heading-spaced"><div><span className="record-card-kicker">REQUEST QUEUE</span><h2 style={{ margin: "0.25rem 0 0" }}>{queueFilterLabel}</h2><p style={{ color: "var(--muted)", margin: "0.35rem 0 0" }}>Open a request to update its status, owner, customer message, and next action.</p></div><span className="record-status">{visibleRequests.length} request{visibleRequests.length === 1 ? "" : "s"}</span></div>
       <nav className="technician-tabs" aria-label="Request phases">
         {requestPhases.map((phase) => <Link className={selectedPhase === phase.key ? "technician-tab-active" : undefined} href={phase.key === "all" ? "/service-requests" : `/service-requests?phase=${phase.key}`} key={phase.key}>{phase.label} ({phaseCount(phase)})</Link>)}
       </nav>

@@ -1168,6 +1168,51 @@ select {
   justify-content: space-between;
 }
 
+.workflow-section-heading h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.workflow-section-heading p {
+  color: var(--muted);
+  margin: 0.3rem 0 0;
+}
+
+.workflow-section-heading-meta {
+  color: var(--muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.workflow-section-kicker {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+}
+
+.status-pill {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.2rem 0.55rem;
+}
+
+.status-pill-success {
+  background: color-mix(in srgb, #16835b 10%, var(--surface));
+  border-color: color-mix(in srgb, #16835b 35%, var(--border));
+  color: #126646;
+}
+
+.status-pill-muted {
+  background: var(--background);
+  color: var(--muted);
+}
+
 .workflow-section-heading-spaced {
   margin-top: 0.5rem;
 }
@@ -1186,6 +1231,15 @@ select {
   .request-command-grid {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .workflow-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .workflow-section-heading-meta {
+    white-space: normal;
   }
 
   .request-command-status {
