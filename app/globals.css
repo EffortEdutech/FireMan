@@ -34,6 +34,94 @@ select {
   font: inherit;
 }
 
+button {
+  appearance: none;
+}
+
+.button {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0.55rem;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.65rem 0.95rem;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease,
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.button-primary {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.button-secondary {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.button:hover:not(:disabled),
+.button:focus-visible:not(:disabled) {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgb(21 61 92 / 0.14);
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.button:focus-visible,
+.technician-action-link:focus-visible,
+.technician-install-button:focus-visible {
+  outline: 3px solid rgb(21 61 92 / 0.24);
+  outline-offset: 2px;
+}
+
+.button:disabled,
+.technician-action-link:disabled,
+.technician-install-button:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.35);
+  opacity: 0.52;
+}
+
+.button-compact {
+  min-height: 44px;
+  padding: 0.55rem 0.7rem;
+}
+
+.button[data-state="pending"] {
+  cursor: wait;
+}
+
+.button-spinner {
+  animation: button-spin 750ms linear infinite;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  display: inline-block;
+  height: 1rem;
+  width: 1rem;
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 table {
   min-width: 720px;
 }
@@ -974,11 +1062,22 @@ select {
 }
 
 .technician-action-link {
+  background: var(--surface);
+  color: var(--foreground);
   border: 1px solid var(--border);
   border-radius: 5px;
+  cursor: pointer;
   display: inline-block;
   font-weight: 700;
   padding: 0.55rem 0.7rem;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+}
+
+.technician-action-link:hover:not(:disabled),
+.technician-action-link:focus-visible:not(:disabled) {
+  background: var(--background);
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgb(21 61 92 / 0.12);
 }
 
 .technician-install-button {

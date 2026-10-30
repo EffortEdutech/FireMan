@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { normalizeAssetCode } from "@/lib/maintenance/asset-scan";
 
 type AssetResult = {
@@ -32,6 +33,8 @@ export function AssetScanner() {
   );
   const [result, setResult] = useState<AssetResult | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [lookingUp, setLookingUp] = useState(false);
   const [cameraSupported] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -61,26 +64,30 @@ export function AssetScanner() {
     setCode(normalized);
     setMessage("Looking up asset...");
     setResult(null);
-    let response: Response;
+    setLookingUp(true);
     try {
-      response = await fetch(lookupUrl);
+      const response = await fetch(lookupUrl);
+      const payload = (await response.json()) as {
+        asset?: AssetResult;
+        error?: string;
+      };
+      if (!response.ok || !payload.asset) {
+        setMessage(
+          payload.error === "asset-not-found"
+            ? "No active asset matched that code."
+            : "Asset lookup failed. Try again.",
+        );
+        return;
+      }
+      setResult(payload.asset);
+      setMessage("Asset identified. Open an assigned job to use it.");
     } catch {
-      return setMessage(
+      setMessage(
         "Asset lookup could not connect. Check your connection and retry.",
       );
+    } finally {
+      setLookingUp(false);
     }
-    const payload = (await response.json()) as {
-      asset?: AssetResult;
-      error?: string;
-    };
-    if (!response.ok || !payload.asset)
-      return setMessage(
-        payload.error === "asset-not-found"
-          ? "No active asset matched that code."
-          : "Asset lookup failed. Try again.",
-      );
-    setResult(payload.asset);
-    setMessage("Asset identified. Open an assigned job to use it.");
   }
 
   async function startCamera() {
@@ -88,6 +95,7 @@ export function AssetScanner() {
       return setMessage(
         "Camera scanning is not supported in this browser. Use manual asset code entry.",
       );
+    setCameraStarting(true);
     try {
       if (!("BarcodeDetector" in window)) {
         if (!videoRef.current)
@@ -134,6 +142,8 @@ export function AssetScanner() {
           ? "Camera permission was denied. Allow camera access or use manual asset code entry."
           : "Camera is unavailable. Use manual asset code entry.",
       );
+    } finally {
+      setCameraStarting(false);
     }
   }
 
@@ -185,21 +195,22 @@ export function AssetScanner() {
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
         {!cameraActive ? (
-          <button
-            className="technician-action-link"
-            onClick={startCamera}
+          <Button
+            busy={cameraStarting}
+            onClick={() => void startCamera()}
+            pendingLabel="Starting camera…"
             type="button"
           >
             Start camera
-          </button>
+          </Button>
         ) : (
-          <button
-            className="technician-action-link"
+          <Button
             onClick={stopCamera}
             type="button"
+            variant="secondary"
           >
             Stop camera
-          </button>
+          </Button>
         )}
       </div>
       <form
@@ -215,9 +226,9 @@ export function AssetScanner() {
           placeholder="Enter asset code"
           value={code}
         />
-        <button className="technician-action-link" type="submit">
+        <Button busy={lookingUp} pendingLabel="Finding asset…" type="submit">
           Find asset
-        </button>
+        </Button>
       </form>
       <div
         aria-live="polite"

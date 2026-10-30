@@ -1,4 +1,5 @@
 import type { ChangeEvent } from "react";
+import { Button } from "@/components/ui/button";
 import type { ReportLayoutSection } from "@/lib/reports/report-layout";
 import type { ReportTemplateSectionDefinition } from "@/lib/reports/template-builder";
 
@@ -139,12 +140,12 @@ export function ReportTemplateSectionCard({
               style={{ ...fieldStyle, width: "100%" }}
               type="number"
             />
-            <button aria-label={`Move ${section.defaultTitle} up`} onClick={onMoveUp} style={fieldStyle} type="button">
+            <Button aria-label={`Move ${section.defaultTitle} up`} className="button-compact" disabled={!onMoveUp} onClick={onMoveUp} type="button" variant="secondary">
               Up
-            </button>
-            <button aria-label={`Move ${section.defaultTitle} down`} onClick={onMoveDown} style={fieldStyle} type="button">
+            </Button>
+            <Button aria-label={`Move ${section.defaultTitle} down`} className="button-compact" disabled={!onMoveDown} onClick={onMoveDown} type="button" variant="secondary">
               Down
-            </button>
+            </Button>
           </div>
         </div>
         <div>

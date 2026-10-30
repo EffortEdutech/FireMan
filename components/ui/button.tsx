@@ -1,21 +1,42 @@
-import type { ButtonHTMLAttributes } from "react";
+"use client";
+
+import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { useFormStatus } from "react-dom";
 import { cn } from "@/lib/utils/cn";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  busy?: boolean;
+  pendingLabel?: ReactNode;
   variant?: "primary" | "secondary";
 };
 
-export function Button({ className, variant = "primary", ...props }: ButtonProps) {
+export function Button({
+  children,
+  busy = false,
+  className,
+  disabled,
+  pendingLabel = "Working…",
+  variant = "primary",
+  ...props
+}: ButtonProps) {
+  const { pending } = useFormStatus();
+  const isBusy = busy || pending;
+  const isDisabled = disabled || isBusy;
+
   return (
     <button
+      aria-busy={isBusy || undefined}
+      data-state={isBusy ? "pending" : isDisabled ? "disabled" : "ready"}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center rounded-md border px-4 py-2 font-medium",
-        variant === "primary"
-          ? "border-transparent bg-[var(--accent)] text-[var(--accent-foreground)]"
-          : "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]",
+        "button",
+        variant === "primary" ? "button-primary" : "button-secondary",
         className
       )}
+      disabled={isDisabled}
       {...props}
-    />
+    >
+      {isBusy ? <span aria-hidden="true" className="button-spinner" /> : null}
+      <span className="button-label">{isBusy ? pendingLabel : children}</span>
+    </button>
   );
 }

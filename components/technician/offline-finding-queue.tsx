@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { addOfflineFinding, OFFLINE_FINDING_QUEUE_KEY, removeOfflineFinding, type OfflineFinding } from "@/lib/maintenance/offline-queue";
 
 export function OfflineFindingQueue({ jobId }: { jobId: string }) {
@@ -16,8 +17,10 @@ export function OfflineFindingQueue({ jobId }: { jobId: string }) {
   const [photoCaption, setPhotoCaption] = useState("");
   const [message, setMessage] = useState("");
   const [failedIds, setFailedIds] = useState<string[]>([]);
+  const [syncing, setSyncing] = useState(false);
 
   const syncQueue = useCallback(async () => {
+    setSyncing(true);
     setMessage("Syncing pending findings...");
     const current = JSON.parse(localStorage.getItem(OFFLINE_FINDING_QUEUE_KEY) ?? "[]") as OfflineFinding[];
     const failed: string[] = [];
@@ -30,6 +33,7 @@ export function OfflineFindingQueue({ jobId }: { jobId: string }) {
     }
     setFailedIds(failed);
     setMessage(failed.length ? `${failed.length} finding${failed.length === 1 ? "" : "s"} failed to sync. Retry when connected.` : current.length ? "Pending findings synced." : "");
+    setSyncing(false);
   }, []);
 
   useEffect(() => {
@@ -75,10 +79,10 @@ export function OfflineFindingQueue({ jobId }: { jobId: string }) {
       <textarea aria-label="Offline finding description" onChange={(event) => setDescription(event.target.value)} placeholder="Description" value={description} />
       <input accept="image/*" aria-label="Offline finding photo" onChange={(event) => setPhoto(event.target.files?.[0] ?? null)} type="file" />
       <input aria-label="Offline photo caption" onChange={(event) => setPhotoCaption(event.target.value)} placeholder="Photo caption (optional)" value={photoCaption} />
-      <button className="technician-action-link" type="submit">Save finding draft</button>
+      <Button type="submit" variant="secondary" pendingLabel="Saving draft…">Save finding draft</Button>
     </form>
     {message ? <div aria-live="polite" className="offline-queue-message">{message}</div> : null}
     {jobQueue.length ? <div className="offline-queue-items">{jobQueue.map((item) => <span key={item.id}>{item.title} · {item.severity} · {failedIds.includes(item.id) ? "sync failed" : "pending sync"}</span>)}</div> : null}
-    {failedIds.length ? <button className="technician-action-link" onClick={() => void syncQueue()} type="button">Retry failed sync</button> : null}
+    {failedIds.length ? <Button busy={syncing} onClick={() => void syncQueue()} type="button" variant="secondary" pendingLabel="Retrying…">Retry failed sync</Button> : null}
   </div>;
 }

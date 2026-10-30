@@ -1,9 +1,11 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 export function PrintLabelButton() {
   return (
-    <button className="button" onClick={() => window.print()} type="button">
+    <Button onClick={() => window.print()} type="button" variant="secondary">
       Print label
-    </button>
+    </Button>
   );
 }

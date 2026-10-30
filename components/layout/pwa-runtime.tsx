@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -10,6 +11,7 @@ type InstallPromptEvent = Event & {
 export function PwaRuntime() {
   const [online, setOnline] = useState<boolean | null>(null);
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
+  const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
     const onOnline = () => setOnline(true);
@@ -31,12 +33,17 @@ export function PwaRuntime() {
 
   async function install() {
     if (!installPrompt) return;
-    await installPrompt.prompt();
-    await installPrompt.userChoice;
-    setInstallPrompt(null);
+    setInstalling(true);
+    try {
+      await installPrompt.prompt();
+      await installPrompt.userChoice;
+      setInstallPrompt(null);
+    } finally {
+      setInstalling(false);
+    }
   }
 
   const statusClass = online === null ? "pwa-status" : online ? "pwa-status pwa-status-online" : "pwa-status pwa-status-offline";
   const statusLabel = online === null ? "Checking connection" : online ? "Online" : "Offline shell";
-  return <span aria-live="polite" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}><span className={statusClass}>{statusLabel}</span>{installPrompt ? <button className="technician-install-button" onClick={install} type="button">Install app</button> : null}</span>;
+  return <span aria-live="polite" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}><span className={statusClass}>{statusLabel}</span>{installPrompt ? <Button busy={installing} onClick={() => void install()} pendingLabel="Installing…" type="button" variant="secondary">Install app</Button> : null}</span>;
 }
