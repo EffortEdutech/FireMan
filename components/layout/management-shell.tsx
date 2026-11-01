@@ -19,36 +19,20 @@ type ManagementShellProps = Readonly<{
 
 export function ManagementShell({ children, currentUser, title, description }: ManagementShellProps) {
   return (
-    <div
-      className="management-shell"
-      style={{
-        display: "grid",
-        height: "100vh",
-        minHeight: "100vh",
-        overflow: "hidden",
-        gridTemplateColumns: "minmax(180px, 240px) minmax(0, 1fr)"
-      }}
-    >
-      <aside
-        className="management-shell-sidebar"
-        style={{
-          borderRight: "1px solid var(--border)",
-          background: "var(--surface)",
-          padding: "1.25rem"
-        }}
-      >
+    <div className="management-shell">
+      <aside className="management-shell-sidebar">
         <Link href="/" style={{ display: "grid", gap: "0.2rem" }}><strong>{tenantBrand.name}</strong><span style={{ color: "var(--muted)", fontSize: "0.75rem" }}>FireMaint operations</span></Link>
         <ManagementNav />
-        <div style={{ borderTop: "1px solid var(--border)", marginTop: "2rem", paddingTop: "1rem" }}>
+        <div className="management-shell-user">
           <CurrentUserBadge email={currentUser.email} profile={currentUser.profile} />
         </div>
-        <form action={signOut} style={{ marginTop: "2rem" }}>
+        <form action={signOut} className="management-shell-signout">
           <Button type="submit" variant="secondary">
             Sign Out
           </Button>
         </form>
       </aside>
-      <main className="management-shell-main" style={{ display: "grid", alignContent: "start", gap: "1.5rem", minWidth: 0, padding: "2rem" }}>
+      <main className="management-shell-main">
         {title ? <PageHeader {...(description ? { description } : {})} title={title} /> : null}
         {children}
       </main>

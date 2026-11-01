@@ -314,6 +314,47 @@ select {
   margin-top: 2rem;
 }
 
+.management-shell {
+  background: var(--background);
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  height: 100dvh;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.management-shell-sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  height: 100dvh;
+  overflow-y: auto;
+  padding: 1.25rem;
+  position: fixed;
+  width: 240px;
+  z-index: 10;
+}
+
+.management-shell-user {
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+  padding-top: 1rem;
+}
+
+.management-shell-signout {
+  margin-top: 2rem;
+}
+
+.management-shell-main {
+  align-content: start;
+  display: grid;
+  gap: 1.5rem;
+  grid-column: 2;
+  height: 100dvh;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 2rem;
+}
+
 .management-nav-group {
   display: grid;
   gap: 0.45rem;
@@ -2206,6 +2247,7 @@ select {
   }
 
   .management-shell-main {
+    grid-column: 1;
     height: auto;
     overflow: visible;
     padding: 1rem !important;

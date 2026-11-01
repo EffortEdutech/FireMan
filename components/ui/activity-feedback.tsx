@@ -12,7 +12,7 @@ export function ActivityFeedback() {
   const [activity, setActivity] = useState<{ kind: ActivityKind; routeKey: string } | null>(null);
 
   useEffect(() => {
-    const clearAfterNavigation = window.setTimeout(() => setActivity(null), 0);
+    const clearAfterNavigation = window.setTimeout(() => setActivity(null), 220);
     return () => window.clearTimeout(clearAfterNavigation);
   }, [routeKey]);
 
