@@ -16,29 +16,16 @@ type TechnicianShellProps = Readonly<{
 
 export function TechnicianShell({ children, currentUser }: TechnicianShellProps) {
   return (
-    <div
-      style={{
-        display: "grid",
-        minHeight: "100vh",
-        gridTemplateRows: "auto 1fr auto",
-        background: "#fbfbfa"
-      }}
-    >
-      <header
-        style={{
-          borderBottom: "1px solid var(--border)",
-          background: "var(--surface)",
-          padding: "1rem"
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+    <div className="technician-shell">
+      <header className="technician-shell-header">
+        <div className="technician-shell-header-inner">
           <div>
             <strong>{tenantBrand.name} Field Service</strong>
-            <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+            <div className="technician-shell-runtime">
               <PwaRuntime />
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div className="technician-shell-account">
             <CurrentUserBadge email={currentUser.email} profile={currentUser.profile} />
             <form action={signOut}>
               <Button type="submit" variant="secondary">
@@ -48,7 +35,7 @@ export function TechnicianShell({ children, currentUser }: TechnicianShellProps)
           </div>
         </div>
       </header>
-      <main style={{ padding: "1rem" }}>{children}</main>
+      <main className="technician-shell-main">{children}</main>
       <TechnicianNav />
     </div>
   );
