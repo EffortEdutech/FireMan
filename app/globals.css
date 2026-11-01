@@ -191,6 +191,24 @@ textarea:disabled {
   white-space: nowrap;
 }
 
+.status-badge-success {
+  background: #e8f4ec;
+  border-color: #b9d8c1;
+  color: #215c32;
+}
+
+.status-badge-warning {
+  background: #fff5df;
+  border-color: #ead39c;
+  color: #765711;
+}
+
+.status-badge-danger {
+  background: #fff0ed;
+  border-color: #e4b6ae;
+  color: #9a3427;
+}
+
 .button {
   align-items: center;
   background: var(--accent);
