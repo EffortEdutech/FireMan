@@ -16,8 +16,8 @@ type FilterBarProps = {
 
 export function FilterBar({ description, items, selectedKey }: FilterBarProps) {
   return (
-    <Card>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+    <Card className="filter-bar-card">
+      <div className="filter-bar-links">
         {items.map((item) => {
           const selected = selectedKey === item.key;
 
@@ -26,15 +26,7 @@ export function FilterBar({ description, items, selectedKey }: FilterBarProps) {
               aria-current={selected ? "page" : undefined}
               href={item.href}
               key={item.key}
-              style={{
-                background: selected ? "var(--accent)" : "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: 6,
-                color: selected ? "var(--accent-foreground)" : "var(--foreground)",
-                fontWeight: 700,
-                padding: "8px 10px",
-                textDecoration: "none"
-              }}
+              className={`filter-bar-link${selected ? " filter-bar-link-active" : ""}`}
             >
               {item.label} ({item.count})
             </Link>
@@ -42,7 +34,7 @@ export function FilterBar({ description, items, selectedKey }: FilterBarProps) {
         })}
       </div>
       {description ? (
-        <div style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: "0.75rem" }}>
+        <div className="filter-bar-description">
           {description}
         </div>
       ) : null}
