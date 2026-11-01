@@ -145,10 +145,58 @@ button {
   appearance: none;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgb(21 61 92 / 0.24);
+  outline-offset: 2px;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+select,
+textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--foreground);
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: #f0f2f0;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.status-badge {
+  background: #eef2f6;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--foreground);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 0.28rem 0.6rem;
+  white-space: nowrap;
+}
+
 .button {
   align-items: center;
+  background: var(--accent);
   border: 1px solid transparent;
   border-radius: 7px;
+  color: var(--accent-foreground);
   cursor: pointer;
   display: inline-flex;
   gap: 0.55rem;
@@ -2269,6 +2317,10 @@ select {
 
   button {
     width: 100%;
+  }
+
+  .operations-console-nav button {
+    width: auto;
   }
 
   .dashboard-section-heading,
