@@ -517,6 +517,11 @@ export type Database = {
         Row: {
           active: boolean
           code: string
+          catalogue_version: number
+          approval_status: string
+          reference_standards: Json
+          supersedes_id: string | null
+          approved_at: string | null
           created_at: string
           description: string | null
           id: string
@@ -528,6 +533,11 @@ export type Database = {
         Insert: {
           active?: boolean
           code: string
+          catalogue_version?: number
+          approval_status?: string
+          reference_standards?: Json
+          supersedes_id?: string | null
+          approved_at?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -539,6 +549,11 @@ export type Database = {
         Update: {
           active?: boolean
           code?: string
+          catalogue_version?: number
+          approval_status?: string
+          reference_standards?: Json
+          supersedes_id?: string | null
+          approved_at?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -2370,6 +2385,10 @@ export type Database = {
         | "SPECIAL_HAZARD"
         | "DRY_CHEMICAL"
         | "FIRE_WATER_SUPPLY"
+        | "ASPIRATING_SMOKE"
+        | "GAS_DETECTION"
+        | "FIRE_EVACUATION"
+        | "FIRE_BRIGADE_COMMS"
         | "OTHER"
       template_field_type:
         | "PASS_FAIL"
@@ -2558,6 +2577,10 @@ export const Constants = {
         "SPECIAL_HAZARD",
         "DRY_CHEMICAL",
         "FIRE_WATER_SUPPLY",
+        "ASPIRATING_SMOKE",
+        "GAS_DETECTION",
+        "FIRE_EVACUATION",
+        "FIRE_BRIGADE_COMMS",
         "OTHER",
       ],
       template_field_type: [

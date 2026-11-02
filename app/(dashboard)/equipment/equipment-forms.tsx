@@ -74,6 +74,10 @@ const systemTypes = [
   ["SPECIAL_HAZARD", "Special hazard"],
   ["DRY_CHEMICAL", "Dry chemical suppression"],
   ["FIRE_WATER_SUPPLY", "Fire-water supply"],
+  ["ASPIRATING_SMOKE", "Aspirating smoke / VESDA"],
+  ["GAS_DETECTION", "Gas detection"],
+  ["FIRE_EVACUATION", "Voice evacuation"],
+  ["FIRE_BRIGADE_COMMS", "Fire brigade communications"],
   ["OTHER", "Other"]
 ];
 

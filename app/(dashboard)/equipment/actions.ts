@@ -29,6 +29,10 @@ const systemTypes = new Set<SystemType>([
   "SPECIAL_HAZARD",
   "DRY_CHEMICAL",
   "FIRE_WATER_SUPPLY",
+  "ASPIRATING_SMOKE",
+  "GAS_DETECTION",
+  "FIRE_EVACUATION",
+  "FIRE_BRIGADE_COMMS",
   "OTHER"
 ]);
 

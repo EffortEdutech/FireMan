@@ -23,7 +23,10 @@ const groups = [
   },
   {
     label: "Administration",
-    items: [{ href: "/report-templates", label: "Report Settings" }]
+    items: [
+      { href: "/catalogue", label: "Equipment Catalogue" },
+      { href: "/report-templates", label: "Report Settings" }
+    ]
   }
 ];
 
@@ -51,3 +54,4 @@ export function ManagementNav() {
     </nav>
   );
 }
+
