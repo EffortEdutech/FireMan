@@ -248,6 +248,8 @@ export type Database = {
           model: string | null
           next_inspection_at: string | null
           organisation_id: string
+          parent_equipment_id: string | null
+          protected_hazard_id: string | null
           qr_token: string
           serial_number: string | null
           status: Database["public"]["Enums"]["equipment_status"]
@@ -270,6 +272,8 @@ export type Database = {
           model?: string | null
           next_inspection_at?: string | null
           organisation_id: string
+          parent_equipment_id?: string | null
+          protected_hazard_id?: string | null
           qr_token?: string
           serial_number?: string | null
           status?: Database["public"]["Enums"]["equipment_status"]
@@ -292,6 +296,8 @@ export type Database = {
           model?: string | null
           next_inspection_at?: string | null
           organisation_id?: string
+          parent_equipment_id?: string | null
+          protected_hazard_id?: string | null
           qr_token?: string
           serial_number?: string | null
           status?: Database["public"]["Enums"]["equipment_status"]
@@ -320,6 +326,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organisations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_parent_same_organisation_fkey"
+            columns: ["organisation_id", "parent_equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["organisation_id", "id"]
+          },
+          {
+            foreignKeyName: "equipment_hazard_same_organisation_fkey"
+            columns: ["organisation_id", "protected_hazard_id"]
+            isOneToOne: false
+            referencedRelation: "protected_hazards"
+            referencedColumns: ["organisation_id", "id"]
           },
           {
             foreignKeyName: "equipment_system_id_fkey"
@@ -383,6 +403,60 @@ export type Database = {
           { foreignKeyName: "equipment_documents_equipment_id_fkey"; columns: ["equipment_id"]; isOneToOne: false; referencedRelation: "equipment"; referencedColumns: ["id"] },
           { foreignKeyName: "equipment_documents_organisation_id_fkey"; columns: ["organisation_id"]; isOneToOne: false; referencedRelation: "organisations"; referencedColumns: ["id"] },
           { foreignKeyName: "equipment_documents_uploaded_by_fkey"; columns: ["uploaded_by"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
+        ]
+      }
+      protected_hazards: {
+        Row: {
+          active: boolean
+          building_id: string
+          code: string | null
+          created_at: string
+          customer_visible: boolean
+          design_basis: string | null
+          hazard_type: string | null
+          id: string
+          name: string
+          notes: string | null
+          organisation_id: string
+          protected_area: string | null
+          system_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          building_id: string
+          code?: string | null
+          created_at?: string
+          customer_visible?: boolean
+          design_basis?: string | null
+          hazard_type?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organisation_id: string
+          protected_area?: string | null
+          system_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          building_id?: string
+          code?: string | null
+          created_at?: string
+          customer_visible?: boolean
+          design_basis?: string | null
+          hazard_type?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          protected_area?: string | null
+          system_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: "protected_hazards_building_same_organisation_fkey"; columns: ["organisation_id", "building_id"]; isOneToOne: false; referencedRelation: "buildings"; referencedColumns: ["organisation_id", "id"] },
+          { foreignKeyName: "protected_hazards_system_same_organisation_fkey"; columns: ["organisation_id", "system_id"]; isOneToOne: false; referencedRelation: "systems"; referencedColumns: ["organisation_id", "id"] },
         ]
       }
       equipment_type_fields: {
@@ -1967,6 +2041,7 @@ export type Database = {
           id: string
           name: string
           organisation_id: string
+          parent_system_id: string | null
           system_type: Database["public"]["Enums"]["system_type"]
           updated_at: string
         }
@@ -1979,6 +2054,7 @@ export type Database = {
           id?: string
           name: string
           organisation_id: string
+          parent_system_id?: string | null
           system_type: Database["public"]["Enums"]["system_type"]
           updated_at?: string
         }
@@ -1991,6 +2067,7 @@ export type Database = {
           id?: string
           name?: string
           organisation_id?: string
+          parent_system_id?: string | null
           system_type?: Database["public"]["Enums"]["system_type"]
           updated_at?: string
         }
@@ -2008,6 +2085,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organisations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "systems_parent_same_organisation_fkey"
+            columns: ["organisation_id", "parent_system_id"]
+            isOneToOne: false
+            referencedRelation: "systems"
+            referencedColumns: ["organisation_id", "id"]
           },
         ]
       }
@@ -2276,9 +2360,14 @@ export type Database = {
         | "HYDRANT_RISER"
         | "FIRE_PUMP"
         | "GASEOUS_SUPPRESSION"
+        | "WATER_SPRAY_MIST"
+        | "CO2_SUPPRESSION"
         | "FOAM_SUPPRESSION"
+        | "KITCHEN_SUPPRESSION"
         | "PASSIVE_PROTECTION"
         | "SMOKE_CONTROL"
+        | "EMERGENCY_LIFE_SAFETY"
+        | "SPECIAL_HAZARD"
         | "OTHER"
       template_field_type:
         | "PASS_FAIL"
@@ -2457,9 +2546,14 @@ export const Constants = {
         "HYDRANT_RISER",
         "FIRE_PUMP",
         "GASEOUS_SUPPRESSION",
+        "WATER_SPRAY_MIST",
+        "CO2_SUPPRESSION",
         "FOAM_SUPPRESSION",
+        "KITCHEN_SUPPRESSION",
         "PASSIVE_PROTECTION",
         "SMOKE_CONTROL",
+        "EMERGENCY_LIFE_SAFETY",
+        "SPECIAL_HAZARD",
         "OTHER",
       ],
       template_field_type: [
