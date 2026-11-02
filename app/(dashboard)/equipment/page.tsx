@@ -99,7 +99,7 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
   const pageSize = 50;
   const equipmentQuery = supabase
     .from("equipment")
-    .select("id,asset_code,serial_number,brand,model,capacity,location_description,installation_date,technical_data,status,created_at,buildings(name,sites(name)),systems(name),equipment_types(id,name,code,system_type)", { count: "exact" })
+    .select("id,asset_code,serial_number,brand,model,capacity,location_description,installation_date,technical_data,status,created_at,buildings!equipment_building_id_fkey(name,sites(name)),systems!equipment_system_id_fkey(name),equipment_types(id,name,code,system_type)", { count: "exact" })
     .order(selectedSort === "asset_asc" ? "asset_code" : "created_at", { ascending: selectedSort === "asset_asc" })
     .range((requestedPage - 1) * pageSize, requestedPage * pageSize - 1);
   if (selectedStatus !== "all") equipmentQuery.eq("status", selectedStatus as never);
@@ -203,3 +203,4 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
     </div>
   );
 }
+

@@ -20,7 +20,7 @@ export default async function EquipmentLabelPage({
   const { data: equipment } = await supabase
     .from("equipment")
     .select(
-      "id,asset_code,qr_token,location_description,equipment_types(name),buildings(name,sites(name))",
+      "id,asset_code,qr_token,location_description,equipment_types(name),buildings!equipment_building_id_fkey(name,sites(name))",
     )
     .eq("id", equipmentId)
     .eq("organisation_id", profile.organisation_id)
@@ -98,3 +98,4 @@ export default async function EquipmentLabelPage({
     </div>
   );
 }
+

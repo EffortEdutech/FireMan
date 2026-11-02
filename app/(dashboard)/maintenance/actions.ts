@@ -63,7 +63,7 @@ export async function createPlanAndJob(formData: FormData) {
   if (equipmentId) {
     const { data: equipment, error: equipmentError } = await supabase
       .from("equipment")
-      .select("id,building_id,buildings!inner(site_id)")
+      .select("id,building_id,buildings!equipment_building_id_fkey!inner(site_id)")
       .eq("id", equipmentId)
       .eq("organisation_id", profile.organisation_id)
       .eq("status", "ACTIVE")
@@ -486,3 +486,4 @@ export async function closeJobFromIssuedReport(formData: FormData) {
   revalidatePath("/client/dashboard");
   redirect("/maintenance?closed=1");
 }
+

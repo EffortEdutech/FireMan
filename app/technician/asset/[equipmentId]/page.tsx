@@ -18,7 +18,7 @@ export default async function TechnicianAssetPage({
   const { data: equipment } = await supabase
     .from("equipment")
     .select(
-      "id,asset_code,status,serial_number,location_description,buildings(name,sites(name)),systems(name),equipment_types(name)",
+      "id,asset_code,status,serial_number,location_description,buildings!equipment_building_id_fkey(name,sites(name)),systems!equipment_system_id_fkey(name),equipment_types(name)",
     )
     .eq("id", equipmentId)
     .maybeSingle();
@@ -148,3 +148,4 @@ export default async function TechnicianAssetPage({
     </div>
   );
 }
+

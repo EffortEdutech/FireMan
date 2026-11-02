@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const equipmentQuery = supabase
     .from("equipment")
     .select(
-      "id,asset_code,status,location_description,qr_token,buildings(name,sites(name,clients(name))),systems(name),equipment_types(name)",
+      "id,asset_code,status,location_description,qr_token,buildings!equipment_building_id_fkey(name,sites(name,clients(name))),systems!equipment_system_id_fkey(name),equipment_types(name)",
     )
     .eq("status", "ACTIVE");
   const { data, error } = qrToken
@@ -58,3 +58,4 @@ export async function GET(request: Request) {
     },
   });
 }
+

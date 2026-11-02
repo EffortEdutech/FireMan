@@ -19,7 +19,7 @@ export default async function ClientEquipmentDetailPage({
   const { data: equipment, error } = await supabase
     .from("equipment")
     .select(
-      "id,asset_code,serial_number,brand,model,capacity,location_description,installation_date,status,qr_token,technical_data,buildings(name,sites(name)),systems(name,code),equipment_types(id,name,code)",
+      "id,asset_code,serial_number,brand,model,capacity,location_description,installation_date,status,qr_token,technical_data,buildings!equipment_building_id_fkey(name,sites(name)),systems!equipment_system_id_fkey(name,code),equipment_types(id,name,code)",
     )
     .eq("id", equipmentId)
     .maybeSingle();
@@ -239,3 +239,4 @@ export default async function ClientEquipmentDetailPage({
     </div>
   );
 }
+

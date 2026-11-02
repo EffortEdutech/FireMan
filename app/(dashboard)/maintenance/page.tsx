@@ -94,7 +94,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
     supabase.from("sites").select("id,name,client_id").eq("active", true).order("name", { ascending: true }),
     supabase
       .from("equipment")
-      .select("id,asset_code,location_description,status,buildings(name,site_id,sites(name,clients(name))),equipment_types(name,code)")
+      .select("id,asset_code,location_description,status,buildings!equipment_building_id_fkey(name,site_id,sites(name,clients(name))),equipment_types(name,code)")
       .eq("status", "ACTIVE")
       .order("asset_code", { ascending: true }),
     supabase
@@ -426,3 +426,4 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
     </div>
   );
 }
+

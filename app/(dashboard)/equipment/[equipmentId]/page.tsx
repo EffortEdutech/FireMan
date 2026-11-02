@@ -65,7 +65,7 @@ export default async function EquipmentDetailPage({ params, searchParams }: Prop
 
   const { data: equipment, error } = await supabase
     .from("equipment")
-    .select("id,asset_code,serial_number,brand,model,capacity,location_description,installation_date,status,qr_token,technical_data,equipment_type_id,parent_equipment_id,protected_hazard_id,created_at,updated_at,buildings(id,name,sites(id,name,clients(id,name))),systems(id,name,code,system_type),equipment_types(id,name,code,system_type)")
+    .select("id,asset_code,serial_number,brand,model,capacity,location_description,installation_date,status,qr_token,technical_data,equipment_type_id,parent_equipment_id,protected_hazard_id,created_at,updated_at,buildings!equipment_building_id_fkey(id,name,sites(id,name,clients(id,name))),systems!equipment_system_id_fkey(id,name,code,system_type),equipment_types(id,name,code,system_type)")
     .eq("id", equipmentId)
     .eq("organisation_id", profile.organisation_id)
     .maybeSingle();
@@ -123,3 +123,4 @@ export default async function EquipmentDetailPage({ params, searchParams }: Prop
     </div>
   );
 }
+
