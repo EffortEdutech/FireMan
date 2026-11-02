@@ -176,7 +176,7 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
           <p style={{ color: "var(--muted)", margin: "0 0 1rem" }}>Paste the completed CSV template below. FAST validates hierarchy, catalogue codes, duplicate asset codes, status values, JSON technical data, and required fields before creating any records.</p>
           <form action={importEquipmentCsv}>
             <label>Equipment CSV<textarea name="csv_text" required rows={16} placeholder="Paste FAST_EQUIPMENT_IMPORT_TEMPLATE.csv contents here" style={{ width: "100%", marginTop: "0.5rem", fontFamily: "monospace" }} /></label>
-            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginTop: "1rem", flexWrap: "wrap" }}><Button type="submit">Validate and import</Button><a className="button button-secondary" href="/docs/FAST_EQUIPMENT_IMPORT_TEMPLATE.csv">Download template</a><span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>No records are created when validation fails.</span></div>
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginTop: "1rem", flexWrap: "wrap" }}><Button type="submit">Validate and import</Button><a className="button button-secondary" download href="/FAST_EQUIPMENT_IMPORT_TEMPLATE.csv">Download template</a><span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>No records are created when validation fails.</span></div>
           </form>
         </Card>
       ) : null}
