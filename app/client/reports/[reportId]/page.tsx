@@ -54,6 +54,11 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
           <StatusBadge>Issued</StatusBadge>
         </div>
       </div>
+      <nav className="client-report-navigation no-print" aria-label="Customer report navigation">
+        <Link href="/client/dashboard">All reports</Link>
+        <Link href="/client/equipment">Equipment register</Link>
+        <Link href="/client/requests">Service requests</Link>
+      </nav>
 
       <section
         style={{
@@ -120,3 +125,4 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
     </div>
   );
 }
+

@@ -1426,6 +1426,26 @@ select {
   margin-top: 0.2rem;
 }
 
+.client-report-navigation {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.client-report-navigation a {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.client-report-navigation a:hover,
+.client-report-navigation a:focus-visible {
+  color: var(--foreground);
+}
+
 .client-portal-summary {
   align-items: center;
   background: var(--surface);
