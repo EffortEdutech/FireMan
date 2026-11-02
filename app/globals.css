@@ -473,8 +473,14 @@ select {
 
 .technician-shell-main {
   min-height: 0;
+  min-width: 0;
   overflow-y: auto;
   padding: 1rem;
+}
+
+.technician-shell-main > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .page-kicker {
@@ -2491,6 +2497,10 @@ select {
 
   .technician-shell-account form {
     flex: 0 0 auto;
+  }
+
+  .technician-shell-main {
+    overflow-x: hidden;
   }
 
   table {
