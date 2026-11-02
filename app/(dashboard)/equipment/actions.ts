@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
 import { createClient } from "@/lib/supabase/server";
-import type { Database } from "@/lib/supabase/types";
+import type { Database, Json } from "@/lib/supabase/types";
 
 type SystemType = Database["public"]["Enums"]["system_type"];
 
@@ -76,6 +76,143 @@ function technicalDataValue(formData: FormData, fields: TechnicalField[]) {
   }
 
   return { data: technicalData };
+}
+
+type ImportRow = Record<string, string>;
+
+const importHeaders = [
+  "asset_code",
+  "equipment_type_code",
+  "client_name",
+  "site_name",
+  "building_name",
+  "system_code",
+  "location_description",
+  "manufacturer",
+  "model",
+  "serial_number",
+  "capacity",
+  "installation_date",
+  "status",
+  "technical_data_json",
+  "document_references",
+  "customer_visible"
+];
+
+function parseCsv(text: string) {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    const next = text[index + 1];
+    if (character === '"' && quoted && next === '"') {
+      cell += '"';
+      index += 1;
+    } else if (character === '"') {
+      quoted = !quoted;
+    } else if (character === "," && !quoted) {
+      row.push(cell.trim());
+      cell = "";
+    } else if ((character === "\n" || character === "\r") && !quoted) {
+      if (character === "\r" && next === "\n") index += 1;
+      row.push(cell.trim());
+      if (row.some((value) => value !== "")) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += character;
+    }
+  }
+
+  row.push(cell.trim());
+  if (row.some((value) => value !== "")) rows.push(row);
+  if (rows.length < 2) return { error: "CSV must include a header and at least one asset row." };
+
+  const headers = (rows[0] ?? []).map((header) => header.trim());
+  if (headers.join("|") !== importHeaders.join("|")) {
+    return { error: `CSV headers must match the FAST template exactly. Expected: ${importHeaders.join(",")}` };
+  }
+
+  return { rows: rows.slice(1).map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ""]))) as ImportRow[] };
+}
+
+const importStatuses = new Set<Database["public"]["Enums"]["equipment_status"]>(["ACTIVE", "OUT_OF_SERVICE", "RETIRED"]);
+
+export async function importEquipmentCsv(formData: FormData) {
+  const profile = await requireProfile();
+  if (!canAccessManagement(profile.role)) redirect("/dashboard");
+
+  const rawCsv = value(formData, "csv_text");
+  if (!rawCsv) redirect("/equipment?view=import&error=import-empty");
+  const parsed = parseCsv(rawCsv);
+  if (parsed.error || !parsed.rows) redirect(`/equipment?view=import&error=${encodeURIComponent(parsed.error ?? "CSV could not be read.")}`);
+
+  const supabase = await createClient();
+  const [{ data: buildings }, { data: systems }, { data: equipmentTypes }, { data: existingEquipment }] = await Promise.all([
+    supabase.from("buildings").select("id,name,site_id,sites(name,clients(name))").eq("organisation_id", profile.organisation_id).eq("active", true),
+    supabase.from("systems").select("id,building_id,code,name").eq("organisation_id", profile.organisation_id).eq("active", true),
+    supabase.from("equipment_types").select("id,code").or(`organisation_id.is.null,organisation_id.eq.${profile.organisation_id}`).eq("active", true),
+    supabase.from("equipment").select("asset_code").eq("organisation_id", profile.organisation_id)
+  ]);
+  if (!buildings || !systems || !equipmentTypes || !existingEquipment) redirect("/equipment?view=import&error=import-reference-data");
+
+  const [{ data: technicalFields }] = await Promise.all([
+    supabase.from("equipment_type_fields").select("equipment_type_id,field_key,field_type,required").eq("active", true).order("sort_order", { ascending: true })
+  ]);
+  const existingCodes = new Set(existingEquipment.map((equipment) => equipment.asset_code.toLowerCase()));
+  const batchCodes = new Set<string>();
+  const errors: string[] = [];
+  const inserts: Database["public"]["Tables"]["equipment"]["Insert"][] = [];
+
+  for (const [index, row] of parsed.rows.entries()) {
+    const line = index + 2;
+    const assetCode = row.asset_code ?? "";
+    const equipmentTypeCode = row.equipment_type_code ?? "";
+    const clientName = row.client_name ?? "";
+    const siteName = row.site_name ?? "";
+    const buildingName = row.building_name ?? "";
+    const systemCode = row.system_code ?? "";
+    const type = equipmentTypes.find((candidate) => candidate.code.toLowerCase() === equipmentTypeCode.trim().toLowerCase());
+    const building = buildings.find((candidate) => candidate.name.toLowerCase() === buildingName.trim().toLowerCase() && candidate.sites?.name?.toLowerCase() === siteName.trim().toLowerCase() && candidate.sites?.clients?.name?.toLowerCase() === clientName.trim().toLowerCase());
+    const system = systemCode ? systems.find((candidate) => candidate.building_id === building?.id && (candidate.code?.toLowerCase() === systemCode.trim().toLowerCase() || candidate.name.toLowerCase() === systemCode.trim().toLowerCase())) : null;
+    const status = ((row.status ?? "ACTIVE") || "ACTIVE") as Database["public"]["Enums"]["equipment_status"];
+    if (!assetCode) errors.push(`Line ${line}: asset_code is required.`);
+    if (assetCode && (existingCodes.has(assetCode.toLowerCase()) || batchCodes.has(assetCode.toLowerCase()))) errors.push(`Line ${line}: asset_code ${assetCode} already exists or is duplicated.`);
+    if (!type) errors.push(`Line ${line}: equipment_type_code ${equipmentTypeCode || "(blank)"} was not found.`);
+    if (!building) errors.push(`Line ${line}: client/site/building could not be matched.`);
+    if (systemCode && !system) errors.push(`Line ${line}: system_code ${systemCode} was not found in the selected building.`);
+    if (!importStatuses.has(status)) errors.push(`Line ${line}: status must be ACTIVE, OUT_OF_SERVICE, or RETIRED.`);
+    let technicalData: Record<string, unknown> = {};
+    if (row.technical_data_json) {
+      try {
+        const parsedTechnical = JSON.parse(row.technical_data_json) as unknown;
+        if (!parsedTechnical || typeof parsedTechnical !== "object" || Array.isArray(parsedTechnical)) throw new Error("object required");
+        technicalData = parsedTechnical as Record<string, unknown>;
+      } catch {
+        errors.push(`Line ${line}: technical_data_json must be a valid JSON object.`);
+      }
+    }
+    const fields = technicalFields?.filter((field) => field.equipment_type_id === type?.id) ?? [];
+    for (const field of fields) {
+      const fieldValue = technicalData[field.field_key];
+      if (field.required && (fieldValue === undefined || fieldValue === null || fieldValue === "")) errors.push(`Line ${line}: required technical field ${field.field_key} is missing.`);
+      if (field.field_type === "NUMBER" && fieldValue !== undefined && (typeof fieldValue !== "number" || !Number.isFinite(fieldValue))) errors.push(`Line ${line}: technical field ${field.field_key} must be numeric.`);
+    }
+    if (!errors.some((message) => message.startsWith(`Line ${line}:`)) && type && building) {
+      batchCodes.add(assetCode.toLowerCase());
+      inserts.push({ organisation_id: profile.organisation_id, building_id: building.id, system_id: system?.id ?? null, equipment_type_id: type.id, asset_code: assetCode, serial_number: row.serial_number || null, brand: row.manufacturer || null, model: row.model || null, capacity: row.capacity || null, location_description: row.location_description || null, installation_date: row.installation_date || null, status, technical_data: technicalData as unknown as Json });
+    }
+  }
+
+  if (errors.length) redirect(`/equipment?view=import&error=${encodeURIComponent(errors.slice(0, 5).join(" "))}`);
+  const { error } = await supabase.from("equipment").insert(inserts);
+  if (error) redirect(`/equipment?view=import&error=${encodeURIComponent(error.code ?? "equipment-import-failed")}`);
+  revalidatePath("/equipment");
+  revalidatePath("/dashboard");
+  redirect(`/equipment?imported=${inserts.length}`);
 }
 
 export async function createBuildingRecord(formData: FormData) {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createBuildingRecord, createEquipmentRecord, createSystemRecord } from "@/app/(dashboard)/equipment/actions";
+import { createBuildingRecord, createEquipmentRecord, createSystemRecord, importEquipmentCsv } from "@/app/(dashboard)/equipment/actions";
 import { EquipmentForms } from "@/app/(dashboard)/equipment/equipment-forms";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,6 +16,7 @@ type EquipmentPageProps = {
   searchParams?: Promise<{
     building?: string;
     equipment?: string;
+    imported?: string;
     error?: string;
     family?: string;
     search?: string;
@@ -92,7 +93,7 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
 
   const params = await searchParams;
   const supabase = await createClient();
-  const view = ["assets", "catalogue", "setup"].includes(params?.view ?? "") ? params?.view ?? "assets" : "assets";
+  const view = ["assets", "catalogue", "setup", "import"].includes(params?.view ?? "") ? params?.view ?? "assets" : "assets";
   const selectedStatus = equipmentFilters.some((filter) => filter.key === params?.status) ? params?.status ?? "ACTIVE" : "ACTIVE";
   const selectedSort = ["created_desc", "asset_asc"].includes(params?.sort ?? "") ? params?.sort ?? "created_desc" : "created_desc";
   const searchTerm = (params?.search ?? "").trim().toLowerCase();
@@ -159,13 +160,26 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
         <Link className={`ui-tab${view === "assets" ? " ui-tab-active" : ""}`} href="/equipment">Asset register <span>{allEquipmentCount ?? 0}</span></Link>
         <Link className={`ui-tab${view === "catalogue" ? " ui-tab-active" : ""}`} href="/equipment?view=catalogue">Equipment catalogue <span>{equipmentTypeOptions.length}</span></Link>
         <Link className={`ui-tab${view === "setup" ? " ui-tab-active" : ""}`} href="/equipment?view=setup">Register asset</Link>
+        <Link className={`ui-tab${view === "import" ? " ui-tab-active" : ""}`} href="/equipment?view=import">Import register</Link>
       </nav>
 
       {params?.building ? <SuccessState message="Building created." /> : null}
       {params?.system ? <SuccessState message="System created." /> : null}
       {params?.equipment ? <SuccessState message="Equipment registered." /> : null}
+      {params?.imported ? <SuccessState message={`${params.imported} equipment assets imported successfully.`} /> : null}
       {params?.error ? <ErrorState title="Equipment register not saved" message={errorMessage(params.error) ?? "The register item could not be saved."} /> : null}
       {setupError ? <ErrorState title="Register setup unavailable" message="Some register choices could not be loaded." /> : null}
+
+      {view === "import" ? (
+        <Card className="workflow-action-card equipment-setup-panel">
+          <div className="workflow-section-heading"><div><span className="record-card-kicker">CONTROLLED IMPORT</span><h2 style={{ fontSize: "1rem", margin: "0.25rem 0 0" }}>Import FAST equipment register</h2></div><span className="record-status">Validate before insert</span></div>
+          <p style={{ color: "var(--muted)", margin: "0 0 1rem" }}>Paste the completed CSV template below. FAST validates hierarchy, catalogue codes, duplicate asset codes, status values, JSON technical data, and required fields before creating any records.</p>
+          <form action={importEquipmentCsv}>
+            <label>Equipment CSV<textarea name="csv_text" required rows={16} placeholder="Paste FAST_EQUIPMENT_IMPORT_TEMPLATE.csv contents here" style={{ width: "100%", marginTop: "0.5rem", fontFamily: "monospace" }} /></label>
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginTop: "1rem", flexWrap: "wrap" }}><Button type="submit">Validate and import</Button><a className="button button-secondary" href="/docs/FAST_EQUIPMENT_IMPORT_TEMPLATE.csv">Download template</a><span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>No records are created when validation fails.</span></div>
+          </form>
+        </Card>
+      ) : null}
 
       {view === "setup" ? (
         <Card className="workflow-action-card equipment-setup-panel">
