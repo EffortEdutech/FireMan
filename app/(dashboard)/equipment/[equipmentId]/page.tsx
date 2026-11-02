@@ -30,7 +30,9 @@ const familyLabels: Record<string, string> = {
   PASSIVE_PROTECTION: "Passive protection",
   SMOKE_CONTROL: "Smoke control",
   EMERGENCY_LIFE_SAFETY: "Emergency life safety",
-  SPECIAL_HAZARD: "Special hazard"
+  SPECIAL_HAZARD: "Special hazard",
+  DRY_CHEMICAL: "Dry chemical suppression",
+  FIRE_WATER_SUPPLY: "Fire-water supply"
 };
 
 function displayValue(value: unknown) {

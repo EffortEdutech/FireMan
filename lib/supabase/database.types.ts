@@ -2368,6 +2368,8 @@ export type Database = {
         | "SMOKE_CONTROL"
         | "EMERGENCY_LIFE_SAFETY"
         | "SPECIAL_HAZARD"
+        | "DRY_CHEMICAL"
+        | "FIRE_WATER_SUPPLY"
         | "OTHER"
       template_field_type:
         | "PASS_FAIL"
@@ -2554,6 +2556,8 @@ export const Constants = {
         "SMOKE_CONTROL",
         "EMERGENCY_LIFE_SAFETY",
         "SPECIAL_HAZARD",
+        "DRY_CHEMICAL",
+        "FIRE_WATER_SUPPLY",
         "OTHER",
       ],
       template_field_type: [
@@ -2570,3 +2574,4 @@ export const Constants = {
     },
   },
 } as const
+

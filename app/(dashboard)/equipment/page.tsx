@@ -59,6 +59,8 @@ const familyLabels: Record<string, string> = {
   SMOKE_CONTROL: "Smoke control",
   EMERGENCY_LIFE_SAFETY: "Emergency life safety",
   SPECIAL_HAZARD: "Special hazard",
+  DRY_CHEMICAL: "Dry chemical suppression",
+  FIRE_WATER_SUPPLY: "Fire-water supply",
   OTHER: "Other"
 };
 

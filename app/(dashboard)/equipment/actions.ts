@@ -27,6 +27,8 @@ const systemTypes = new Set<SystemType>([
   "SMOKE_CONTROL",
   "EMERGENCY_LIFE_SAFETY",
   "SPECIAL_HAZARD",
+  "DRY_CHEMICAL",
+  "FIRE_WATER_SUPPLY",
   "OTHER"
 ]);
 
@@ -393,3 +395,4 @@ export async function uploadEquipmentDocument(formData: FormData) {
   revalidatePath(`/equipment/${equipmentId}`);
   redirect(`/equipment/${equipmentId}?saved=document`);
 }
+
