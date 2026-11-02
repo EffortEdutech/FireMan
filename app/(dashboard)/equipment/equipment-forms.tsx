@@ -32,6 +32,7 @@ type EquipmentTypeOption = {
     label: string;
     field_type: string;
     unit: string | null;
+    options?: unknown;
     required: boolean;
   }>;
 };
@@ -62,10 +63,15 @@ const systemTypes = [
   ["EXIT_SIGNAGE", "Exit signage"],
   ["HYDRANT_RISER", "Hydrant / riser"],
   ["FIRE_PUMP", "Fire pump"],
+  ["WATER_SPRAY_MIST", "Water spray / mist"],
   ["GASEOUS_SUPPRESSION", "Gaseous suppression"],
+  ["CO2_SUPPRESSION", "CO₂ suppression"],
   ["FOAM_SUPPRESSION", "Foam suppression"],
+  ["KITCHEN_SUPPRESSION", "Kitchen suppression"],
   ["PASSIVE_PROTECTION", "Passive protection (doors, dampers)"],
   ["SMOKE_CONTROL", "Smoke control"],
+  ["EMERGENCY_LIFE_SAFETY", "Emergency life safety"],
+  ["SPECIAL_HAZARD", "Special hazard"],
   ["OTHER", "Other"]
 ];
 
@@ -210,7 +216,14 @@ export function EquipmentForms({
                 {selectedEquipmentType.fields.map((field) => (
                   <label key={field.field_key} style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: "0.85rem" }}>
                     <span>{field.label}{field.required ? " *" : ""}{field.unit ? ` (${field.unit})` : ""}</span>
-                    <input aria-label={field.label} name={`technical_${field.field_key}`} required={field.required} style={fieldStyle} type={field.field_type === "NUMBER" ? "number" : field.field_type === "DATE" ? "date" : "text"} />
+                    {field.field_type === "SELECT" && Array.isArray(field.options) ? (
+                      <select aria-label={field.label} name={`technical_${field.field_key}`} required={field.required} style={fieldStyle}>
+                        <option value="">Select {field.label.toLowerCase()}</option>
+                        {field.options.map((option) => <option key={String(option)} value={String(option)}>{String(option)}</option>)}
+                      </select>
+                    ) : (
+                      <input aria-label={field.label} name={`technical_${field.field_key}`} required={field.required} style={fieldStyle} type={field.field_type === "NUMBER" ? "number" : field.field_type === "DATE" ? "date" : "text"} />
+                    )}
                   </label>
                 ))}
               </div>

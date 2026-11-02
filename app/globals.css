@@ -1658,6 +1658,163 @@ select {
   opacity: 0.45;
 }
 
+.equipment-workspace {
+  display: grid;
+  gap: 1rem;
+}
+
+.equipment-workspace-tabs {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.65rem;
+}
+
+.equipment-workspace-tabs .ui-tab {
+  gap: 0.45rem;
+}
+
+.equipment-workspace-tabs .ui-tab span {
+  color: currentColor;
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.workspace-section-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.workspace-section-heading h2 {
+  margin: 0.25rem 0 0;
+}
+
+.workspace-section-heading p {
+  color: var(--muted);
+  margin: 0.4rem 0 0;
+  max-width: 58rem;
+}
+
+.equipment-search-toolbar,
+.equipment-catalogue-toolbar {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.equipment-search-toolbar input {
+  flex: 1 1 24rem;
+  min-height: 42px;
+}
+
+.equipment-catalogue-toolbar label {
+  color: var(--muted);
+  display: grid;
+  flex: 1 1 15rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  gap: 0.3rem;
+}
+
+.equipment-catalogue-toolbar input,
+.equipment-catalogue-toolbar select {
+  min-height: 42px;
+}
+
+.equipment-sort-toolbar {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.equipment-catalogue-table-card,
+.equipment-assets-table-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.table-context {
+  align-items: baseline;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+}
+
+.table-context span,
+.table-cell-subtext,
+.text-muted {
+  color: var(--muted);
+}
+
+.table-cell-subtext {
+  display: block;
+  font-size: 0.76rem;
+  margin-top: 0.25rem;
+}
+
+.catalogue-code {
+  color: var(--accent);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0.02em;
+}
+
+.equipment-catalogue-table td,
+.equipment-catalogue-table th,
+.equipment-assets-table td,
+.equipment-assets-table th {
+  vertical-align: top;
+}
+
+.equipment-status {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.22rem 0.55rem;
+  white-space: nowrap;
+}
+
+.equipment-status-active {
+  background: color-mix(in srgb, #16835b 10%, var(--surface));
+  border-color: color-mix(in srgb, #16835b 35%, var(--border));
+  color: #126646;
+}
+
+.equipment-status-out_of_service {
+  background: color-mix(in srgb, #b7791f 11%, var(--surface));
+  border-color: color-mix(in srgb, #b7791f 35%, var(--border));
+  color: #8a5b12;
+}
+
+.equipment-status-retired {
+  background: var(--background);
+  color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .workspace-section-heading {
+    flex-direction: column;
+  }
+
+  .workspace-section-heading .button {
+    width: 100%;
+  }
+
+  .equipment-search-toolbar .button,
+  .equipment-catalogue-toolbar .button {
+    width: 100%;
+  }
+
+  .table-context {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
+
 @media (max-width: 760px) {
   .workflow-stepper,
   .workflow-summary-grid {
