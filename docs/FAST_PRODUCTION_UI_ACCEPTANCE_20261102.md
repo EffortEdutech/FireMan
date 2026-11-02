@@ -20,19 +20,19 @@
 - Authenticated Dashboard views verified: Overview, Maintenance intelligence, Maintenance history, Technician workload, and Management attention.
 - Authenticated management screens verified after data loading: Service Requests, Maintenance, Reports, Equipment, Clients, Sites, and Report Settings.
 - Loading boundaries were observed on slower data-backed routes and cleared after the route finished loading.
-- Technician routes correctly redirected the current OWNER session to the management dashboard; a technician-role session is still required to validate the technician shell itself.
+- Authenticated technician session verified Today, Jobs, Scan, More, and a technician job-detail route.
+- Technician mobile viewport verified at 390×844: no page-level horizontal overflow, filter controls scroll within their own region, and bottom navigation remains usable.
+- A real mobile-layout defect was fixed by constraining technician grid content; production deployment `b512f43` is READY and aliased to `fire-man.vercel.app`.
 - Local production build passes TypeScript, ESLint, and Next.js build validation.
 
 ## Evidence still required
 
-- Authenticated technician-role review of Today, Jobs, Scan, and equipment workflow.
-- Real-device/mobile visual review of the authenticated management and technician shells.
 - Button pending-state verification during an authenticated form submission.
 
 ## Acceptance limitation
 
-The available browser session is authenticated as FAST OWNER, which is sufficient for management-screen review but is redirected away from technician-only routes. The repository Playwright suite also cannot start its configured `webServer` process in this Windows environment, although `npm run start` launches the same production server manually on port 3060. Mobile review was limited to the narrow Codex browser viewport; a real device or technician-role session is still needed for full daily-use approval.
+The repository Playwright suite cannot start its configured `webServer` process in this Windows environment, although `npm run start` launches the same production server manually on port 3060. The mobile check used a 390×844 browser viewport rather than a physical handset. Form submission was not triggered against production because the available technician data was already submitted/locked and creating new field data would be an external operational side effect.
 
 ## Defects recorded
 
-No production route or interaction defect was identified during this acceptance pass. The remaining items are validation prerequisites (technician-role access, real-device/mobile review, and a safe authenticated form-submission check), not confirmed product defects.
+One mobile overflow defect was found and fixed in `app/globals.css`; production verification passed after deployment `b512f43`. No remaining production route or navigation defect was identified. The only deferred check is a live form-pending observation, which requires an editable pilot job and explicit operational test approval.
