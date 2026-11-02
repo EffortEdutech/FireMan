@@ -1,3 +1,2 @@
 asset_code,equipment_type_code,client_name,site_name,building_name,system_code,location_description,manufacturer,model,serial_number,capacity,installation_date,status,technical_data_json,document_references,customer_visible
-FAST-DEMO-001,FAP-STD,Example Client,Example Site,Example Building,FAS-MAIN,Ground floor fire command centre,Example Manufacturer,Example Model,EXAMPLE-SERIAL,,2026-01-15,ACTIVE,"{\"panel_configuration\":\"addressable\",\"battery_capacity\":\"65\"}",,false
-
+FAST-SAMPLE-001,FAP-STD,CLIENT_NAME,SITE_NAME,BUILDING_NAME,SYSTEM_CODE,Fire command centre,Example Manufacturer,Example Model,EXAMPLE-SERIAL,,2026-01-15,ACTIVE,"{""panel_configuration"":""addressable"",""battery_capacity"":65}",,false
