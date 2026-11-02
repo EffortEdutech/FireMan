@@ -4,41 +4,16 @@ import { PageHeader } from "@/components/ui/page-header";
 import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessManagement } from "@/lib/permissions/roles";
 import { createClient } from "@/lib/supabase/server";
+import { changeCatalogueStatus, createCatalogueRecord, duplicateCatalogueVersion, importCatalogueCsv, saveCatalogueField, saveChecklistItem, saveChecklistTemplate, updateCatalogueRecord } from "./actions";
 
-type CataloguePageProps = {
-  searchParams?: Promise<{ search?: string; family?: string; status?: string }>;
-};
-
-const familyLabels: Record<string, string> = {
-  FIRE_ALARM: "Fire alarm",
-  FIRE_EXTINGUISHING: "Fire extinguishing",
-  HOSE_REEL: "Hose reel",
-  SPRINKLER: "Sprinkler",
-  EMERGENCY_LIGHTING: "Emergency lighting",
-  EXIT_SIGNAGE: "Exit signage",
-  HYDRANT_RISER: "Hydrant / riser",
-  FIRE_PUMP: "Fire pump",
-  WATER_SPRAY_MIST: "Water spray / mist",
-  GASEOUS_SUPPRESSION: "Gaseous suppression",
-  CO2_SUPPRESSION: "CO₂ suppression",
-  FOAM_SUPPRESSION: "Foam / deluge / monitor",
-  KITCHEN_SUPPRESSION: "Kitchen suppression",
-  PASSIVE_PROTECTION: "Passive protection",
-  SMOKE_CONTROL: "Smoke control",
-  EMERGENCY_LIFE_SAFETY: "Emergency life safety",
-  SPECIAL_HAZARD: "Special hazard",
-  DRY_CHEMICAL: "Dry chemical suppression",
-  FIRE_WATER_SUPPLY: "Fire-water supply",
-  ASPIRATING_SMOKE: "Aspirating smoke / VESDA",
-  GAS_DETECTION: "Gas detection",
-  FIRE_EVACUATION: "Voice evacuation",
-  FIRE_BRIGADE_COMMS: "Fire brigade communications",
-  OTHER: "Other"
-};
-
-function familyLabel(value: string) {
-  return familyLabels[value] ?? value.replaceAll("_", " ");
-}
+type CataloguePageProps = { searchParams?: Promise<{ search?: string; family?: string; status?: string; selected?: string; error?: string; created?: string; saved?: string; duplicated?: string; imported?: string; "field-saved"?: string; "template-saved"?: string; "item-saved"?: string }> };
+const familyLabels: Record<string, string> = { FIRE_ALARM: "Fire alarm", FIRE_EXTINGUISHING: "Fire extinguishing", HOSE_REEL: "Hose reel", SPRINKLER: "Sprinkler", EMERGENCY_LIGHTING: "Emergency lighting", EXIT_SIGNAGE: "Exit signage", HYDRANT_RISER: "Hydrant / riser", FIRE_PUMP: "Fire pump", WATER_SPRAY_MIST: "Water spray / mist", GASEOUS_SUPPRESSION: "Gaseous suppression", CO2_SUPPRESSION: "CO₂ suppression", FOAM_SUPPRESSION: "Foam / deluge / monitor", KITCHEN_SUPPRESSION: "Kitchen suppression", PASSIVE_PROTECTION: "Passive protection", SMOKE_CONTROL: "Smoke control", EMERGENCY_LIFE_SAFETY: "Emergency life safety", SPECIAL_HAZARD: "Special hazard", DRY_CHEMICAL: "Dry chemical suppression", FIRE_WATER_SUPPLY: "Fire-water supply", ASPIRATING_SMOKE: "Aspirating smoke / VESDA", GAS_DETECTION: "Gas detection", FIRE_EVACUATION: "Voice evacuation", FIRE_BRIGADE_COMMS: "Fire brigade communications", OTHER: "Other" };
+const systemOptions = Object.entries(familyLabels);
+const fieldOptions = ["PASS_FAIL", "YES_NO", "SELECT", "NUMBER", "TEXT", "PHOTO", "DATE", "SIGNATURE"];
+function familyLabel(value: string) { return familyLabels[value] ?? value.replaceAll("_", " "); }
+function statusClass(status: string) { return `record-status record-status-${status.toLowerCase()}`; }
+function StatusAction({ id, next, label, tone = "secondary" }: { id: string; next: string; label: string; tone?: "primary" | "secondary" | "danger" }) { return <form action={changeCatalogueStatus}><input type="hidden" name="equipment_type_id" value={id} /><input type="hidden" name="next_status" value={next} /><button className={`button button-${tone}`} type="submit">{label}</button></form>; }
+function CreatePanel() { return <details className="workflow-action-card"><summary className="section-heading"><span><span className="record-card-kicker">NEW RECORD</span><strong>Create catalogue record</strong></span><span className="button button-primary">Add equipment type</span></summary><form action={createCatalogueRecord} className="form-grid form-grid-two" style={{ marginTop: "1rem" }}><label>Name<input name="name" required placeholder="e.g. Aspirating detector" /></label><label>Code<input name="code" required placeholder="e.g. ASP-DET-2" /></label><label>System family<select name="system_type" defaultValue="FIRE_ALARM">{systemOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Reference standards<input name="reference_standards" placeholder="NFPA 72, EN 54-20" /></label><label className="form-grid-span-two">Description<textarea name="description" rows={3} placeholder="Describe the catalogue component and its intended use." /></label><div className="form-actions form-grid-span-two"><button className="button button-primary" type="submit">Create draft</button><span className="form-help">New records start as DRAFT and are not available for asset registration.</span></div></form></details>; }
 
 export default async function CataloguePage({ searchParams }: CataloguePageProps) {
   const profile = await requireProfile();
@@ -48,61 +23,37 @@ export default async function CataloguePage({ searchParams }: CataloguePageProps
   const selectedFamily = params.family ?? "";
   const selectedStatus = params.status ?? "";
   const supabase = await createClient();
-
   const [{ data: types }, { data: fields }] = await Promise.all([
-    supabase.from("equipment_types").select("id,name,code,system_type,description,active,catalogue_version,approval_status,reference_standards,approved_at").is("organisation_id", null).order("system_type").order("name"),
-    supabase.from("equipment_type_fields").select("equipment_type_id,required,customer_visible,active").is("organisation_id", null).eq("active", true)
+    supabase.from("equipment_types").select("id,name,code,system_type,description,active,catalogue_version,approval_status,reference_standards,approved_at,supersedes_id").is("organisation_id", null).order("code").order("catalogue_version"),
+    supabase.from("equipment_type_fields").select("id,equipment_type_id,field_key,label,field_type,unit,options,required,customer_visible,sort_order,active").is("organisation_id", null).eq("active", true).order("sort_order")
   ]);
-
-  const fieldMap = new Map<string, { total: number; required: number; customerVisible: number }>();
-  for (const field of fields ?? []) {
-    const current = fieldMap.get(field.equipment_type_id) ?? { total: 0, required: 0, customerVisible: 0 };
-    current.total += 1;
-    if (field.required) current.required += 1;
-    if (field.customer_visible) current.customerVisible += 1;
-    fieldMap.set(field.equipment_type_id, current);
-  }
-
-  const catalogue = (types ?? []).filter((type) => {
-    const matchesSearch = !search || `${type.code} ${type.name} ${type.description ?? ""}`.toLowerCase().includes(search);
-    const matchesFamily = !selectedFamily || type.system_type === selectedFamily;
-    const matchesStatus = !selectedStatus || type.approval_status === selectedStatus;
-    return matchesSearch && matchesFamily && matchesStatus;
-  });
+  const catalogue = (types ?? []).filter((type) => (!search || `${type.code} ${type.name} ${type.description ?? ""}`.toLowerCase().includes(search)) && (!selectedFamily || type.system_type === selectedFamily) && (!selectedStatus || type.approval_status === selectedStatus));
   const families = Array.from(new Set((types ?? []).map((type) => type.system_type))).sort((a, b) => familyLabel(a).localeCompare(familyLabel(b)));
+  const selected = (types ?? []).find((type) => type.id === params.selected) ?? null;
+  const selectedFields = selected ? (fields ?? []).filter((field) => field.equipment_type_id === selected.id) : [];
+  const { data: selectedTemplates } = selected ? await supabase.from("inspection_templates").select("id,name,code,version,status,description").eq("equipment_type_id", selected.id).is("organisation_id", null).order("version", { ascending: false }) : { data: [] };
+  const templateIds = selectedTemplates?.map((template) => template.id) ?? [];
+  const { data: selectedItems } = templateIds.length ? await supabase.from("inspection_template_items").select("id,template_id,section,item_code,prompt,field_type,options,required,sort_order,guidance,fail_creates_finding").in("template_id", templateIds).order("sort_order") : { data: [] };
+  const { data: auditEvents } = selected ? await supabase.from("catalogue_audit_events").select("id,action,from_status,to_status,catalogue_version,metadata,created_at,actor_id").eq("entity_id", selected.id).order("created_at", { ascending: false }).limit(20) : { data: [] };
+  const fieldMap = new Map<string, { total: number; required: number; customerVisible: number }>();
+  for (const field of fields ?? []) { const current = fieldMap.get(field.equipment_type_id) ?? { total: 0, required: 0, customerVisible: 0 }; current.total += 1; if (field.required) current.required += 1; if (field.customer_visible) current.customerVisible += 1; fieldMap.set(field.equipment_type_id, current); }
   const approved = (types ?? []).filter((type) => type.approval_status === "APPROVED").length;
   const inReview = (types ?? []).filter((type) => type.approval_status === "IN_REVIEW").length;
   const draft = (types ?? []).filter((type) => type.approval_status === "DRAFT").length;
 
-  return (
-    <div className="page-stack">
-      <PageHeader title="Equipment catalogue" description="Global FireMaint product catalogue shared by FAST and every future client organisation." />
-      <div className="page-actions"><Link className="button button-secondary" href="/equipment">Open asset register</Link></div>
-
-      <div className="metrics-grid">
-        <Card><span className="metric-label">Global equipment types</span><strong className="metric-value">{types?.length ?? 0}</strong><span className="metric-detail">Reusable catalogue records</span></Card>
-        <Card><span className="metric-label">Approved</span><strong className="metric-value">{approved}</strong><span className="metric-detail">Available for client use</span></Card>
-        <Card><span className="metric-label">In review</span><strong className="metric-value">{inReview}</strong><span className="metric-detail">Awaiting catalogue approval</span></Card>
-        <Card><span className="metric-label">Draft</span><strong className="metric-value">{draft}</strong><span className="metric-detail">Not available for asset registration</span></Card>
-      </div>
-
-      <Card className="workflow-action-card">
-        <div className="section-heading"><div><span className="record-card-kicker">CATALOGUE CONTROL</span><h2>Filter product records</h2></div><span className="record-status">{catalogue.length} shown</span></div>
-        <form className="filter-bar-card" method="get">
-          <label>Search<input name="search" defaultValue={params.search ?? ""} placeholder="Code, equipment, or description" /></label>
-          <label>System family<select name="family" defaultValue={selectedFamily}><option value="">All families</option>{families.map((family) => <option key={family} value={family}>{familyLabel(family)}</option>)}</select></label>
-          <label>Approval status<select name="status" defaultValue={selectedStatus}><option value="">All statuses</option><option value="APPROVED">Approved</option><option value="IN_REVIEW">In review</option><option value="DRAFT">Draft</option><option value="RETIRED">Retired</option></select></label>
-          <button className="button button-secondary" type="submit">Apply filters</button>
-        </form>
-      </Card>
-
-      <Card className="equipment-assets-table-card">
-        <div className="table-context"><strong>{catalogue.length} catalogue records</strong><span>Global product data · versioned · client reusable</span></div>
-        <div className="table-scroll"><table className="data-table responsive-detail-table"><thead><tr><th>Code</th><th>Equipment type</th><th>System family</th><th>Version</th><th>Approval</th><th>Technical fields</th><th>References</th></tr></thead><tbody>
-          {catalogue.map((type) => { const counts = fieldMap.get(type.id) ?? { total: 0, required: 0, customerVisible: 0 }; const standards = Array.isArray(type.reference_standards) ? type.reference_standards.map(String).join(", ") : "—"; return <tr key={type.id}><td data-label="Code"><strong className="catalogue-code">{type.code}</strong></td><td data-label="Equipment type"><strong>{type.name}</strong><small className="table-cell-subtext">{type.description ?? "No description"}</small></td><td data-label="System family">{familyLabel(type.system_type)}</td><td data-label="Version">v{type.catalogue_version}</td><td data-label="Approval"><span className={`record-status record-status-${type.approval_status.toLowerCase()}`}>{type.approval_status}</span></td><td data-label="Technical fields"><strong>{counts.total}</strong><small className="table-cell-subtext">{counts.required} required · {counts.customerVisible} customer-visible</small></td><td data-label="References">{standards}</td></tr>; })}
-        </tbody></table></div>
-      </Card>
-    </div>
-  );
+  return <div className="page-stack">
+    <PageHeader title="Equipment catalogue administration" description="Maintain the global FireMaint product catalogue once, then reuse approved versions for FAST and future client organisations." />
+    <div className="page-actions"><Link className="button button-secondary" href="/equipment">Open asset register</Link><a className="button button-secondary" href="/api/catalogue/export">Export CSV</a></div>
+    {params.error ? <div className="form-error" role="alert">Catalogue action failed: {params.error}</div> : null}
+    {params.created || params.saved || params.duplicated || params.imported || params["field-saved"] || params["template-saved"] || params["item-saved"] ? <div className="form-success" role="status">Catalogue update saved. New records remain controlled by their approval status.</div> : null}
+    <div className="metrics-grid"><Card><span className="metric-label">Global records</span><strong className="metric-value">{types?.length ?? 0}</strong><span className="metric-detail">Reusable product definitions</span></Card><Card><span className="metric-label">Approved</span><strong className="metric-value">{approved}</strong><span className="metric-detail">Available for asset registration</span></Card><Card><span className="metric-label">In review</span><strong className="metric-value">{inReview}</strong><span className="metric-detail">Awaiting approval decision</span></Card><Card><span className="metric-label">Draft</span><strong className="metric-value">{draft}</strong><span className="metric-detail">Editable working versions</span></Card></div>
+    <div className="split-layout"><div className="page-stack">
+      <CreatePanel />
+      <Card className="workflow-action-card"><div className="section-heading"><div><span className="record-card-kicker">CATALOGUE QUEUE</span><h2>Versioned product records</h2></div><span className="record-status">{catalogue.length} shown</span></div><form className="filter-bar-card" method="get"><label>Search<input name="search" defaultValue={params.search ?? ""} placeholder="Code, name, description" /></label><label>Family<select name="family" defaultValue={selectedFamily}><option value="">All families</option>{families.map((family) => <option key={family} value={family}>{familyLabel(family)}</option>)}</select></label><label>Status<select name="status" defaultValue={selectedStatus}><option value="">All statuses</option>{["DRAFT", "IN_REVIEW", "APPROVED", "RETIRED"].map((status) => <option key={status} value={status}>{status.replace("_", " ")}</option>)}</select></label><button className="button button-secondary" type="submit">Filter</button></form><div className="table-scroll"><table className="data-table responsive-detail-table"><thead><tr><th>Record</th><th>Family</th><th>Version</th><th>Status</th><th>Fields</th><th>Actions</th></tr></thead><tbody>{catalogue.map((type) => { const counts = fieldMap.get(type.id) ?? { total: 0, required: 0, customerVisible: 0 }; return <tr key={type.id} className={selected?.id === type.id ? "data-table-row-selected" : undefined}><td data-label="Record"><Link href={`/catalogue?selected=${type.id}`}><strong className="catalogue-code">{type.code}</strong><small className="table-cell-subtext">{type.name}</small></Link></td><td data-label="Family">{familyLabel(type.system_type)}</td><td data-label="Version">v{type.catalogue_version}</td><td data-label="Status"><span className={statusClass(type.approval_status)}>{type.approval_status}</span></td><td data-label="Fields"><strong>{counts.total}</strong><small className="table-cell-subtext">{counts.required} required · {counts.customerVisible} visible</small></td><td data-label="Actions"><div className="table-row-actions"><Link className="button button-small button-secondary" href={`/catalogue?selected=${type.id}`}>Open</Link>{type.approval_status === "DRAFT" ? <StatusAction id={type.id} next="IN_REVIEW" label="Submit review" /> : null}{type.approval_status === "IN_REVIEW" ? <><StatusAction id={type.id} next="DRAFT" label="Return draft" /><StatusAction id={type.id} next="APPROVED" label="Approve" tone="primary" /></> : null}{type.approval_status === "APPROVED" ? <StatusAction id={type.id} next="RETIRED" label="Retire" tone="danger" /> : null}<form action={duplicateCatalogueVersion}><input type="hidden" name="equipment_type_id" value={type.id} /><button className="button button-small button-secondary" type="submit">Duplicate</button></form></div></td></tr>; })}</tbody></table></div></Card>
+      <Card className="workflow-action-card"><div className="section-heading"><div><span className="record-card-kicker">MAINTENANCE</span><h2>Import catalogue CSV</h2></div></div><p className="section-description">Import creates new DRAFT versions only. Exported CSV files can be edited and re-imported as controlled drafts.</p><form action={importCatalogueCsv} className="form-actions"><input type="file" name="catalogue_file" accept=".csv,text/csv" required /><button className="button button-secondary" type="submit">Import drafts</button></form><small className="form-help">Columns: code, name, system_type, description, reference_standards</small></Card>
+    </div><aside className="page-stack">{selected ? <Card className="detail-panel"><div className="section-heading"><div><span className="record-card-kicker">SELECTED VERSION</span><h2>{selected.code}</h2><p>{selected.name}</p></div><span className={statusClass(selected.approval_status)}>{selected.approval_status}</span></div>{["DRAFT", "IN_REVIEW"].includes(selected.approval_status) ? <form action={updateCatalogueRecord} className="form-grid"><input type="hidden" name="equipment_type_id" value={selected.id} /><label>Name<input name="name" defaultValue={selected.name} /></label><label>Code<input name="code" defaultValue={selected.code} /></label><label>System family<select name="system_type" defaultValue={selected.system_type}>{systemOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Standards<input name="reference_standards" defaultValue={Array.isArray(selected.reference_standards) ? selected.reference_standards.join(", ") : ""} /></label><label>Description<textarea name="description" defaultValue={selected.description ?? ""} rows={3} /></label><button className="button button-primary" type="submit">Save draft</button></form> : <p className="section-description">This version is locked. Duplicate it to make a new editable version.</p>}<div className="detail-meta"><span>Version <strong>v{selected.catalogue_version}</strong></span><span>Family <strong>{familyLabel(selected.system_type)}</strong></span><span>Approved <strong>{selected.approved_at ? new Date(selected.approved_at).toLocaleDateString("en-MY") : "—"}</strong></span></div><form action={duplicateCatalogueVersion}><input type="hidden" name="equipment_type_id" value={selected.id} /><button className="button button-secondary" type="submit">Duplicate as next version</button></form></Card> : <Card className="empty-state"><strong>Select a catalogue record</strong><p>Choose a row to manage its version, fields, checklists, and approval history.</p></Card>}
+      {selected && ["DRAFT", "IN_REVIEW"].includes(selected.approval_status) ? <><Card className="detail-panel"><div className="section-heading"><div><span className="record-card-kicker">TECHNICAL FIELD TEMPLATE</span><h2>Fields</h2></div><span className="record-status">{selectedFields.length}</span></div><div className="table-scroll"><table className="data-table"><thead><tr><th>Key</th><th>Label</th><th>Type</th><th>Rules</th></tr></thead><tbody>{selectedFields.map((field) => <tr key={field.id}><td><strong>{field.field_key}</strong></td><td>{field.label}</td><td>{field.field_type}</td><td>{field.required ? "Required" : "Optional"} · {field.customer_visible ? "Visible" : "Internal"}</td></tr>)}</tbody></table></div><form action={saveCatalogueField} className="form-grid form-grid-two"><input type="hidden" name="equipment_type_id" value={selected.id} /><label>Key<input name="field_key" required /></label><label>Label<input name="label" required /></label><label>Type<select name="field_type" defaultValue="TEXT">{fieldOptions.map((option) => <option key={option}>{option}</option>)}</select></label><label>Unit<input name="unit" /></label><label>Options<input name="options" placeholder="option one, option two" /></label><label>Sort order<input name="sort_order" type="number" defaultValue="100" /></label><label><input type="checkbox" name="required" /> Required</label><label><input type="checkbox" name="customer_visible" defaultChecked /> Customer-visible</label><button className="button button-secondary" type="submit">Add field</button></form></Card><Card className="detail-panel"><div className="section-heading"><div><span className="record-card-kicker">INSPECTION TEMPLATES</span><h2>Checklist templates</h2></div><span className="record-status">{selectedTemplates?.length ?? 0}</span></div>{(selectedTemplates ?? []).map((template) => <div className="catalogue-template-block" key={template.id}><div className="table-context"><strong>{template.name}</strong><span>{template.code} · {template.status} · {(selectedItems ?? []).filter((item) => item.template_id === template.id).length} items</span></div><ul className="compact-list">{(selectedItems ?? []).filter((item) => item.template_id === template.id).map((item) => <li key={item.id}><span>{item.item_code} · {item.prompt}</span><small>{item.field_type}{item.required ? " · required" : ""}</small></li>)}</ul><form action={saveChecklistItem} className="form-grid form-grid-two"><input type="hidden" name="equipment_type_id" value={selected.id} /><input type="hidden" name="template_id" value={template.id} /><label>Item code<input name="item_code" required /></label><label>Prompt<input name="item_prompt" required /></label><label>Type<select name="item_field_type" defaultValue="PASS_FAIL">{fieldOptions.map((option) => <option key={option}>{option}</option>)}</select></label><label>Section<input name="item_section" defaultValue="General" /></label><label>Guidance<input name="item_guidance" /></label><label>Sort order<input name="item_sort_order" type="number" defaultValue="10" /></label><label><input type="checkbox" name="item_required" defaultChecked /> Required</label><label><input type="checkbox" name="item_fail_finding" defaultChecked /> Create finding on failure</label><button className="button button-secondary" type="submit">Add checklist item</button></form></div>)}<form action={saveChecklistTemplate} className="form-grid form-grid-two"><input type="hidden" name="equipment_type_id" value={selected.id} /><label>Template name<input name="template_name" required /></label><label>Template code<input name="template_code" required /></label><label>Version<input name="template_version" type="number" defaultValue={selected.catalogue_version} /></label><label>Description<input name="template_description" /></label><button className="button button-secondary" type="submit">Add template</button></form></Card></> : null}
+      {selected ? <Card className="detail-panel"><div className="section-heading"><div><span className="record-card-kicker">GOVERNANCE</span><h2>Approval history</h2></div><span className="record-status">{auditEvents?.length ?? 0}</span></div><ul className="timeline-list">{(auditEvents ?? []).map((event) => <li key={event.id}><strong>{event.action}</strong><span>{event.from_status ?? "—"} → {event.to_status ?? "—"}</span><small>{new Date(event.created_at).toLocaleString("en-MY")}</small></li>)}</ul></Card> : null}</aside></div>
+  </div>;
 }
 

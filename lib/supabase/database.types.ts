@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalogue_audit_events: {
+        Row: {
+          action: string
+          actor_id: string
+          catalogue_version: number | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          from_status: string | null
+          id: string
+          metadata: Json
+          organisation_id: string | null
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          catalogue_version?: number | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json
+          organisation_id?: string | null
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          catalogue_version?: number | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json
+          organisation_id?: string | null
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_audit_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogue_audit_events_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
