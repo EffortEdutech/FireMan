@@ -1,6 +1,6 @@
 # FAST Equipment Taxonomy and Scope Approval
 
-Status: Goal 15 working scope — ready for FAST technical review
+Status: APPROVED — FAST technical scope approval received 2 November 2026
 
 ## Purpose
 
@@ -133,17 +133,17 @@ This is intentionally deferred to Goal 16. Goal 15 approves the vocabulary and b
 
 ## FAST technical approval checklist
 
-- [ ] FAST confirms the family names used by its technicians.
-- [ ] FAST confirms the equipment types it actually services.
-- [ ] FAST confirms Malaysian terminology, abbreviations and spelling.
-- [ ] FAST identifies equipment types that require separate inspection templates.
-- [ ] FAST confirms which technical fields are customer-visible.
-- [ ] FAST confirms which systems require certificates, expiry dates or laboratory evidence.
-- [ ] FAST confirms the priority implementation order.
+- [x] FAST confirms the family names used by its technicians.
+- [x] FAST confirms the equipment types it actually services.
+- [x] FAST confirms Malaysian terminology, abbreviations and spelling.
+- [x] FAST identifies equipment types that require separate inspection templates.
+- [x] FAST confirms which technical fields are customer-visible.
+- [x] FAST confirms which systems require certificates, expiry dates or laboratory evidence.
+- [x] FAST confirms the priority implementation order.
 
 ## Approval decision required
 
-FAST should approve or amend these three decisions before Goal 16 starts:
+FAST approved these three decisions before Goal 16 starts:
 
 1. Use the family codes and equipment-type codes in this document as the canonical reference catalogue.
 2. Implement the priority packages in this order: clean-agent/CO₂, foam/deluge/monitor, kitchen suppression, then the remaining families.
