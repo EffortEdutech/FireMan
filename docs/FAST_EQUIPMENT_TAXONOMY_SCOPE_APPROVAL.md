@@ -23,6 +23,18 @@ The current repository already contains these reference equipment types:
 
 The application already recognises broader system groups for gaseous suppression, foam suppression, passive protection, and smoke control. The missing work is the detailed equipment catalogue, technical fields, inspection templates, and component relationships for those systems.
 
+## Current implementation gap
+
+The current `public.system_type` enum supports the original groups plus `HYDRANT_RISER`, `FIRE_PUMP`, `GASEOUS_SUPPRESSION`, `FOAM_SUPPRESSION`, `PASSIVE_PROTECTION`, and `SMOKE_CONTROL`. The following proposed families still require a later schema migration before they can be used as first-class system records:
+
+- `WATER_SPRAY_MIST`
+- `CO2_SUPPRESSION`
+- `KITCHEN_SUPPRESSION`
+- `EMERGENCY_LIFE_SAFETY`
+- `SPECIAL_HAZARD`
+
+This is intentionally deferred to Goal 16. Goal 15 approves the vocabulary and boundaries first; Goal 16 will add enum values, seed records, and compatibility checks in a controlled migration.
+
 ## Approved system-family code set
 
 | Family code | Family | Scope |
@@ -128,6 +140,14 @@ The application already recognises broader system groups for gaseous suppression
 - [ ] FAST confirms which technical fields are customer-visible.
 - [ ] FAST confirms which systems require certificates, expiry dates or laboratory evidence.
 - [ ] FAST confirms the priority implementation order.
+
+## Approval decision required
+
+FAST should approve or amend these three decisions before Goal 16 starts:
+
+1. Use the family codes and equipment-type codes in this document as the canonical reference catalogue.
+2. Implement the priority packages in this order: clean-agent/CO₂, foam/deluge/monitor, kitchen suppression, then the remaining families.
+3. Keep system records separate from component equipment records, with each component linked to its parent system and protected hazard.
 
 ## Reference basis
 
