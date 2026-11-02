@@ -149,6 +149,27 @@ FAST should approve or amend these three decisions before Goal 16 starts:
 2. Implement the priority packages in this order: clean-agent/CO₂, foam/deluge/monitor, kitchen suppression, then the remaining families.
 3. Keep system records separate from component equipment records, with each component linked to its parent system and protected hazard.
 
+## Technical review matrix
+
+| Family | Existing system enum | Goal 16 migration needed | Priority | FAST decision |
+| --- | --- | --- | --- | --- |
+| Fire alarm and detection | Yes | No | Core | Pending |
+| Automatic sprinkler | Yes | No | Core | Pending |
+| Hydrant, riser and hose reel | Yes | No | Core | Pending |
+| Fire pumps and water supply | Yes | No | Core | Pending |
+| Water spray and water mist | No | Yes | Phase 2 | Pending |
+| Clean-agent suppression | Yes | No | Phase 1 | Pending |
+| Carbon-dioxide suppression | No | Yes | Phase 1 | Pending |
+| Foam, deluge and monitor | Yes | No | Phase 1 | Pending |
+| Commercial kitchen suppression | No | Yes | Phase 1 | Pending |
+| Portable and wheeled extinguishers | Yes | No | Core | Pending |
+| Passive fire protection | Yes | No | Phase 2 | Pending |
+| Smoke control and pressurisation | Yes | No | Phase 2 | Pending |
+| Emergency lighting and evacuation | Partial | Possibly | Phase 2 | Pending |
+| Special-hazard systems | No | Yes | Phase 3 | Pending |
+
+`Pending` is intentional. A FAST technical reviewer must confirm the family is within FAST’s service scope before it becomes an approved catalogue item.
+
 ## Reference basis
 
 - NFPA official standards catalogue: https://www.nfpa.org/for-professionals/codes-and-standards/list-of-codes-and-standards
