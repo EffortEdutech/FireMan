@@ -296,6 +296,56 @@ export async function updateEquipmentTechnicalData(formData: FormData) {
   redirect(`/equipment/${equipmentId}?saved=technical-data`);
 }
 
+const equipmentStatuses = new Set<Database["public"]["Enums"]["equipment_status"]>(["ACTIVE", "OUT_OF_SERVICE", "RETIRED"]);
+
+export async function updateEquipmentRecord(formData: FormData) {
+  const profile = await requireProfile();
+  if (!canAccessManagement(profile.role)) redirect("/dashboard");
+
+  const equipmentId = value(formData, "equipment_id");
+  const buildingId = value(formData, "building_id");
+  const systemId = value(formData, "system_id");
+  const parentEquipmentId = value(formData, "parent_equipment_id");
+  const protectedHazardId = value(formData, "protected_hazard_id");
+  const statusValue = value(formData, "status") as Database["public"]["Enums"]["equipment_status"] | null;
+  if (!equipmentId || !buildingId || !statusValue || !equipmentStatuses.has(statusValue)) {
+    redirect(`/equipment/${equipmentId ?? ""}?error=invalid-asset-update`);
+  }
+
+  const supabase = await createClient();
+  const [{ data: building }, { data: system }, { data: parentEquipment }, { data: hazard }] = await Promise.all([
+    supabase.from("buildings").select("id").eq("id", buildingId).eq("organisation_id", profile.organisation_id).eq("active", true).maybeSingle(),
+    systemId ? supabase.from("systems").select("id,building_id").eq("id", systemId).eq("organisation_id", profile.organisation_id).eq("active", true).maybeSingle() : Promise.resolve({ data: null }),
+    parentEquipmentId ? supabase.from("equipment").select("id,building_id").eq("id", parentEquipmentId).eq("organisation_id", profile.organisation_id).maybeSingle() : Promise.resolve({ data: null }),
+    protectedHazardId ? supabase.from("protected_hazards").select("id,building_id,system_id").eq("id", protectedHazardId).eq("organisation_id", profile.organisation_id).eq("active", true).maybeSingle() : Promise.resolve({ data: null })
+  ]);
+
+  if (!building) redirect(`/equipment/${equipmentId}?error=building-mismatch`);
+  if (systemId && (!system || system.building_id !== buildingId)) redirect(`/equipment/${equipmentId}?error=system-building-mismatch`);
+  if (parentEquipmentId && (!parentEquipment || parentEquipment.id === equipmentId || parentEquipment.building_id !== buildingId)) redirect(`/equipment/${equipmentId}?error=parent-equipment-mismatch`);
+  if (protectedHazardId && (!hazard || hazard.building_id !== buildingId || (systemId && hazard.system_id !== systemId))) redirect(`/equipment/${equipmentId}?error=hazard-mismatch`);
+
+  const { error } = await supabase.from("equipment").update({
+    building_id: buildingId,
+    system_id: systemId,
+    parent_equipment_id: parentEquipmentId,
+    protected_hazard_id: protectedHazardId,
+    asset_code: value(formData, "asset_code") ?? "",
+    serial_number: value(formData, "serial_number"),
+    brand: value(formData, "brand"),
+    model: value(formData, "model"),
+    capacity: value(formData, "capacity"),
+    location_description: value(formData, "location_description"),
+    installation_date: value(formData, "installation_date"),
+    status: statusValue
+  }).eq("id", equipmentId).eq("organisation_id", profile.organisation_id);
+  if (error) redirect(`/equipment/${equipmentId}?error=asset-update-failed`);
+
+  revalidatePath(`/equipment/${equipmentId}`);
+  revalidatePath("/equipment");
+  redirect(`/equipment/${equipmentId}?saved=asset`);
+}
+
 export async function uploadEquipmentDocument(formData: FormData) {
   const profile = await requireProfile();
   if (!canAccessManagement(profile.role)) redirect("/dashboard");
