@@ -1331,6 +1331,212 @@ select {
   line-height: 1.4;
 }
 
+.client-page-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.client-dashboard-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.client-page-heading {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.client-request-filters {
+  align-items: end;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(240px, 2fr) minmax(180px, 1fr) auto auto;
+}
+
+.client-request-filters label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.75rem;
+  font-weight: 800;
+  gap: 0.35rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.client-request-filters input,
+.client-request-filters select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  color: var(--foreground);
+  font: inherit;
+  min-height: 2.55rem;
+  padding: 0.55rem 0.65rem;
+  text-transform: none;
+}
+
+.client-request-table-card {
+  border-radius: 0.5rem;
+}
+
+.client-document-groups {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.client-document-groups h3 {
+  align-items: center;
+  display: flex;
+  font-size: 0.85rem;
+  gap: 0.45rem;
+  margin: 0 0 0.45rem;
+}
+
+.client-document-count {
+  background: var(--surface-muted, #f2f3f3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+}
+
+.client-document-list {
+  border-top: 1px solid var(--border);
+}
+
+.client-document-row {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+}
+
+.client-document-meta {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+}
+
+.client-portal-summary {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  padding: 1rem 1.25rem;
+}
+
+.client-portal-summary div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.client-portal-summary span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.client-portal-summary strong {
+  font-size: 1.35rem;
+}
+
+.client-filter-panel {
+  padding: 1rem 1.25rem;
+}
+
+.client-equipment-filters {
+  align-items: end;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(220px, 2fr) minmax(150px, 1fr) minmax(180px, 1fr) auto auto;
+}
+
+.client-equipment-filters label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.client-equipment-filters input,
+.client-equipment-filters select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  color: var(--foreground);
+  font: inherit;
+  min-height: 2.55rem;
+  padding: 0.55rem 0.65rem;
+  text-transform: none;
+}
+
+.client-equipment-table-card {
+  border-radius: 0.5rem;
+}
+
+.client-equipment-table td,
+.client-equipment-table th {
+  vertical-align: top;
+}
+
+.client-equipment-table td {
+  min-width: 8rem;
+}
+
+@media (max-width: 860px) {
+  .client-portal-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .client-portal-summary .button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .client-equipment-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .client-request-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .client-portal-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .client-equipment-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .client-request-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .client-equipment-filters .button {
+    width: 100%;
+  }
+}
+
 .report-review-title {
   margin: 0;
 }
@@ -2944,3 +3150,4 @@ select {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+

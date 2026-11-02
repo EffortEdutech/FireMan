@@ -149,6 +149,11 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       <PageHeader title="Client Dashboard" description="Review issued maintenance reports and attached evidence." />
+      <nav className="client-dashboard-actions" aria-label="Customer portal actions">
+        <Link className="button button-primary" href="/client/equipment">View equipment register</Link>
+        <Link className="button button-secondary" href="/client/requests">Track service requests</Link>
+        <Link className="button button-secondary" href="/client/requests/new">Submit a service request</Link>
+      </nav>
       {error ? (
         <EmptyState title="Reports unavailable" message="Issued reports could not be loaded." />
       ) : findingsError || quoteRequestsError || jobEquipmentError || inspectionsError || resultsError ? (
@@ -296,3 +301,4 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
     </div>
   );
 }
+

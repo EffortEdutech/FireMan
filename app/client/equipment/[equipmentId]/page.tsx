@@ -7,6 +7,10 @@ import { requireProfile } from "@/lib/auth/current-user";
 import { canAccessClientPortal } from "@/lib/permissions/roles";
 import { createClient } from "@/lib/supabase/server";
 
+function documentTypeLabel(documentType: string) {
+  return documentType.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 export default async function ClientEquipmentDetailPage({
   params,
 }: {
@@ -36,7 +40,7 @@ export default async function ClientEquipmentDetailPage({
       supabase
         .from("equipment_documents")
         .select(
-          "id,title,document_type,storage_path,file_name,mime_type,size_bytes,created_at",
+          "id,title,document_type,storage_path,file_name,mime_type,size_bytes,expires_at,created_at",
         )
         .eq("equipment_id", equipmentId)
         .eq("customer_visible", true)
@@ -64,6 +68,10 @@ export default async function ClientEquipmentDetailPage({
       return { ...document, signedUrl: data?.signedUrl ?? null };
     }),
   );
+  const documentGroups = Array.from(new Set(signedDocuments.map((document) => document.document_type))).map((documentType) => ({
+    documentType,
+    documents: signedDocuments.filter((document) => document.document_type === documentType),
+  }));
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       <PageHeader
@@ -167,33 +175,19 @@ export default async function ClientEquipmentDetailPage({
           <span className="record-status">{signedDocuments.length} shared</span>
         </div>
         {signedDocuments.length > 0 ? (
-          <div style={{ display: "grid", gap: "0.75rem", marginTop: "1rem" }}>
-            {signedDocuments.map((document) => (
-              <div
-                key={document.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: "1rem",
-                  alignItems: "center",
-                  borderTop: "1px solid var(--border)",
-                  paddingTop: "0.75rem",
-                }}
-              >
-                <div>
-                  <strong>{document.title}</strong>
-                  <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
-                    {document.document_type} · {document.file_name ?? "File"}
-                  </div>
+          <div className="client-document-groups">
+            {documentGroups.map((group) => (
+              <section key={group.documentType} aria-labelledby={`documents-${group.documentType}`}>
+                <h3 id={`documents-${group.documentType}`}>{documentTypeLabel(group.documentType)} <span className="client-document-count">{group.documents.length}</span></h3>
+                <div className="client-document-list">
+                  {group.documents.map((document) => (
+                    <div className="client-document-row" key={document.id}>
+                      <div><strong>{document.title}</strong><div className="client-document-meta">{document.file_name ?? "File"}{document.expires_at ? ` · Expires ${new Date(document.expires_at).toLocaleDateString("en-MY")}` : ""}</div></div>
+                      {document.signedUrl ? <a href={document.signedUrl} rel="noreferrer" target="_blank">Download</a> : <span>Unavailable</span>}
+                    </div>
+                  ))}
                 </div>
-                {document.signedUrl ? (
-                  <a href={document.signedUrl} rel="noreferrer" target="_blank">
-                    Download
-                  </a>
-                ) : (
-                  <span>Unavailable</span>
-                )}
-              </div>
+              </section>
             ))}
           </div>
         ) : (
