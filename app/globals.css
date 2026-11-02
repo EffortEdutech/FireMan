@@ -483,6 +483,11 @@ select {
   max-width: 100%;
 }
 
+.technician-shell-main > * > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .page-kicker {
   color: var(--accent);
   font-size: 0.7rem;
