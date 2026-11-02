@@ -145,7 +145,9 @@ export async function importEquipmentCsv(formData: FormData) {
   const profile = await requireProfile();
   if (!canAccessManagement(profile.role)) redirect("/dashboard");
 
-  const rawCsv = value(formData, "csv_text");
+  const fileEntry = formData.get("csv_file");
+  const uploadedCsv = fileEntry instanceof File && fileEntry.size > 0 ? await fileEntry.text() : null;
+  const rawCsv = uploadedCsv ?? value(formData, "csv_text");
   if (!rawCsv) redirect("/equipment?view=import&error=import-empty");
   const parsed = parseCsv(rawCsv);
   if (parsed.error || !parsed.rows) redirect(`/equipment?view=import&error=${encodeURIComponent(parsed.error ?? "CSV could not be read.")}`);

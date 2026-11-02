@@ -174,8 +174,10 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
         <Card className="workflow-action-card equipment-setup-panel">
           <div className="workflow-section-heading"><div><span className="record-card-kicker">CONTROLLED IMPORT</span><h2 style={{ fontSize: "1rem", margin: "0.25rem 0 0" }}>Import FAST equipment register</h2></div><span className="record-status">Validate before insert</span></div>
           <p style={{ color: "var(--muted)", margin: "0 0 1rem" }}>Paste the completed CSV template below. FAST validates hierarchy, catalogue codes, duplicate asset codes, status values, JSON technical data, and required fields before creating any records.</p>
-          <form action={importEquipmentCsv}>
-            <label>Equipment CSV<textarea name="csv_text" required rows={16} placeholder="Paste FAST_EQUIPMENT_IMPORT_TEMPLATE.csv contents here" style={{ width: "100%", marginTop: "0.5rem", fontFamily: "monospace" }} /></label>
+          <form action={importEquipmentCsv} encType="multipart/form-data">
+            <label>CSV file<input name="csv_file" type="file" accept=".csv,text/csv" style={{ display: "block", marginTop: "0.5rem" }} /></label>
+            <p style={{ color: "var(--muted)", margin: "0.75rem 0" }}>Or paste CSV contents below if the file is not available.</p>
+            <label>Equipment CSV<textarea name="csv_text" rows={12} placeholder="Paste FAST_EQUIPMENT_IMPORT_TEMPLATE.csv contents here" style={{ width: "100%", marginTop: "0.5rem", fontFamily: "monospace" }} /></label>
             <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginTop: "1rem", flexWrap: "wrap" }}><Button type="submit">Validate and import</Button><a className="button button-secondary" download href="/FAST_EQUIPMENT_IMPORT_TEMPLATE.csv">Download template</a><span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>No records are created when validation fails.</span></div>
           </form>
         </Card>
