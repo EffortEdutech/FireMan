@@ -147,8 +147,11 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
   };
 
   return (
-    <div style={{ display: "grid", gap: "1rem" }}>
-      <PageHeader title="Client Dashboard" description="Review issued maintenance reports and attached evidence." />
+    <div className="client-page-stack client-dashboard-page">
+      <section className="client-dashboard-hero">
+        <div><span className="client-portal-kicker">CUSTOMER PORTAL</span><PageHeader title="Client Dashboard" description="Review issued maintenance reports and attached evidence." /></div>
+        <p className="client-dashboard-hero-note">Your shared equipment, requests, and issued service reports in one place.</p>
+      </section>
       <nav className="client-dashboard-actions" aria-label="Customer portal actions">
         <Link className="button button-primary" href="/client/equipment">View equipment register</Link>
         <Link className="button button-secondary" href="/client/requests">Track service requests</Link>
@@ -160,7 +163,7 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
         <EmptyState title="Evidence unavailable" message="Report evidence could not be loaded." />
       ) : reports && reports.length > 0 ? (
         <>
-        <Card>
+        <Card className="client-dashboard-metrics">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem" }}>
             <div>
               <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>Issued reports</div>
@@ -173,6 +176,10 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
             <div>
               <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>With checklist</div>
               <strong style={{ display: "block", fontSize: "1.5rem", marginTop: 4 }}>{reportsWithChecklist}</strong>
+            </div>
+            <div>
+              <div style={{ color: "var(--muted)", fontSize: "0.875rem" }}>No evidence</div>
+              <strong style={{ display: "block", fontSize: "1.5rem", marginTop: 4 }}>{reportsWithNoEvidence}</strong>
             </div>
           </div>
         </Card>
@@ -187,7 +194,7 @@ export default async function ClientDashboardPage({ searchParams }: ClientDashbo
           selectedKey={selectedEvidence}
         />
         {filteredReports.length > 0 ? (
-        <Card className="table-scroll" style={{ padding: 0 }}>
+        <Card className="table-scroll client-dashboard-report-table" style={{ padding: 0 }}>
           <table className="data-table">
             <colgroup>
               <col style={{ width: 150 }} />
