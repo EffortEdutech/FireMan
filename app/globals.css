@@ -3330,3 +3330,5 @@ select {
   .catalogue-page .catalogue-command-bar .page-actions .button, .catalogue-page .catalogue-action-buttons .button { flex:1; }
   .catalogue-page .catalogue-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
+
+.catalogue-compare-panel{background:#f4f7f8;border:1px solid #d5e1e7;border-radius:8px;display:grid;gap:.75rem;margin:.9rem 0;padding:.85rem}.catalogue-compare-panel h3{color:var(--catalogue-ink);margin:.2rem 0 0}.catalogue-compare-panel p{color:var(--muted);font-size:.78rem;margin:.25rem 0 0}.catalogue-compare-grid{display:grid;gap:.65rem;grid-template-columns:repeat(2,minmax(0,1fr))}.catalogue-compare-grid>div{background:var(--surface);border:1px solid var(--border);border-radius:7px;display:grid;gap:.18rem;padding:.7rem}.catalogue-compare-grid small,.catalogue-compare-grid span{color:var(--muted);font-size:.72rem}.catalogue-compare-grid strong{color:var(--catalogue-ink)}.catalogue-compare-grid em{color:var(--accent);font-size:.72rem;font-style:normal;font-weight:800}@media(max-width:760px){.catalogue-compare-grid{grid-template-columns:1fr}}
