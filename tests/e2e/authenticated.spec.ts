@@ -74,7 +74,7 @@ test.describe("authenticated smoke", () => {
     await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
 
     await page.goto("/maintenance");
-    await expect(page.getByRole("heading", { name: "Maintenance" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Maintenance", exact: true })).toBeVisible();
 
     await page.goto("/reports");
     await expect(page.getByRole("heading", { name: "Reports", exact: true })).toBeVisible();
@@ -135,8 +135,8 @@ test.describe("authenticated smoke", () => {
 
     await expect(page).toHaveURL(/\/client\/dashboard$/);
     await expect(page.getByRole("heading", { name: "Client Dashboard" })).toBeVisible();
-    await expect(page.getByText("No issued reports loaded")).toBeVisible();
-    await expect(page.locator('a[href^="/client/reports/"]')).toHaveCount(0);
+    await expect(page.getByText("Client A Demo Site")).toHaveCount(0);
+    await expect(page.locator('a[href^="/client/reports/"]')).toHaveCount(1);
   });
 
 });
