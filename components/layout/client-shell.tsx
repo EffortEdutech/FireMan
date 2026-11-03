@@ -15,20 +15,21 @@ type ClientShellProps = Readonly<{
 
 export function ClientShell({ children, currentUser }: ClientShellProps) {
   return (
-    <div className="client-shell">
-      <header className="client-shell-header">
-        <div className="client-shell-header-inner">
-          <div className="client-shell-brand">
-            <Link className="client-shell-logo" href="/client/dashboard">{tenantBrand.name}</Link>
-            <span>Customer portal</span>
-          </div>
-          <nav className="client-shell-nav" aria-label="Customer portal navigation">
-            <Link href="/client/dashboard">Dashboard</Link>
-            <Link href="/client/equipment">Equipment</Link>
+    <div style={{ minHeight: "100vh" }}>
+      <header
+        style={{
+          borderBottom: "1px solid var(--border)",
+          background: "var(--surface)",
+          padding: "1rem 2rem"
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <strong>{tenantBrand.name} Customer Portal</strong>
             <Link href="/client/requests">Service requests</Link>
-            <Link className="client-shell-primary" href="/client/requests/new">New request</Link>
-          </nav>
-          <div className="client-shell-account">
+            <Link href="/client/equipment">Equipment</Link>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
             <CurrentUserBadge email={currentUser.email} profile={currentUser.profile} />
             <form action={signOut}>
               <Button type="submit" variant="secondary">
@@ -38,8 +39,7 @@ export function ClientShell({ children, currentUser }: ClientShellProps) {
           </div>
         </div>
       </header>
-      <main className="client-shell-main">{children}</main>
+      <main style={{ margin: "0 auto", maxWidth: "960px", padding: "2rem" }}>{children}</main>
     </div>
   );
 }
-
