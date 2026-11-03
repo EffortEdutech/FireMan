@@ -78,7 +78,7 @@ export default async function ReportTemplatesPage({ searchParams }: ReportTempla
   const defaultTemplate = templateRows.find((template) => template.is_default);
 
   return (
-    <div style={{ display: "grid", gap: "1rem" }}>
+    <div className="operations-page page-report-templates">
       <div>
         <h1 style={{ fontSize: "1.75rem", margin: 0 }}>Report Settings</h1>
         <p style={{ color: "var(--muted)", margin: "0.5rem 0 0" }}>

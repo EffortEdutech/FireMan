@@ -83,7 +83,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
   const pagedSites = sortedSites;
 
   return (
-    <div style={{ display: "grid", gap: "1rem" }}>
+    <div className="operations-page page-sites">
       <PageHeader title="Sites" description="Set up the buildings and service locations where FAST work takes place." />
       <div className="register-summary"><strong>{activeSiteCount} active sites</strong><span>{inactiveSiteCount} inactive · choose a site below to review its property record</span></div>
       {params?.created ? (

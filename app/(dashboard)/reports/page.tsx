@@ -168,7 +168,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const pagedReports = filteredReports;
 
   return (
-    <div style={{ display: "grid", gap: "1rem" }}>
+    <div className="operations-page page-reports">
       <PageHeader title="Reports" description="Move completed field work through evidence review, report approval, and client issue." />
       <div className="register-summary"><strong>{activeReportCount} reports need action</strong><span>{generatedReportCount} awaiting review · {reviewedReportCount} ready to issue · {issuedReportCount} already issued</span></div>
       {params?.created ? (

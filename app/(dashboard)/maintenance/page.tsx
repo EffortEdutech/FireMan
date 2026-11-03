@@ -198,7 +198,7 @@ export default async function MaintenancePage({ searchParams }: MaintenancePageP
   const pagedJobs = sortedJobs;
 
   return (
-    <div style={{ display: "grid", gap: "1rem" }}>
+    <div className="operations-page page-maintenance">
       <PageHeader title="Maintenance" description="Move planned work through technician delivery, evidence review, reporting, and closure." />
       <div className="register-summary"><strong>Maintenance delivery queue</strong><span>Schedule work, monitor field completion, review evidence, and close issued work.</span></div>
       {params?.created ? (

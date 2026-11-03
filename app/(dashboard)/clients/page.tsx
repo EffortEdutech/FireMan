@@ -82,7 +82,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   const pagedClients = sortedClients;
 
   return (
-    <div style={{ display: "grid", gap: "1rem" }}>
+    <div className="operations-page page-clients">
       <PageHeader title="Clients" description="Set up the organisations that own or manage the properties FAST services." />
       <div className="register-summary"><strong>{activeClientCount} active clients</strong><span>{inactiveClientCount} inactive · create or review the organisation record below</span></div>
         {params?.created ? (
