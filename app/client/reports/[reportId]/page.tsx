@@ -36,7 +36,7 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
   const templateStats = reportTemplateStats(reportData.layout);
 
   return (
-    <div className="print-sheet" style={{ display: "grid", gap: "1rem" }}>
+    <div className="print-sheet client-page-stack client-report-detail-page">
       <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "flex-start" }}>
         <div>
           <Link className="no-print" href="/client/dashboard" style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
@@ -125,4 +125,3 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
     </div>
   );
 }
-

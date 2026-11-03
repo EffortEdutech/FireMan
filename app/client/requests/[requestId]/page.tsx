@@ -36,16 +36,16 @@ export default async function CustomerRequestDetailPage({ params, searchParams }
   ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   return (
-    <div style={{ display: "grid", gap: "1rem" }}>
+    <div className="client-page-stack client-request-detail-page">
       <Link href="/client/requests">← All service requests</Link>
       {query.submitted ? <Card role="status">Request submitted. You can follow updates on this page.</Card> : null}
       {query.replied ? <Card role="status">Your reply was sent to FAST.</Card> : null}
       {query.error ? <Card role="alert">Your reply couldn’t be sent. Please try again.</Card> : null}
       <PageHeader title={request.title} description={`${request.request_reference} · ${site?.name ?? "Site"} · ${serviceRequestCategoryLabels[request.category]}`} />
-      <Card style={{ display: "grid", gap: "0.6rem" }}>
-        <strong>{serviceRequestStatusLabels[request.status]}</strong>
+      <Card className="client-request-status-card">
+        <div className="client-request-status-heading"><span className="client-portal-kicker client-portal-kicker-dark">CURRENT STATUS</span><span className={`status-badge ${request.status === "COMPLETED" || request.status === "CLOSED" ? "status-badge-success" : request.status === "NEEDS_CUSTOMER_INFO" ? "status-badge-danger" : "status-badge-warning"}`}>{serviceRequestStatusLabels[request.status]}</span></div>
         <p style={{ margin: 0 }}>{request.customer_message}</p>
-        <div><strong>Next action:</strong> {request.next_action}</div>
+        <div className="client-next-action"><span>Next action</span><strong>{request.next_action ?? "FAST will provide the next update."}</strong><small>{request.next_action_owner ?? "FAST team"}</small></div>
         <div><strong>With:</strong> {request.next_action_owner}</div>
         {request.hold_reason ? <div><strong>Waiting on:</strong> {request.hold_reason}</div> : null}
         {request.appointment_at ? <div><strong>Appointment:</strong> {dateLabel(request.appointment_at)}</div> : null}

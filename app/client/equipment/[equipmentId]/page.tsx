@@ -73,12 +73,12 @@ export default async function ClientEquipmentDetailPage({
     documents: signedDocuments.filter((document) => document.document_type === documentType),
   }));
   return (
-    <div style={{ display: "grid", gap: "1rem" }}>
+    <div className="client-page-stack client-equipment-detail-page">
       <PageHeader
         title={equipment.asset_code}
         description="Customer equipment record shared by FAST."
       />
-      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+      <div className="client-detail-actions">
         <Link href="/client/equipment" className="button button-secondary">
           Back to equipment
         </Link>
@@ -233,4 +233,3 @@ export default async function ClientEquipmentDetailPage({
     </div>
   );
 }
-
